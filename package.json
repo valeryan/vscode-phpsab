@@ -1,0 +1,152 @@
+{
+    "name": "vscode-phpsab",
+    "displayName": "PHP Sniffer & Beautifier",
+    "description": "PHP Sniffer & Beautifier for Visual Studio Code",
+    "version": "0.0.1",
+    "icon": "php_logo.png",
+    "publisher": "valeryanm",
+    "homepage": "https://github.com/valeryan/vscode-phpsab",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/valeryan/vscode-phpsab.git"
+    },
+    "bugs": {
+        "url": "https://github.com/valeryan/vscode-phpsab/issues"
+    },
+    "engines": {
+        "vscode": "^1.25.0"
+    },
+    "categories": [
+        "Formatters",
+        "Linters",
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:php"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "fixer.fix",
+                "title": "PHPCBF: Fix this file",
+                "when": "!inOutput && editorFocus && editorLangId == php"
+            }
+        ],
+        "configuration": {
+            "title": "PHP Sniffer & Fixer Configuration options",
+            "type": "object",
+            "properties": {
+                "phpsab.fixerEnable": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Control if this fixer is enabled for PHP files or not."
+                },
+                "phpsab.executablePathCBF": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": null,
+                    "description": "Optional. The default path to the phpcbf executable. Can be overridden if auto search is enabled."
+                },
+                "phpsab.executablePathCS": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": null,
+                    "description": "Optional. The default path to the phpcs executable. Can be overridden if auto search is enabled."
+                },
+                "phpsab.composerJsonPath": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": "composer.json",
+                    "description": "The path to composer.json"
+                },
+                "phpsab.standard": {
+                    "scope": "resource",
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null,
+                    "description": "Optional. The default config to use or global standard. Can be overridden if auto search is enabled."
+                },
+                "phpsab.autoConfigSearch": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically search for a ruleset file to use as configuration. Overrides custom standards defined above."
+                },
+                "phpsab.allowedAutoRulesets": {
+                    "scope": "resource",
+                    "type": "array",
+                    "default": [
+                        ".phpcs.xml",
+                        ".phpcs.xml.dist",
+                        "phpcs.xml",
+                        "phpcs.xml.dist",
+                        "phpcs.ruleset.xml",
+                        "ruleset.xml"
+                    ],
+                    "description": "Filenames to search for that contain rulesets for fixers."
+                },
+                "phpsab.snifferEnable": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Control if this sniffer is enabled for PHP files or not."
+                },
+                "phpsab.snifferMode": {
+                    "scope": "resource",
+                    "type": "string",
+                    "default": "onSave",
+                    "enum": [
+                        "onSave",
+                        "onType"
+                    ],
+                    "markdownDescription": "When to run `phpcs`."
+                },
+                "phpsab.snifferTypeDelay": {
+                    "scope": "resource",
+                    "type": "number",
+                    "default": 250,
+                    "minimum": 0,
+                    "markdownDescription": "When `phpSniffer.run` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run."
+                },
+                "phpsab.snifferShowSources": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Control if phpcs report should include sniff sources."
+                },
+                "phpsab.debug": {
+                    "scope": "resource",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Write debug info to the console"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    },
+    "dependencies": {
+        "cross-spawn": "^6.0.5",
+        "lodash.debounce": "^4.0.8"
+    },
+    "devDependencies": {
+        "@types/cross-spawn": "^6.0.0",
+        "@types/lodash.debounce": "^4.0.6",
+        "@types/mocha": "^2.2.42",
+        "@types/node": "^7.10.2",
+        "tslint": "^5.8.0",
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.34",
+        "vscode-uri": "^1.0.6"
+    }
+}
