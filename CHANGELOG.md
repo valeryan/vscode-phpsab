@@ -1,3 +1,5 @@
 # Change Log
+## 0.0.2
+- Adding Keywords for Marketplace
 ## 0.0.1
 - Initial Alpha release
