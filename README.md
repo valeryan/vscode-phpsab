@@ -5,7 +5,7 @@
 [![Open Issues](https://vsmarketplacebadge.apphb.com/rating/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
 
 # Special Notice 
-This is very much an Alpha of combining my `phpcbf` extension with the `Php Sniffer` extension created by `wongjn`. I am currently testing this internally with my team and I am sure there are many bugs. It is currently only being tested on Linux. Other OS support will follow. 
+This is very much an Alpha of combining my [vscode-phpcbf](https://github.com/valeryan/vscode-phpcbf) extension with the [Php Sniffer](https://github.com/wongjn/vscode-php-sniffer) extension created by `wongjn` and the auto config search capabilities of [vscode-phpcs](https://github.com/ikappas/vscode-phpcs) by `Ioannis Kappas`. I am currently testing this internally with my team and I am sure there are many bugs. It is currently only being tested on Linux. Other OS support will follow. 
 #
 
 This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) provides an interface to [phpcs & phpcbf](http://pear.php.net/package/PHP_CodeSniffer/). It will be used with files that have the “PHP” language mode. This extension is designed to use auto configuration search mechanism to apply rulesets to files within a workspace. This is useful for developers who work with many different projects that have different coding standards.
