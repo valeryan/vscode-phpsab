@@ -195,7 +195,7 @@ export class Sniffer {
 
         if (this.config.debug) {
             console.log("----- SNIFFER -----");
-            console.log("SNIFFER args: " + this.config.executablePathCBF + " " + lintArgs.join(" "));
+            console.log("SNIFFER args: " + this.config.executablePathCS + " " + lintArgs.join(" "));
         }
 
         const sniffer = spawn(this.config.executablePathCS, lintArgs, options);
