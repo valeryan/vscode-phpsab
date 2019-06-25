@@ -1,12 +1,12 @@
 # vscode-phpcbf
 
-[![Current Version](https://vsmarketplacebadge.apphb.com/version/valeryanm.phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=valeryanm.phpsab)
-[![Install Count](https://vsmarketplacebadge.apphb.com/installs/valeryanm.phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=valeryanm.phpsab)
-[![Open Issues](https://vsmarketplacebadge.apphb.com/rating/valeryanm.phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=valeryanm.phpsab)
+[![Current Version](https://vsmarketplacebadge.apphb.com/version/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
+[![Install Count](https://vsmarketplacebadge.apphb.com/installs/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
+[![Open Issues](https://vsmarketplacebadge.apphb.com/rating/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
 
 Integrates [phpcs & phpcbf](https://github.com/squizlabs/PHP_CodeSniffer.git) into [Visual Studio Code](https://code.visualstudio.com/).
 
-This extension is designed to use an auto config search functionality. This way if phpcs finds a configuration file through auto search this extension should similarly find that configuration file and apply fixes based on the same configuration.
+This extension is designed to use an auto config search functionality. When it finds a configuration file through auto search this extension should use that configuration file to create reports with phpcs and apply fixes with phpcbf based on the same configuration.
 
 ## Setup Development Version
 
