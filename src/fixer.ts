@@ -147,6 +147,11 @@ export class Fixer {
             }
             default:
                 error = errors[fixer.status];
+                if (this.config.debug) {
+                    console.log("----- FIXER STDOUT -----");
+                    console.log(fixed);
+                    console.log("----- FIXER STDOUT END -----");
+                }
         }
 
         if (this.config.debug) {

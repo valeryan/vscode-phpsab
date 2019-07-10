@@ -148,7 +148,7 @@ export class ComposerPathResolver extends PathResolverBase {
 					resolvedPath = vendorPath;
 				} else {
 					let relativeVendorPath = path.relative(this.workspaceRoot, vendorPath);
-					throw new Error(`Composer phpcbf dependency is configured but was not found under ${relativeVendorPath}. You may need to run "composer install" or set your phpcbf.executablePath manually.`);
+					throw new Error(`Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to run "composer install" or set your executablePaths for phpcs & phpcbf manually.`);
 				}
 			}
 		}
