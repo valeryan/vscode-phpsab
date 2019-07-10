@@ -25,16 +25,21 @@ const enum runConfig {
  *   The process to kill.
  */
 function phpCliKill(command: ChildProcess) {
-    // exec("for pid in $(ps -ef | awk '/sniffer/ {print $2}'); do kill -9 $pid; done");
-    exec(`ps -ef | awk '/sniffer/ {print $2" "$8" "$4" "$7}'`,
-        (err, stdout) => {
-            stdout.split("\n").forEach(($process) => {
-                const killable = $process.split(" ");
-                if (killable[1] === "php" && parseInt(killable[2]) > 90) {
-                    exec(`kill ${killable[0]}`);
+    if (!/^win/.test(process.platform)) {
+        exec(`ps -ef | awk '/phpcs/ {print $2" "$8" "$4" "$7}'`,
+            (err, stdout) => {
+                if (err) {
+                    window.showErrorMessage('Sniffer: Error trying to kill PHP CLI, you may need to kill the process yourself.');
                 }
+                stdout.split("\n").forEach(($process) => {
+                    const killable = $process.split(" ");
+                    if (killable[1] === "php" && parseInt(killable[2]) > 90) {
+                        exec(`kill ${killable[0]}`);
+                    }
+                });
             });
-        });
+    }
+
     command.kill();
 }
 
