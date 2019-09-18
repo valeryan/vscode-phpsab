@@ -151,7 +151,6 @@
         "@types/lodash.debounce": "^4.0.6",
         "@types/mocha": "^5.2.7",
         "@types/node": "^12.7.5",
-        "@types/vscode": "^1.32.0",
         "tslint": "^5.20.0",
         "typescript": "^3.6.3",
         "vscode": "^1.1.36",
