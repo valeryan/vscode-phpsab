@@ -8,7 +8,7 @@
 import * as fs from 'fs';
 
 import { PathResolverBase } from './path-resolver-base';
-import { TextDocument } from 'vscode';
+import { TextDocument, workspace } from 'vscode';
 import { Settings } from '../settings';
 
 export class StandardsPathResolver extends PathResolverBase {
@@ -23,8 +23,13 @@ export class StandardsPathResolver extends PathResolverBase {
         }
 
         let resolvedPath: string | null = null;
-        let workspaceRoot = this.config.workspaceRoot + this.pathSeparator;
-        let localPath = this.document.uri.fsPath.replace(workspaceRoot, '');
+        const resource = this.document.uri;
+        const folder = workspace.getWorkspaceFolder(resource);
+        if (!folder) {
+            return '';
+        }
+        let workspaceRoot = folder.uri.fsPath + this.pathSeparator;
+        let localPath = resource.fsPath.replace(workspaceRoot, '');
         let paths = localPath.split(this.pathSeparator)
             .filter(path => path.includes('.php') !== true);
 

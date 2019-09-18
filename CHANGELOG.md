@@ -3,6 +3,7 @@
 ## 0.0.4
 - Updated Dependencies
 - Fix an issue causing the content of files to be deleted by the Fixer
+- Add basic support for resolving standards files in a multi-workspace project
 ## 0.0.3
 - Fix some language in the DEVELOPMENT.md
 - Fix some debug information
