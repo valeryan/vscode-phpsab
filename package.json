@@ -2,7 +2,7 @@
     "name": "vscode-phpsab",
     "displayName": "PHP Sniffer & Beautifier",
     "description": "PHP Sniffer & Beautifier for Visual Studio Code",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "icon": "php_logo.png",
     "publisher": "valeryanm",
     "homepage": "https://github.com/valeryan/vscode-phpsab",
