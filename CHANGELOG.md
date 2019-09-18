@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.0.4
+- Updated Dependencies
+- Fix an issue causing the content of files to be deleted by the Fixer
 ## 0.0.3
 - Fix some language in the DEVELOPMENT.md
 - Fix some debug information

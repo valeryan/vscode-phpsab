@@ -49,6 +49,8 @@ export class Configuration {
         settings = await this.resolveCBFExecutablePath(settings);
         settings = await this.resolveCSExecutablePath(settings);
 
+        settings = await this.validate(settings);
+
         if (settings.debug) {
             console.log("----- PHPSAB CONFIGURATION -----");
             console.log(settings);
@@ -101,5 +103,21 @@ export class Configuration {
 
         // one last safety check
         return folder ? folder.uri.fsPath : '';
+    }
+
+    private async validate(settings: Settings): Promise<Settings> {
+        if (settings.snifferEnable && !settings.executablePathCS) {
+            if (settings.debug) {
+                console.error("Sniffer will be disable because phpcs could not be found.");
+            }
+            settings.snifferEnable = false;
+        }
+        if (settings.fixerEnable && !settings.executablePathCBF) {
+            if (settings.debug) {
+                console.error("Fixer will be disable because phpcbf could not be found.");
+            }
+            settings.fixerEnable = false;
+        }
+        return settings;
     }
 }

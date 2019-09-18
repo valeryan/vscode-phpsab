@@ -8,6 +8,9 @@ import { Settings } from './settings';
 
 function activateFixer(context: ExtensionContext, config: Settings) {
     if (config.fixerEnable === true) {
+        if (config.debug) {
+            console.log("----- ACTIVATE FIXER -----");
+        }
         let fixer = new Fixer(context.subscriptions, config);
 
         // register format from command pallet
@@ -33,6 +36,9 @@ function activateFixer(context: ExtensionContext, config: Settings) {
 function activateSniffer(context: ExtensionContext, config: Settings) {
     // register a document validator
     if (config.snifferEnable === true) {
+        if (config.debug) {
+            console.log("----- ACTIVATE SNIFFER -----");
+        }
         context.subscriptions.push(new Sniffer(context.subscriptions, config));
     }
 }
@@ -43,7 +49,6 @@ function activateSniffer(context: ExtensionContext, config: Settings) {
 export async function activate(context: ExtensionContext) {
     let configuration = new Configuration();
     let config = await configuration.load();
-
     activateFixer(context, config);
     activateSniffer(context, config);
 }
