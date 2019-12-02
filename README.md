@@ -81,12 +81,19 @@ This setting controls whether `phpcbf` fixer is enabled.
 
 This setting controls whether `phpcs` sniffer is enabled.
 
-### **phpsab.executablePath**
+### **phpsab.executablePathCS**
+
+[ *Scope:* All | Optional | *Type:* string | *Default:* null ]
+
+This setting controls the executable path for `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
+If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcs' in your path.
+
+### **phpsab.executablePathCBF**
 
 [ *Scope:* All | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the executable path for the `phpcbf`. You may specify the absolute path or workspace relative path to the `phpcbf` executable.
-If omitted, the plugin will try to locate the path parsing your composer configuration or the global path.
+If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcbf' in your path..
 
 ### **phpsab.standard**
 
