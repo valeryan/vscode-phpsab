@@ -10,7 +10,6 @@ export interface Settings {
     autoConfigSearch: boolean;
     allowedAutoRulesets: string[];
     debug: boolean;
-    timeout: number;
     snifferEnable: boolean;
     snifferMode: string;
     snifferTypeDelay: number;

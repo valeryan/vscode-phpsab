@@ -143,17 +143,17 @@
         "test": "npm run compile && node ./node_modules/vscode/bin/test"
     },
     "dependencies": {
-        "cross-spawn": "^7.0.0",
+        "cross-spawn": "^7.0.1",
         "lodash.debounce": "^4.0.8"
     },
     "devDependencies": {
-        "@types/cross-spawn": "^6.0.0",
+        "@types/cross-spawn": "^6.0.1",
         "@types/lodash.debounce": "^4.0.6",
         "@types/mocha": "^5.2.7",
-        "@types/node": "^12.7.5",
-        "tslint": "^5.20.0",
-        "typescript": "^3.6.3",
+        "@types/node": "^12.12.27",
+        "tslint": "^5.20.1",
+        "typescript": "^3.7.5",
         "vscode": "^1.1.36",
-        "vscode-uri": "^2.0.3"
+        "vscode-uri": "^2.1.1"
     }
 }

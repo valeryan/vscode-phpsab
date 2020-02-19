@@ -11,7 +11,6 @@ export class Configuration {
      */
     public async load() {
         let config: WorkspaceConfiguration;
-        let timeout: number | undefined;
         let rootPath: string;
 
         if (!workspace.workspaceFolders) {
@@ -20,7 +19,6 @@ export class Configuration {
 
         const resource = workspace.workspaceFolders[0].uri;
         config = workspace.getConfiguration('phpsab', resource);
-        timeout = workspace.getConfiguration('editor', resource).get('formatOnSaveTimeout');
         rootPath = this.resolveRootPath(workspace, resource);
 
         // update settings from config
@@ -38,7 +36,6 @@ export class Configuration {
                 "phpcs.dist.xml",
                 "ruleset.xml"
             ]),
-            timeout: timeout ? timeout : 750,
             snifferEnable: config.get('snifferEnable', true),
             snifferMode: config.get('snifferMode', 'onSave'),
             snifferShowSources: config.get('snifferShowSources', false),

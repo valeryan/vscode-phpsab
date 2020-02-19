@@ -67,7 +67,6 @@ export class Fixer {
             cwd: this.config.workspaceRoot !== null ? this.config.workspaceRoot : undefined,
             env: process.env,
             encoding: "utf8",
-            timeout: this.config.timeout,
             tty: true,
             input: fileText
         };
@@ -105,13 +104,13 @@ export class Fixer {
             case null: {
                 // deal with some special case errors
                 error = 'A General Execution error occurred.';
-                
+
                 if (fixer.error === undefined) {
                     break;
                 }
                 const execError: ConsoleError = fixer.error;
                 if (execError.code === 'ETIMEDOUT') {
-                    error = 'FIXER: Formating the document is taking longer than the configured formatOnSaveTimeout. Consider setting to at least 2 seconds (2000).';
+                    error = 'FIXER: Formating the document timed out.';
                 }
 
                 if (execError.code === 'ENOENT') {

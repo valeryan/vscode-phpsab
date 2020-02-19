@@ -194,7 +194,6 @@ export class Sniffer {
             cwd: this.config.workspaceRoot !== null ? this.config.workspaceRoot : undefined,
             env: process.env,
             encoding: "utf8",
-            timeout: this.config.timeout,
             tty: true
         };
 
