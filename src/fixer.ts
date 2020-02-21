@@ -5,19 +5,36 @@ import { Configuration } from "./configuration";
 import { Settings } from "./settings";
 import { StandardsPathResolver } from "./resolvers/standards-path-resolver";
 import { ConsoleError } from "./console-error";
-import { window, TextDocument, Range, Position, TextEdit, ProviderResult, Disposable, workspace, ConfigurationChangeEvent } from "vscode";
+import {
+    window,
+    TextDocument,
+    Range,
+    Position,
+    TextEdit,
+    ProviderResult,
+    Disposable,
+    workspace,
+    ConfigurationChangeEvent
+} from "vscode";
 export class Fixer {
     public config!: Settings;
 
     constructor(subscriptions: Disposable[], config: Settings) {
         this.config = config;
-        workspace.onDidChangeConfiguration(this.loadSettings, this, subscriptions);
+        workspace.onDidChangeConfiguration(
+            this.loadSettings,
+            this,
+            subscriptions
+        );
     }
     /**
      * Load Configuration from editor
      */
     public async loadSettings(event: ConfigurationChangeEvent) {
-        if (!event.affectsConfiguration('phpsab') && !event.affectsConfiguration('editor.formatOnSaveTimeout')) {
+        if (
+            !event.affectsConfiguration("phpsab") &&
+            !event.affectsConfiguration("editor.formatOnSaveTimeout")
+        ) {
             return;
         }
         let configuration = new Configuration();
@@ -36,7 +53,7 @@ export class Fixer {
 
         let args = [];
         args.push("-q");
-        if (standard !== '') {
+        if (standard !== "") {
             args.push("--standard=" + standard);
         }
         args.push(`--stdin-path=${filePath}`);
@@ -49,35 +66,52 @@ export class Fixer {
      * @param document
      */
     private async format(document: TextDocument) {
-        if (document.languageId !== 'php' || this.config.fixerEnable === false) {
-            return '';
+        if (
+            document.languageId !== "php" ||
+            this.config.fixerEnable === false
+        ) {
+            return "";
         }
         if (this.config.debug) {
             console.time("fixer");
         }
 
         // setup and spawn fixer process
-        const standard = await new StandardsPathResolver(document, this.config).resolve();
+        const standard = await new StandardsPathResolver(
+            document,
+            this.config
+        ).resolve();
 
         const lintArgs = this.getArgs(document, standard);
 
         let fileText = document.getText();
 
         const options = {
-            cwd: this.config.workspaceRoot !== null ? this.config.workspaceRoot : undefined,
+            cwd:
+                this.config.workspaceRoot !== null
+                    ? this.config.workspaceRoot
+                    : undefined,
             env: process.env,
             encoding: "utf8",
-            timeout: this.config.timeout,
             tty: true,
             input: fileText
         };
 
         if (this.config.debug) {
             console.log("----- FIXER -----");
-            console.log("FIXER args: " + this.config.executablePathCBF + " " + lintArgs.join(" "));
+            console.log(
+                "FIXER args: " +
+                    this.config.executablePathCBF +
+                    " " +
+                    lintArgs.join(" ")
+            );
         }
 
-        const fixer = spawn.sync(this.config.executablePathCBF, lintArgs, options);
+        const fixer = spawn.sync(
+            this.config.executablePathCBF,
+            lintArgs,
+            options
+        );
         const stdout = fixer.stdout.toString().trim();
 
         let fixed = stdout + "\n";
@@ -90,32 +124,35 @@ export class Fixer {
             255: "FIXER: A Fatal execution error occurred."
         };
 
-        let error: string = '';
-        let result: string = '';
-        let message: string = 'No fixable errors were found.';
+        let error: string = "";
+        let result: string = "";
+        let message: string = "No fixable errors were found.";
 
         /**
-        * fixer exit codes:
-        * Exit code 0 is used to indicate that no fixable errors were found, so nothing was fixed
-        * Exit code 1 is used to indicate that all fixable errors were fixed correctly
-        * Exit code 2 is used to indicate that FIXER failed to fix some of the fixable errors it found
-        * Exit code 3 is used for general script execution errors
-        */
+         * fixer exit codes:
+         * Exit code 0 is used to indicate that no fixable errors were found, so nothing was fixed
+         * Exit code 1 is used to indicate that all fixable errors were fixed correctly
+         * Exit code 2 is used to indicate that FIXER failed to fix some of the fixable errors it found
+         * Exit code 3 is used for general script execution errors
+         */
         switch (fixer.status) {
             case null: {
                 // deal with some special case errors
-                error = 'A General Execution error occurred.';
-                
+                error = "A General Execution error occurred.";
+
                 if (fixer.error === undefined) {
                     break;
                 }
                 const execError: ConsoleError = fixer.error;
-                if (execError.code === 'ETIMEDOUT') {
-                    error = 'FIXER: Formating the document is taking longer than the configured formatOnSaveTimeout. Consider setting to at least 2 seconds (2000).';
+                if (execError.code === "ETIMEDOUT") {
+                    error = "FIXER: Formatting the document timed out.";
                 }
 
-                if (execError.code === 'ENOENT') {
-                    error = 'FIXER: ' + execError.message + '. executablePath not found.';
+                if (execError.code === "ENOENT") {
+                    error =
+                        "FIXER: " +
+                        execError.message +
+                        ". executablePath not found.";
                 }
                 break;
             }
@@ -128,7 +165,7 @@ export class Fixer {
             case 1: {
                 if (fixed.length > 0 && fixed !== fileText) {
                     result = fixed;
-                    message = 'All fixable errors were fixed correctly.';
+                    message = "All fixable errors were fixed correctly.";
                 }
 
                 if (this.config.debug) {
@@ -140,7 +177,7 @@ export class Fixer {
             case 2: {
                 if (fixed.length > 0 && fixed !== fileText) {
                     result = fixed;
-                    message = 'FIXER failed to fix some of the fixable errors.';
+                    message = "FIXER failed to fix some of the fixable errors.";
                 }
 
                 if (this.config.debug) {
@@ -163,7 +200,7 @@ export class Fixer {
             console.log("----- FIXER END -----");
         }
 
-        if (error !== '') {
+        if (error !== "") {
             return Promise.reject(error);
         }
 
@@ -174,13 +211,12 @@ export class Fixer {
      * Setup wrapper to format for extension
      * @param document
      */
-    public registerDocumentProvider(document: TextDocument): ProviderResult<TextEdit[]> {
+    public registerDocumentProvider(
+        document: TextDocument
+    ): ProviderResult<TextEdit[]> {
         return new Promise((resolve, reject) => {
             let lastLine = document.lineAt(document.lineCount - 1);
-            let range = new Range(
-                new Position(0, 0),
-                lastLine.range.end
-            );
+            let range = new Range(new Position(0, 0), lastLine.range.end);
 
             this.format(document)
                 .then(text => {

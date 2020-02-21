@@ -4,10 +4,6 @@
 [![Install Count](https://vsmarketplacebadge.apphb.com/installs/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
 [![Open Issues](https://vsmarketplacebadge.apphb.com/rating/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
 
-# Special Notice 
-This is very much an Alpha of combining my [vscode-phpcbf](https://github.com/valeryan/vscode-phpcbf) extension with the [Php Sniffer](https://github.com/wongjn/vscode-php-sniffer) extension created by `wongjn` and the auto config search capabilities of [vscode-phpcs](https://github.com/ikappas/vscode-phpcs) by `Ioannis Kappas`. I am currently testing this internally with my team and I am sure there are many bugs. It is currently only being tested on Linux. Other OS support will follow. 
-#
-
 This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) provides an interface to [phpcs & phpcbf](http://pear.php.net/package/PHP_CodeSniffer/). It will be used with files that have the “PHP” language mode. This extension is designed to use auto configuration search mechanism to apply rulesets to files within a workspace. This is useful for developers who work with many different projects that have different coding standards.
 
 ## Installation
@@ -195,16 +191,13 @@ Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpc
 
 ### **phpsab.allowedAutoRulesets**
 
-[ *Scope:* All | Optional | *Type:* array | *Default:* [] ]
+[ _Scope:_ All | Optional | _Type:_ array | _Default:_ [] ]
 
 An array of filenames that could contain a valid phpcs ruleset.
 
 ```json
 {
-    "phpsab.allowedAutoRulesets": [
-        "phpcs.xml",
-        "special.xml",
-    ]
+    "phpsab.allowedAutoRulesets": ["phpcs.xml", "special.xml"]
 }
 ```
 
@@ -212,7 +205,7 @@ An array of filenames that could contain a valid phpcs ruleset.
 
 [ *Scope:* All | Optional | *Type:* string | *Default:* onSave ]
 
-Enum dropdown options to set Sniffer Mode to `onSave` or `onType`. 
+Enum dropdown options to set Sniffer Mode to `onSave` or `onType`.
 
 1. `onSave`: The Sniffer will only update diagnostics when the document is saved.
 
@@ -222,7 +215,7 @@ Enum dropdown options to set Sniffer Mode to `onSave` or `onType`.
 
 [ *Scope:* All | Optional | *Type:* number | *Default:* 250 ]
 
-When `snifferMode` is `onType` this setting controls how long to wait after typing stops to update. The number represents milliseconds. 
+When `snifferMode` is `onType` this setting controls how long to wait after typing stops to update. The number represents milliseconds.
 
 ### **phpsab.snifferShowSources**
 

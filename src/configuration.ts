@@ -11,39 +11,36 @@ export class Configuration {
      */
     public async load() {
         let config: WorkspaceConfiguration;
-        let timeout: number | undefined;
         let rootPath: string;
 
         if (!workspace.workspaceFolders) {
-            throw new Error('Unable to load configuration.');
+            throw new Error("Unable to load configuration.");
         }
 
         const resource = workspace.workspaceFolders[0].uri;
-        config = workspace.getConfiguration('phpsab', resource);
-        timeout = workspace.getConfiguration('editor', resource).get('formatOnSaveTimeout');
+        config = workspace.getConfiguration("phpsab", resource);
         rootPath = this.resolveRootPath(workspace, resource);
 
         // update settings from config
         let settings: Settings = {
-            fixerEnable: config.get('fixerEnable', true),
+            fixerEnable: config.get("fixerEnable", true),
             workspaceRoot: rootPath,
-            executablePathCBF: config.get('executablePathCBF', ''),
-            executablePathCS: config.get('executablePathCS', ''),
-            composerJsonPath: config.get('composerJsonPath', 'composer.json'),
-            standard: config.get('standard', ''),
-            autoConfigSearch: config.get('autoConfigSearch', true),
-            allowedAutoRulesets: config.get('allowedAutoRulesets', [
+            executablePathCBF: config.get("executablePathCBF", ""),
+            executablePathCS: config.get("executablePathCS", ""),
+            composerJsonPath: config.get("composerJsonPath", "composer.json"),
+            standard: config.get("standard", ""),
+            autoConfigSearch: config.get("autoConfigSearch", true),
+            allowedAutoRulesets: config.get("allowedAutoRulesets", [
                 ".phpcs.xml",
                 "phpcs.xml",
                 "phpcs.dist.xml",
                 "ruleset.xml"
             ]),
-            timeout: timeout ? timeout : 750,
-            snifferEnable: config.get('snifferEnable', true),
-            snifferMode: config.get('snifferMode', 'onSave'),
-            snifferShowSources: config.get('snifferShowSources', false),
-            snifferTypeDelay: config.get('snifferTypeDelay', 250),
-            debug: config.get('debug', false)
+            snifferEnable: config.get("snifferEnable", true),
+            snifferMode: config.get("snifferMode", "onSave"),
+            snifferShowSources: config.get("snifferShowSources", false),
+            snifferTypeDelay: config.get("snifferTypeDelay", 250),
+            debug: config.get("debug", false)
         };
 
         settings = await this.resolveCBFExecutablePath(settings);
@@ -64,12 +61,20 @@ export class Configuration {
      * Get correct executable path from resolver
      * @param settings
      */
-    protected async resolveCBFExecutablePath(settings: Settings): Promise<Settings> {
+    protected async resolveCBFExecutablePath(
+        settings: Settings
+    ): Promise<Settings> {
         if (settings.executablePathCBF === null) {
-            let executablePathResolver = new PathResolver(settings, 'phpcbf');
+            let executablePathResolver = new PathResolver(settings, "phpcbf");
             settings.executablePathCBF = await executablePathResolver.resolve();
-        } else if (!path.isAbsolute(settings.executablePathCBF) && settings.workspaceRoot !== null) {
-            settings.executablePathCBF = path.join(settings.workspaceRoot, settings.executablePathCBF);
+        } else if (
+            !path.isAbsolute(settings.executablePathCBF) &&
+            settings.workspaceRoot !== null
+        ) {
+            settings.executablePathCBF = path.join(
+                settings.workspaceRoot,
+                settings.executablePathCBF
+            );
         }
         return settings;
     }
@@ -78,12 +83,20 @@ export class Configuration {
      * Get correct executable path from resolver
      * @param settings
      */
-    protected async resolveCSExecutablePath(settings: Settings): Promise<Settings> {
+    protected async resolveCSExecutablePath(
+        settings: Settings
+    ): Promise<Settings> {
         if (settings.executablePathCS === null) {
-            let executablePathResolver = new PathResolver(settings, 'phpcs');
+            let executablePathResolver = new PathResolver(settings, "phpcs");
             settings.executablePathCS = await executablePathResolver.resolve();
-        } else if (!path.isAbsolute(settings.executablePathCS) && settings.workspaceRoot !== null) {
-            settings.executablePathCS = path.join(settings.workspaceRoot, settings.executablePathCS);
+        } else if (
+            !path.isAbsolute(settings.executablePathCS) &&
+            settings.workspaceRoot !== null
+        ) {
+            settings.executablePathCS = path.join(
+                settings.workspaceRoot,
+                settings.executablePathCS
+            );
         }
         return settings;
     }
@@ -102,19 +115,23 @@ export class Configuration {
         }
 
         // one last safety check
-        return folder ? folder.uri.fsPath : '';
+        return folder ? folder.uri.fsPath : "";
     }
 
     private async validate(settings: Settings): Promise<Settings> {
         if (settings.snifferEnable && !settings.executablePathCS) {
             if (settings.debug) {
-                console.error("Sniffer will be disable because phpcs could not be found.");
+                console.error(
+                    "Sniffer will be disable because phpcs could not be found."
+                );
             }
             settings.snifferEnable = false;
         }
         if (settings.fixerEnable && !settings.executablePathCBF) {
             if (settings.debug) {
-                console.error("Fixer will be disable because phpcbf could not be found.");
+                console.error(
+                    "Fixer will be disable because phpcbf could not be found."
+                );
             }
             settings.fixerEnable = false;
         }
