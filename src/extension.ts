@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-import { commands, ExtensionContext, languages } from 'vscode';
-import { Fixer } from './fixer';
-import { Sniffer } from './sniffer';
-import { Configuration } from './configuration';
-import { Settings } from './settings';
+import { commands, ExtensionContext, languages } from "vscode";
+import { Fixer } from "./fixer";
+import { Sniffer } from "./sniffer";
+import { Configuration } from "./configuration";
+import { Settings } from "./settings";
 
 function activateFixer(context: ExtensionContext, config: Settings) {
     if (config.fixerEnable === true) {
@@ -24,11 +24,14 @@ function activateFixer(context: ExtensionContext, config: Settings) {
 
         // register as document formatter for php
         context.subscriptions.push(
-            languages.registerDocumentFormattingEditProvider({ scheme: 'file', language: 'php' }, {
-                provideDocumentFormattingEdits: (document) => {
-                    return fixer.registerDocumentProvider(document);
+            languages.registerDocumentFormattingEditProvider(
+                { scheme: "file", language: "php" },
+                {
+                    provideDocumentFormattingEdits: document => {
+                        return fixer.registerDocumentProvider(document);
+                    }
                 }
-            })
+            )
         );
     }
 }

@@ -7,12 +7,12 @@
 
 export abstract class PathResolverBase {
     protected extension: string;
-	protected pathSeparator: string;
+    protected pathSeparator: string;
 
-	constructor() {
-		this.extension = /^win/.test(process.platform) ? ".bat" : "";
-		this.pathSeparator = /^win/.test(process.platform) ? "\\" : "/";
-	}
+    constructor() {
+        this.extension = /^win/.test(process.platform) ? ".bat" : "";
+        this.pathSeparator = /^win/.test(process.platform) ? "\\" : "/";
+    }
 
-	abstract async resolve(): Promise<string>;
+    abstract async resolve(): Promise<string>;
 }

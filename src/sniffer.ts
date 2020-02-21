@@ -5,7 +5,21 @@
  * ------------------------------------------------------------------------------------------ */
 "use strict";
 
-import { Disposable, workspace, DiagnosticCollection, languages, Uri, CancellationTokenSource, ConfigurationChangeEvent, TextDocumentChangeEvent, TextDocument, Diagnostic, Range, DiagnosticSeverity, window } from "vscode";
+import {
+    Disposable,
+    workspace,
+    DiagnosticCollection,
+    languages,
+    Uri,
+    CancellationTokenSource,
+    ConfigurationChangeEvent,
+    TextDocumentChangeEvent,
+    TextDocument,
+    Diagnostic,
+    Range,
+    DiagnosticSeverity,
+    window
+} from "vscode";
 import { Settings } from "./settings";
 import { Configuration } from "./configuration";
 import { StandardsPathResolver } from "./resolvers/standards-path-resolver";
@@ -14,8 +28,8 @@ import { PHPCSReport, PHPCSMessageType } from "./phpcs-report";
 import debounce from "lodash.debounce";
 
 const enum runConfig {
-    save = 'onSave',
-    type = 'onType',
+    save = "onSave",
+    type = "onType"
 }
 
 /**
@@ -26,18 +40,22 @@ const enum runConfig {
  */
 function phpCliKill(command: ChildProcess) {
     if (!/^win/.test(process.platform)) {
-        exec(`ps -ef | awk '/phpcs/ {print $2" "$8" "$4" "$7}'`,
+        exec(
+            `ps -ef | awk '/phpcs/ {print $2" "$8" "$4" "$7}'`,
             (err, stdout) => {
                 if (err) {
-                    window.showErrorMessage('Sniffer: Error trying to kill PHP CLI, you may need to kill the process yourself.');
+                    window.showErrorMessage(
+                        "Sniffer: Error trying to kill PHP CLI, you may need to kill the process yourself."
+                    );
                 }
-                stdout.split("\n").forEach(($process) => {
+                stdout.split("\n").forEach($process => {
                     const killable = $process.split(" ");
                     if (killable[1] === "php" && parseInt(killable[2]) > 90) {
                         exec(`kill ${killable[0]}`);
                     }
                 });
-            });
+            }
+        );
     }
 
     command.kill();
@@ -46,7 +64,9 @@ function phpCliKill(command: ChildProcess) {
 export class Sniffer {
     public config!: Settings;
 
-    private diagnosticCollection: DiagnosticCollection = languages.createDiagnosticCollection('php');
+    private diagnosticCollection: DiagnosticCollection = languages.createDiagnosticCollection(
+        "php"
+    );
 
     /**
      * The active validator listener.
@@ -63,10 +83,22 @@ export class Sniffer {
         if (config.snifferEnable === false) {
             return;
         }
-        workspace.onDidChangeConfiguration(this.onConfigChange, this, subscriptions);
+        workspace.onDidChangeConfiguration(
+            this.onConfigChange,
+            this,
+            subscriptions
+        );
         workspace.onDidOpenTextDocument(this.validate, this, subscriptions);
-        workspace.onDidCloseTextDocument(this.clearDocumentDiagnostics, this, subscriptions);
-        workspace.onDidChangeWorkspaceFolders(this.refresh, this, subscriptions);
+        workspace.onDidCloseTextDocument(
+            this.clearDocumentDiagnostics,
+            this,
+            subscriptions
+        );
+        workspace.onDidChangeWorkspaceFolders(
+            this.refresh,
+            this,
+            subscriptions
+        );
 
         this.refresh();
         this.setValidatorListener();
@@ -86,7 +118,7 @@ export class Sniffer {
      * @param event - The configuration change event.
      */
     protected async onConfigChange(event: ConfigurationChangeEvent) {
-        if (!event.affectsConfiguration('phpsab')) {
+        if (!event.affectsConfiguration("phpsab")) {
             return;
         }
 
@@ -94,7 +126,10 @@ export class Sniffer {
         let config = await configuration.load();
         this.config = config;
 
-        if (event.affectsConfiguration('phpsab.snifferMode') || event.affectsConfiguration('phpsab.snifferTypeDelay')) {
+        if (
+            event.affectsConfiguration("phpsab.snifferMode") ||
+            event.affectsConfiguration("phpsab.snifferTypeDelay")
+        ) {
             this.setValidatorListener();
         }
 
@@ -111,15 +146,21 @@ export class Sniffer {
         const run: runConfig = this.config.snifferMode as runConfig;
         const delay: number = this.config.snifferTypeDelay;
 
-        if (run === runConfig.type as string) {
+        if (run === (runConfig.type as string)) {
             const validator = debounce(
-                ({ document }: TextDocumentChangeEvent): void => { this.validate(document); },
-                delay,
+                ({ document }: TextDocumentChangeEvent): void => {
+                    this.validate(document);
+                },
+                delay
             );
-            this.validatorListener = workspace.onDidChangeTextDocument(validator);
-        }
-        else {
-            this.validatorListener = workspace.onDidSaveTextDocument(this.validate, this);
+            this.validatorListener = workspace.onDidChangeTextDocument(
+                validator
+            );
+        } else {
+            this.validatorListener = workspace.onDidSaveTextDocument(
+                this.validate,
+                this
+            );
         }
     }
 
@@ -151,9 +192,9 @@ export class Sniffer {
         let filePath = document.fileName;
 
         let args = [];
-        args.push('--report=json');
+        args.push("--report=json");
         args.push("-q");
-        if (standard !== '') {
+        if (standard !== "") {
             args.push("--standard=" + standard);
         }
         args.push(`--stdin-path=${filePath}`);
@@ -162,12 +203,15 @@ export class Sniffer {
     }
 
     /**
-   * Lints a document.
-   *
-   * @param document - The document to lint.
-   */
+     * Lints a document.
+     *
+     * @param document - The document to lint.
+     */
     protected async validate(document: TextDocument) {
-        if (document.languageId !== 'php' || this.config.snifferEnable === false) {
+        if (
+            document.languageId !== "php" ||
+            this.config.snifferEnable === false
+        ) {
             return;
         }
 
@@ -185,13 +229,19 @@ export class Sniffer {
         this.runnerCancellations.set(document.uri, runner);
         const { token } = runner;
 
-        const standard = await new StandardsPathResolver(document, this.config).resolve();
+        const standard = await new StandardsPathResolver(
+            document,
+            this.config
+        ).resolve();
         const lintArgs = this.getArgs(document, standard);
 
         let fileText = document.getText();
 
         const options = {
-            cwd: this.config.workspaceRoot !== null ? this.config.workspaceRoot : undefined,
+            cwd:
+                this.config.workspaceRoot !== null
+                    ? this.config.workspaceRoot
+                    : undefined,
             env: process.env,
             encoding: "utf8",
             tty: true
@@ -199,7 +249,12 @@ export class Sniffer {
 
         if (this.config.debug) {
             console.log("----- SNIFFER -----");
-            console.log("SNIFFER args: " + this.config.executablePathCS + " " + lintArgs.join(" "));
+            console.log(
+                "SNIFFER args: " +
+                    this.config.executablePathCS +
+                    " " +
+                    lintArgs.join(" ")
+            );
         }
 
         const sniffer = spawn(this.config.executablePathCS, lintArgs, options);
@@ -207,16 +262,18 @@ export class Sniffer {
         sniffer.stdin.write(fileText);
         sniffer.stdin.end();
 
-        let stdout = '';
-        let stderr = '';
+        let stdout = "";
+        let stderr = "";
 
-        sniffer.stdout.on('data', data => stdout += data);
-        sniffer.stderr.on('data', data => stderr += data);
+        sniffer.stdout.on("data", data => (stdout += data));
+        sniffer.stderr.on("data", data => (stderr += data));
 
-        token.onCancellationRequested(() => !sniffer.killed && phpCliKill(sniffer));
+        token.onCancellationRequested(
+            () => !sniffer.killed && phpCliKill(sniffer)
+        );
 
         const done = new Promise((resolve, reject) => {
-            sniffer.on('close', () => {
+            sniffer.on("close", () => {
                 if (token.isCancellationRequested || !stdout) {
                     resolve();
                     return;
@@ -225,26 +282,38 @@ export class Sniffer {
                 try {
                     const { files }: PHPCSReport = JSON.parse(stdout);
                     for (const file in files) {
-                        files[file].messages.forEach(({ message, line, column, type, source }) => {
-                            const zeroLine = line - 1;
-                            const ZeroColumn = column - 1;
+                        files[file].messages.forEach(
+                            ({ message, line, column, type, source }) => {
+                                const zeroLine = line - 1;
+                                const ZeroColumn = column - 1;
 
-                            const range = new Range(zeroLine, ZeroColumn, zeroLine, ZeroColumn);
-                            const severity = type === PHPCSMessageType.ERROR ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning;
-                            let output = message;
-                            if (this.config.snifferShowSources) {
-                                output += `\n(${source})`;
+                                const range = new Range(
+                                    zeroLine,
+                                    ZeroColumn,
+                                    zeroLine,
+                                    ZeroColumn
+                                );
+                                const severity =
+                                    type === PHPCSMessageType.ERROR
+                                        ? DiagnosticSeverity.Error
+                                        : DiagnosticSeverity.Warning;
+                                let output = message;
+                                if (this.config.snifferShowSources) {
+                                    output += `\n(${source})`;
+                                }
+                                const diagnostic = new Diagnostic(
+                                    range,
+                                    output,
+                                    severity
+                                );
+                                diagnostic.source = "phpcs";
+                                diagnostics.push(diagnostic);
                             }
-                            const diagnostic = new Diagnostic(range, output, severity);
-                            diagnostic.source = 'phpcs';
-                            diagnostics.push(
-                                diagnostic
-                            );
-                        });
+                        );
                     }
                     resolve();
                 } catch (error) {
-                    let message = '';
+                    let message = "";
                     if (stdout) {
                         message += `${stdout}\n`;
                     }
@@ -260,11 +329,10 @@ export class Sniffer {
                 runner.dispose();
                 this.runnerCancellations.delete(document.uri);
             });
-
         });
         setTimeout(() => !sniffer.killed && phpCliKill(sniffer), 3000);
 
-        window.setStatusBarMessage('PHP Sniffer: validating…', done);
+        window.setStatusBarMessage("PHP Sniffer: validating…", done);
 
         if (this.config.debug) {
             console.log(sniffer);
