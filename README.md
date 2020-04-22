@@ -12,7 +12,7 @@ Visual Studio Code must be installed in order to use this plugin. If Visual Stud
 
 ## Usage
 
-<kbd>F1</kbd> -> `fixer: fix this file`
+<kbd>F1</kbd> -> `PHPCBF: Fix this file`
 
 or keyboard shortcut `alt+shift+f` vs code default formatter shortcut
 
@@ -58,7 +58,7 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 1. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
 1. Type ext install phpsab to find the extension.
 1. Press Enter or click the cloud icon to install it.
-1. Restart Visual Studio Code when prompted.
+1. Restart Visual Studio Code!
 
 ## Basic Configuration
 
@@ -84,12 +84,24 @@ This setting controls whether `phpcs` sniffer is enabled.
 This setting controls the executable path for `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
 If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcs' in your path.
 
+> **NOTE:** `phpcbf` is installed along with `phpcs`.
+
+> **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
+```
+"C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat"
+```
+
 ### **phpsab.executablePathCBF**
 
 [ *Scope:* All | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the executable path for the `phpcbf`. You may specify the absolute path or workspace relative path to the `phpcbf` executable.
 If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcbf' in your path..
+
+> **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
+```
+"C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat"
+```
 
 ### **phpsab.standard**
 
@@ -247,7 +259,7 @@ Execute the phpcbf command in your terminal with --report=json and see whether t
 
 ## Acknowledgements
 
-This extension is based off of the `phpcs` extension created by [Ioannis Kappas](https://github.com/ikappas/vscode-phpcs/), the `PHP Sniffer` extension create by [wongjn](https://github.com/wongjn/vscode-php-sniffer) and the existing `phpcbf` extension by [Per Søderlind](https://github.com/soderlind/vscode-phpsab/). It uses some portions of these extensions to provide the `phpcs & phpcbf` functionality with auto config search.
+This extension is based off of the `phpcs` extension created by [Ioannis Kappas](https://github.com/ikappas/vscode-phpcs/), the `PHP Sniffer` extension create by [wongjn](https://github.com/wongjn/vscode-php-sniffer) and the existing `phpcbf` extension by [Per Søderlind](https://github.com/soderlind/vscode-phpcbf). It uses some portions of these extensions to provide the `phpcs & phpcbf` functionality with auto config search.
 
 ## Contributing and Licensing
 
