@@ -95,7 +95,7 @@
                         "phpcs.ruleset.xml",
                         "ruleset.xml"
                     ],
-                    "description": "Filenames to search for that contain rulesets for fixers."
+                    "description": "Filenames to search for that contain the ruleset for fixers."
                 },
                 "phpsab.snifferEnable": {
                     "scope": "resource",
@@ -104,7 +104,6 @@
                     "description": "Control if this sniffer is enabled for PHP files or not."
                 },
                 "phpsab.snifferMode": {
-                    "scope": "resource",
                     "type": "string",
                     "default": "onSave",
                     "enum": [
@@ -114,20 +113,17 @@
                     "markdownDescription": "When to run `phpcs`."
                 },
                 "phpsab.snifferTypeDelay": {
-                    "scope": "resource",
                     "type": "number",
                     "default": 250,
                     "minimum": 0,
-                    "markdownDescription": "When `phpSniffer.run` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run."
+                    "markdownDescription": "When `phpsab.snifferMode` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run."
                 },
                 "phpsab.snifferShowSources": {
-                    "scope": "resource",
                     "type": "boolean",
                     "default": false,
                     "description": "Control if phpcs report should include sniff sources."
                 },
                 "phpsab.debug": {
-                    "scope": "resource",
                     "type": "boolean",
                     "default": false,
                     "description": "Write debug info to the console"
@@ -138,22 +134,28 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
+        "lint": "tslint -p ./",
         "watch": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+        "pretest": "npm run compile",
+        "test": "node ./out/test/runTest.js"
     },
     "dependencies": {
-        "cross-spawn": "^7.0.1",
+        "cross-spawn": "^7.0.3",
         "lodash.debounce": "^4.0.8"
     },
     "devDependencies": {
-        "@types/cross-spawn": "^6.0.1",
+        "@types/cross-spawn": "^6.0.2",
+        "@types/glob": "^7.1.2",
         "@types/lodash.debounce": "^4.0.6",
-        "@types/mocha": "^5.2.7",
-        "@types/node": "^12.12.27",
-        "tslint": "^5.20.1",
-        "typescript": "^3.7.5",
-        "vscode": "^1.1.36",
-        "vscode-uri": "^2.1.1"
+        "@types/mocha": "^5.2.6",
+        "@types/node": "^12.12.47",
+        "@types/vscode": "^1.46.0",
+        "glob": "^7.1.4",
+        "mocha": "^6.1.4",
+        "source-map-support": "^0.5.12",
+        "tslint": "^5.19.0",
+        "typescript": "^3.9.6",
+        "vscode-test": "^1.4.0",
+        "vscode-uri": "^2.1.2"
     }
 }

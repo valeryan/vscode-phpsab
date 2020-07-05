@@ -2,9 +2,9 @@
 
 import * as spawn from "cross-spawn";
 import { Configuration } from "./configuration";
-import { Settings } from "./settings";
+import { Settings } from "./interfaces/settings";
 import { StandardsPathResolver } from "./resolvers/standards-path-resolver";
-import { ConsoleError } from "./console-error";
+import { ConsoleError } from "./interfaces/console-error";
 import {
     window,
     TextDocument,
@@ -66,12 +66,22 @@ export class Fixer {
      * @param document
      */
     private async format(document: TextDocument) {
+        const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+        if (!workspaceFolder) {
+            return "";
+        }
+        const resourceConf = this.config.resources[workspaceFolder.index];
         if (
-            document.languageId !== "php" ||
-            this.config.fixerEnable === false
+            document.languageId !== "php"
         ) {
             return "";
         }
+
+        if (resourceConf.fixerEnable === false) {
+            window.showInformationMessage("Fixer is disable for this workspace or PHPCBF was not found for this workspace.");
+            return "";
+        }
+
         if (this.config.debug) {
             console.time("fixer");
         }
@@ -79,7 +89,8 @@ export class Fixer {
         // setup and spawn fixer process
         const standard = await new StandardsPathResolver(
             document,
-            this.config
+            resourceConf,
+            this.config.debug
         ).resolve();
 
         const lintArgs = this.getArgs(document, standard);
@@ -88,8 +99,8 @@ export class Fixer {
 
         const options = {
             cwd:
-                this.config.workspaceRoot !== null
-                    ? this.config.workspaceRoot
+            resourceConf.workspaceRoot !== null
+                    ? resourceConf.workspaceRoot
                     : undefined,
             env: process.env,
             encoding: "utf8",
@@ -101,14 +112,14 @@ export class Fixer {
             console.log("----- FIXER -----");
             console.log(
                 "FIXER args: " +
-                    this.config.executablePathCBF +
+                resourceConf.executablePathCBF +
                     " " +
                     lintArgs.join(" ")
             );
         }
 
         const fixer = spawn.sync(
-            this.config.executablePathCBF,
+            resourceConf.executablePathCBF,
             lintArgs,
             options
         );
