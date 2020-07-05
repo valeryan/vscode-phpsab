@@ -12,7 +12,11 @@ import { TextDocument, workspace } from "vscode";
 import { ResourceSettings } from "../interfaces/resource-settings";
 
 export class StandardsPathResolver extends PathResolverBase {
-    constructor(private document: TextDocument, private config: ResourceSettings, private debug: boolean) {
+    constructor(
+        private document: TextDocument,
+        private config: ResourceSettings,
+        private debug: boolean
+    ) {
         super();
     }
     async resolve(): Promise<string> {
@@ -32,7 +36,7 @@ export class StandardsPathResolver extends PathResolverBase {
         let localPath = resource.fsPath.replace(workspaceRoot, "");
         let paths = localPath
             .split(this.pathSeparator)
-            .filter(path => path.includes(".php") !== true);
+            .filter((path) => path.includes(".php") !== true);
 
         let searchPaths = [];
 
@@ -52,8 +56,8 @@ export class StandardsPathResolver extends PathResolverBase {
 
         let files: string[] = [];
 
-        searchPaths.map(path => {
-            allowed.forEach(file => {
+        searchPaths.map((path) => {
+            allowed.forEach((file) => {
                 files.push(path + file);
             });
         });

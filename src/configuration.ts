@@ -27,7 +27,11 @@ export class Configuration {
         rootPath = this.resolveRootPath(resource);
         const resourcesSettings: Array<ResourceSettings> = [];
 
-        for (let index = 0; index < workspace.workspaceFolders.length; index++) {
+        for (
+            let index = 0;
+            index < workspace.workspaceFolders.length;
+            index++
+        ) {
             const resource = workspace.workspaceFolders[index].uri;
             const config = workspace.getConfiguration("phpsab", resource);
             const rootPath = this.resolveRootPath(resource);
@@ -36,16 +40,19 @@ export class Configuration {
                 workspaceRoot: rootPath,
                 executablePathCBF: config.get("executablePathCBF", ""),
                 executablePathCS: config.get("executablePathCS", ""),
-                composerJsonPath: config.get("composerJsonPath", "composer.json"),
+                composerJsonPath: config.get(
+                    "composerJsonPath",
+                    "composer.json"
+                ),
                 standard: config.get("standard", ""),
                 autoConfigSearch: config.get("autoConfigSearch", true),
                 allowedAutoRulesets: config.get("allowedAutoRulesets", [
                     ".phpcs.xml",
                     "phpcs.xml",
                     "phpcs.dist.xml",
-                    "ruleset.xml"
+                    "ruleset.xml",
                 ]),
-                snifferEnable: config.get("snifferEnable", true)
+                snifferEnable: config.get("snifferEnable", true),
             };
 
             settings = await this.resolveCBFExecutablePath(settings);
@@ -62,7 +69,7 @@ export class Configuration {
             snifferMode: config.get("snifferMode", "onSave"),
             snifferShowSources: config.get("snifferShowSources", false),
             snifferTypeDelay: config.get("snifferTypeDelay", 250),
-            debug: config.get("debug", false)
+            debug: config.get("debug", false),
         };
 
         if (settings.debug) {
@@ -130,7 +137,9 @@ export class Configuration {
         return settings;
     }
 
-    private async validate(settings: ResourceSettings): Promise<ResourceSettings> {
+    private async validate(
+        settings: ResourceSettings
+    ): Promise<ResourceSettings> {
         if (settings.snifferEnable && !settings.executablePathCS) {
             settings.snifferEnable = false;
         }

@@ -5,7 +5,7 @@
  * ------------------------------------------------------------------------------------------ */
 export const enum PHPCSMessageType {
     ERROR = "ERROR",
-    WARNING = "WARNING"
+    WARNING = "WARNING",
 }
 
 export interface PHPCSMessage {

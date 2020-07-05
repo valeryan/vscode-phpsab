@@ -15,7 +15,7 @@ function activateFixer(context: ExtensionContext, settings: Settings) {
 
     // register format from command pallet
     context.subscriptions.push(
-        commands.registerTextEditorCommand("fixer.fix", textEditor => {
+        commands.registerTextEditorCommand("fixer.fix", (textEditor) => {
             if (textEditor.document.languageId === "php") {
                 commands.executeCommand("editor.action.formatDocument");
             }
@@ -27,9 +27,9 @@ function activateFixer(context: ExtensionContext, settings: Settings) {
         languages.registerDocumentFormattingEditProvider(
             { scheme: "file", language: "php" },
             {
-                provideDocumentFormattingEdits: document => {
+                provideDocumentFormattingEdits: (document) => {
                     return fixer.registerDocumentProvider(document);
-                }
+                },
             }
         )
     );

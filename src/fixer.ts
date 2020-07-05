@@ -14,8 +14,9 @@ import {
     ProviderResult,
     Disposable,
     workspace,
-    ConfigurationChangeEvent
+    ConfigurationChangeEvent,
 } from "vscode";
+import { SpawnSyncOptions, SpawnSyncOptionsWithBufferEncoding, SpawnSyncOptionsWithStringEncoding } from "child_process";
 export class Fixer {
     public config!: Settings;
 
@@ -71,14 +72,14 @@ export class Fixer {
             return "";
         }
         const resourceConf = this.config.resources[workspaceFolder.index];
-        if (
-            document.languageId !== "php"
-        ) {
+        if (document.languageId !== "php") {
             return "";
         }
 
         if (resourceConf.fixerEnable === false) {
-            window.showInformationMessage("Fixer is disable for this workspace or PHPCBF was not found for this workspace.");
+            window.showInformationMessage(
+                "Fixer is disable for this workspace or PHPCBF was not found for this workspace."
+            );
             return "";
         }
 
@@ -97,22 +98,21 @@ export class Fixer {
 
         let fileText = document.getText();
 
-        const options = {
+        const options: SpawnSyncOptions = {
             cwd:
-            resourceConf.workspaceRoot !== null
+                resourceConf.workspaceRoot !== null
                     ? resourceConf.workspaceRoot
                     : undefined,
             env: process.env,
             encoding: "utf8",
-            tty: true,
-            input: fileText
+            input: fileText,
         };
 
         if (this.config.debug) {
             console.log("----- FIXER -----");
             console.log(
                 "FIXER args: " +
-                resourceConf.executablePathCBF +
+                    resourceConf.executablePathCBF +
                     " " +
                     lintArgs.join(" ")
             );
@@ -132,7 +132,7 @@ export class Fixer {
             16: "FIXER: Configuration error of the application.",
             32: "FIXER: Configuration error of a Fixer.",
             64: "FIXER: Exception raised within the application.",
-            255: "FIXER: A Fatal execution error occurred."
+            255: "FIXER: A Fatal execution error occurred.",
         };
 
         let error: string = "";
@@ -230,13 +230,13 @@ export class Fixer {
             let range = new Range(new Position(0, 0), lastLine.range.end);
 
             this.format(document)
-                .then(text => {
+                .then((text) => {
                     if (text.length > 0) {
                         resolve([new TextEdit(range, text)]);
                     }
                     resolve();
                 })
-                .catch(err => {
+                .catch((err) => {
                     window.showErrorMessage(err);
                     reject();
                 });

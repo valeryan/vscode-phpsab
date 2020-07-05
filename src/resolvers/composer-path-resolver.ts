@@ -112,7 +112,7 @@ export class ComposerPathResolver extends PathResolverBase {
             search.push(dependencies["packages"]);
         }
 
-        return search.some(pkgs => {
+        return search.some((pkgs) => {
             let match = pkgs.filter((pkg: any) => {
                 return pkg.name === "squizlabs/php_codesniffer";
             });

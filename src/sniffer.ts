@@ -18,7 +18,7 @@ import {
     Diagnostic,
     Range,
     DiagnosticSeverity,
-    window
+    window,
 } from "vscode";
 import { Configuration } from "./configuration";
 import { Settings } from "./interfaces/settings";
@@ -29,7 +29,7 @@ import { debounce } from "lodash";
 
 const enum runConfig {
     save = "onSave",
-    type = "onType"
+    type = "onType",
 }
 
 export class Sniffer {
@@ -216,19 +216,19 @@ export class Sniffer {
 
         const options = {
             cwd:
-            resourceConf.workspaceRoot !== null
+                resourceConf.workspaceRoot !== null
                     ? resourceConf.workspaceRoot
                     : undefined,
             env: process.env,
             encoding: "utf8",
-            tty: true
+            tty: true,
         };
 
         if (this.config.debug) {
             console.log("----- SNIFFER -----");
             console.log(
                 "SNIFFER args: " +
-                resourceConf.executablePathCS +
+                    resourceConf.executablePathCS +
                     " " +
                     lintArgs.join(" ")
             );
@@ -242,12 +242,10 @@ export class Sniffer {
         let stdout = "";
         let stderr = "";
 
-        sniffer.stdout.on("data", data => (stdout += data));
-        sniffer.stderr.on("data", data => (stderr += data));
+        sniffer.stdout.on("data", (data) => (stdout += data));
+        sniffer.stderr.on("data", (data) => (stderr += data));
 
-        token.onCancellationRequested(
-            () => !sniffer.killed
-        );
+        token.onCancellationRequested(() => !sniffer.killed);
 
         const done = new Promise((resolve, reject) => {
             sniffer.on("close", () => {
