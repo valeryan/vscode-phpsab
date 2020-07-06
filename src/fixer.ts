@@ -2,9 +2,9 @@
 
 import * as spawn from "cross-spawn";
 import { Configuration } from "./configuration";
-import { Settings } from "./settings";
+import { Settings } from "./interfaces/settings";
 import { StandardsPathResolver } from "./resolvers/standards-path-resolver";
-import { ConsoleError } from "./console-error";
+import { ConsoleError } from "./interfaces/console-error";
 import {
     window,
     TextDocument,
@@ -14,8 +14,9 @@ import {
     ProviderResult,
     Disposable,
     workspace,
-    ConfigurationChangeEvent
+    ConfigurationChangeEvent,
 } from "vscode";
+import { SpawnSyncOptions, SpawnSyncOptionsWithBufferEncoding, SpawnSyncOptionsWithStringEncoding } from "child_process";
 export class Fixer {
     public config!: Settings;
 
@@ -66,12 +67,22 @@ export class Fixer {
      * @param document
      */
     private async format(document: TextDocument) {
-        if (
-            document.languageId !== "php" ||
-            this.config.fixerEnable === false
-        ) {
+        const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+        if (!workspaceFolder) {
             return "";
         }
+        const resourceConf = this.config.resources[workspaceFolder.index];
+        if (document.languageId !== "php") {
+            return "";
+        }
+
+        if (resourceConf.fixerEnable === false) {
+            window.showInformationMessage(
+                "Fixer is disable for this workspace or PHPCBF was not found for this workspace."
+            );
+            return "";
+        }
+
         if (this.config.debug) {
             console.time("fixer");
         }
@@ -79,36 +90,36 @@ export class Fixer {
         // setup and spawn fixer process
         const standard = await new StandardsPathResolver(
             document,
-            this.config
+            resourceConf,
+            this.config.debug
         ).resolve();
 
         const lintArgs = this.getArgs(document, standard);
 
         let fileText = document.getText();
 
-        const options = {
+        const options: SpawnSyncOptions = {
             cwd:
-                this.config.workspaceRoot !== null
-                    ? this.config.workspaceRoot
+                resourceConf.workspaceRoot !== null
+                    ? resourceConf.workspaceRoot
                     : undefined,
             env: process.env,
             encoding: "utf8",
-            tty: true,
-            input: fileText
+            input: fileText,
         };
 
         if (this.config.debug) {
             console.log("----- FIXER -----");
             console.log(
                 "FIXER args: " +
-                    this.config.executablePathCBF +
+                    resourceConf.executablePathCBF +
                     " " +
                     lintArgs.join(" ")
             );
         }
 
         const fixer = spawn.sync(
-            this.config.executablePathCBF,
+            resourceConf.executablePathCBF,
             lintArgs,
             options
         );
@@ -121,7 +132,7 @@ export class Fixer {
             16: "FIXER: Configuration error of the application.",
             32: "FIXER: Configuration error of a Fixer.",
             64: "FIXER: Exception raised within the application.",
-            255: "FIXER: A Fatal execution error occurred."
+            255: "FIXER: A Fatal execution error occurred.",
         };
 
         let error: string = "";
@@ -219,13 +230,13 @@ export class Fixer {
             let range = new Range(new Position(0, 0), lastLine.range.end);
 
             this.format(document)
-                .then(text => {
+                .then((text) => {
                     if (text.length > 0) {
                         resolve([new TextEdit(range, text)]);
                     }
                     resolve();
                 })
-                .catch(err => {
+                .catch((err) => {
                     window.showErrorMessage(err);
                     reject();
                 });

@@ -1,52 +1,78 @@
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) 2019 Samuel Hilson. All rights reserved.
+ * Licensed under the MIT License. See License.md in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
 "use strict";
 
 import * as path from "path";
-import { Settings } from "./settings";
+import * as fs from "fs";
+import { Settings } from "./interfaces/settings";
+import { ResourceSettings } from "./interfaces/resource-settings";
 import { PathResolver } from "./resolvers/path-resolver";
-import { workspace, WorkspaceConfiguration, Uri } from "vscode";
+import { workspace, WorkspaceConfiguration, Uri, window } from "vscode";
 
 export class Configuration {
+    debug: boolean;
+    config: WorkspaceConfiguration;
+    constructor() {
+        this.config = workspace.getConfiguration("phpsab");
+        this.debug = this.config.get("debug", false);
+    }
+
     /**
      * Load from configuration
      */
     public async load() {
-        let config: WorkspaceConfiguration;
-        let rootPath: string;
-
         if (!workspace.workspaceFolders) {
             throw new Error("Unable to load configuration.");
         }
 
-        const resource = workspace.workspaceFolders[0].uri;
-        config = workspace.getConfiguration("phpsab", resource);
-        rootPath = this.resolveRootPath(workspace, resource);
+        const resourcesSettings: Array<ResourceSettings> = [];
+
+        for (
+            let index = 0;
+            index < workspace.workspaceFolders.length;
+            index++
+        ) {
+            const resource = workspace.workspaceFolders[index].uri;
+            const config = workspace.getConfiguration("phpsab", resource);
+            const rootPath = this.resolveRootPath(resource);
+            let settings: ResourceSettings = {
+                fixerEnable: config.get("fixerEnable", true),
+                workspaceRoot: rootPath,
+                executablePathCBF: config.get("executablePathCBF", ""),
+                executablePathCS: config.get("executablePathCS", ""),
+                composerJsonPath: config.get(
+                    "composerJsonPath",
+                    "composer.json"
+                ),
+                standard: config.get("standard", ""),
+                autoRulesetSearch: config.get("autoRulesetSearch", true),
+                allowedAutoRulesets: config.get("allowedAutoRulesets", [
+                    ".phpcs.xml",
+                    "phpcs.xml",
+                    "phpcs.dist.xml",
+                    "ruleset.xml",
+                ]),
+                snifferEnable: config.get("snifferEnable", true),
+            };
+
+            settings = await this.resolveCBFExecutablePath(settings);
+            settings = await this.resolveCSExecutablePath(settings);
+
+            settings = await this.validate(settings, workspace.workspaceFolders[index].name);
+
+            resourcesSettings.splice(index, 0, settings);
+        }
 
         // update settings from config
         let settings: Settings = {
-            fixerEnable: config.get("fixerEnable", true),
-            workspaceRoot: rootPath,
-            executablePathCBF: config.get("executablePathCBF", ""),
-            executablePathCS: config.get("executablePathCS", ""),
-            composerJsonPath: config.get("composerJsonPath", "composer.json"),
-            standard: config.get("standard", ""),
-            autoConfigSearch: config.get("autoConfigSearch", true),
-            allowedAutoRulesets: config.get("allowedAutoRulesets", [
-                ".phpcs.xml",
-                "phpcs.xml",
-                "phpcs.dist.xml",
-                "ruleset.xml"
-            ]),
-            snifferEnable: config.get("snifferEnable", true),
-            snifferMode: config.get("snifferMode", "onSave"),
-            snifferShowSources: config.get("snifferShowSources", false),
-            snifferTypeDelay: config.get("snifferTypeDelay", 250),
-            debug: config.get("debug", false)
+            resources: resourcesSettings,
+            snifferMode: this.config.get("snifferMode", "onSave"),
+            snifferShowSources: this.config.get("snifferShowSources", false),
+            snifferTypeDelay: this.config.get("snifferTypeDelay", 250),
+            debug: this.debug,
         };
-
-        settings = await this.resolveCBFExecutablePath(settings);
-        settings = await this.resolveCSExecutablePath(settings);
-
-        settings = await this.validate(settings);
 
         if (settings.debug) {
             console.log("----- PHPSAB CONFIGURATION -----");
@@ -58,12 +84,24 @@ export class Configuration {
     }
 
     /**
+     * Attempt to find the root path for a workspace or resource
+     * @param resource
+     */
+    private resolveRootPath(resource: Uri) {
+        // try to get a valid folder from resource
+        let folder = workspace.getWorkspaceFolder(resource);
+
+        // one last safety check
+        return folder ? folder.uri.fsPath : "";
+    }
+
+    /**
      * Get correct executable path from resolver
      * @param settings
      */
     protected async resolveCBFExecutablePath(
-        settings: Settings
-    ): Promise<Settings> {
+        settings: ResourceSettings
+    ): Promise<ResourceSettings> {
         if (settings.executablePathCBF === null) {
             let executablePathResolver = new PathResolver(settings, "phpcbf");
             settings.executablePathCBF = await executablePathResolver.resolve();
@@ -84,8 +122,8 @@ export class Configuration {
      * @param settings
      */
     protected async resolveCSExecutablePath(
-        settings: Settings
-    ): Promise<Settings> {
+        settings: ResourceSettings
+    ): Promise<ResourceSettings> {
         if (settings.executablePathCS === null) {
             let executablePathResolver = new PathResolver(settings, "phpcs");
             settings.executablePathCS = await executablePathResolver.resolve();
@@ -101,40 +139,32 @@ export class Configuration {
         return settings;
     }
 
-    /**
-     * Attempt to find the root path for a workspace or resource
-     * @param workspace
-     * @param resource
-     */
-    private resolveRootPath(workspace: any, resource: Uri) {
-        // try to get a valid folder from resource
-        let folder = workspace.getWorkspaceFolder(resource);
-        // try to get a folder from workspace
-        if (!folder) {
-            folder = workspace.workspaceFolders.shift();
-        }
-
-        // one last safety check
-        return folder ? folder.uri.fsPath : "";
-    }
-
-    private async validate(settings: Settings): Promise<Settings> {
-        if (settings.snifferEnable && !settings.executablePathCS) {
-            if (settings.debug) {
-                console.error(
-                    "Sniffer will be disable because phpcs could not be found."
-                );
+    private async validate(
+        settings: ResourceSettings,
+        resource: string
+    ): Promise<ResourceSettings> {
+        if (settings.snifferEnable && !await this.executableExist(settings.executablePathCS)) {
+            if (this.debug === true) {
+                console.log("The phpcs executable was not found for " + resource);
             }
             settings.snifferEnable = false;
         }
-        if (settings.fixerEnable && !settings.executablePathCBF) {
-            if (settings.debug) {
-                console.error(
-                    "Fixer will be disable because phpcbf could not be found."
-                );
+        if (settings.fixerEnable && !await this.executableExist(settings.executablePathCBF)) {
+            if (this.debug === true) {
+                console.log("The phpcbf executable was not found for " + resource);
             }
             settings.fixerEnable = false;
         }
         return settings;
+    }
+
+    private async executableExist(path: string) {
+        if (!path) {
+            return false;
+        }
+        if (fs.existsSync(path)) {
+            return true;
+        }
+        return false;
     }
 }

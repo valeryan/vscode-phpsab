@@ -9,16 +9,20 @@ import * as fs from "fs";
 
 import { PathResolverBase } from "./path-resolver-base";
 import { TextDocument, workspace } from "vscode";
-import { Settings } from "../settings";
+import { ResourceSettings } from "../interfaces/resource-settings";
 
 export class StandardsPathResolver extends PathResolverBase {
-    constructor(private document: TextDocument, private config: Settings) {
+    constructor(
+        private document: TextDocument,
+        private config: ResourceSettings,
+        private debug: boolean
+    ) {
         super();
     }
     async resolve(): Promise<string> {
         let configured =
             this.config.standard !== null ? this.config.standard : "";
-        if (this.config.autoConfigSearch === false) {
+        if (this.config.autoRulesetSearch === false) {
             return configured;
         }
 
@@ -32,7 +36,7 @@ export class StandardsPathResolver extends PathResolverBase {
         let localPath = resource.fsPath.replace(workspaceRoot, "");
         let paths = localPath
             .split(this.pathSeparator)
-            .filter(path => path.includes(".php") !== true);
+            .filter((path) => path.includes(".php") !== true);
 
         let searchPaths = [];
 
@@ -52,16 +56,16 @@ export class StandardsPathResolver extends PathResolverBase {
 
         let files: string[] = [];
 
-        searchPaths.map(path => {
-            allowed.forEach(file => {
+        searchPaths.map((path) => {
+            allowed.forEach((file) => {
                 files.push(path + file);
             });
         });
 
-        if (this.config.debug) {
-            console.log("----- PHPSAB SEARCHPATHS -----");
+        if (this.debug) {
+            console.log("----- PHPSAB SEARCH PATHS -----");
             console.log(searchPaths);
-            console.log("----- PHPSAB SEARCHPATHS END -----");
+            console.log("----- PHPSAB SEARCH PATHS END -----");
         }
 
         for (let i = 0, len = files.length; i < len; i++) {

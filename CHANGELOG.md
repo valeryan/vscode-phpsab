@@ -1,4 +1,11 @@
 # Change Log
+## 0.0.6
+-   Add better multi-root workspace support
+-   The setting AutoConfigSearch is renamed to AutoRulesetSearch to make its purpose more clear
+-   Extension activation was updated so that the `PHPCBF: Fix this file` is always registered even if phpcbf is not found.
+-   Swapped to ESLint for internal code cleanup
+-   Updated all Dependencies
+-   Updated documentation to reflect some code changes
 
 ## 0.0.5
 

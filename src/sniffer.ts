@@ -18,47 +18,18 @@ import {
     Diagnostic,
     Range,
     DiagnosticSeverity,
-    window
+    window,
 } from "vscode";
-import { Settings } from "./settings";
 import { Configuration } from "./configuration";
+import { Settings } from "./interfaces/settings";
+import { PHPCSReport, PHPCSMessageType } from "./interfaces/phpcs-report";
 import { StandardsPathResolver } from "./resolvers/standards-path-resolver";
-import { ChildProcess, spawn, exec } from "child_process";
-import { PHPCSReport, PHPCSMessageType } from "./phpcs-report";
-import debounce from "lodash.debounce";
+import { spawn } from "child_process";
+import { debounce } from "lodash";
 
 const enum runConfig {
     save = "onSave",
-    type = "onType"
-}
-
-/**
- * Kills PHP CLIs.
- *
- * @param command
- *   The process to kill.
- */
-function phpCliKill(command: ChildProcess) {
-    if (!/^win/.test(process.platform)) {
-        exec(
-            `ps -ef | awk '/phpcs/ {print $2" "$8" "$4" "$7}'`,
-            (err, stdout) => {
-                if (err) {
-                    window.showErrorMessage(
-                        "Sniffer: Error trying to kill PHP CLI, you may need to kill the process yourself."
-                    );
-                }
-                stdout.split("\n").forEach($process => {
-                    const killable = $process.split(" ");
-                    if (killable[1] === "php" && parseInt(killable[2]) > 90) {
-                        exec(`kill ${killable[0]}`);
-                    }
-                });
-            }
-        );
-    }
-
-    command.kill();
+    type = "onType",
 }
 
 export class Sniffer {
@@ -80,7 +51,7 @@ export class Sniffer {
 
     constructor(subscriptions: Disposable[], config: Settings) {
         this.config = config;
-        if (config.snifferEnable === false) {
+        if (config.resources[0].snifferEnable === false) {
             return;
         }
         workspace.onDidChangeConfiguration(
@@ -208,9 +179,14 @@ export class Sniffer {
      * @param document - The document to lint.
      */
     protected async validate(document: TextDocument) {
+        const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+        if (!workspaceFolder) {
+            return;
+        }
+        const resourceConf = this.config.resources[workspaceFolder.index];
         if (
             document.languageId !== "php" ||
-            this.config.snifferEnable === false
+            resourceConf.snifferEnable === false
         ) {
             return;
         }
@@ -231,7 +207,8 @@ export class Sniffer {
 
         const standard = await new StandardsPathResolver(
             document,
-            this.config
+            resourceConf,
+            this.config.debug
         ).resolve();
         const lintArgs = this.getArgs(document, standard);
 
@@ -239,25 +216,25 @@ export class Sniffer {
 
         const options = {
             cwd:
-                this.config.workspaceRoot !== null
-                    ? this.config.workspaceRoot
+                resourceConf.workspaceRoot !== null
+                    ? resourceConf.workspaceRoot
                     : undefined,
             env: process.env,
             encoding: "utf8",
-            tty: true
+            tty: true,
         };
 
         if (this.config.debug) {
             console.log("----- SNIFFER -----");
             console.log(
                 "SNIFFER args: " +
-                    this.config.executablePathCS +
+                    resourceConf.executablePathCS +
                     " " +
                     lintArgs.join(" ")
             );
         }
 
-        const sniffer = spawn(this.config.executablePathCS, lintArgs, options);
+        const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
 
         sniffer.stdin.write(fileText);
         sniffer.stdin.end();
@@ -265,12 +242,10 @@ export class Sniffer {
         let stdout = "";
         let stderr = "";
 
-        sniffer.stdout.on("data", data => (stdout += data));
-        sniffer.stderr.on("data", data => (stderr += data));
+        sniffer.stdout.on("data", (data) => (stdout += data));
+        sniffer.stderr.on("data", (data) => (stderr += data));
 
-        token.onCancellationRequested(
-            () => !sniffer.killed && phpCliKill(sniffer)
-        );
+        token.onCancellationRequested(() => !sniffer.killed);
 
         const done = new Promise((resolve, reject) => {
             sniffer.on("close", () => {
@@ -330,7 +305,7 @@ export class Sniffer {
                 this.runnerCancellations.delete(document.uri);
             });
         });
-        setTimeout(() => !sniffer.killed && phpCliKill(sniffer), 3000);
+        setTimeout(() => !sniffer.killed, 3000);
 
         window.setStatusBarMessage("PHP Sniffer: validating…", done);
 
