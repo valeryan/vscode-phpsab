@@ -20,13 +20,16 @@ or right mouse context menu `Format Document`
 
 or if format on save is enabled save document
 
+## Multi-Root Workspace Support
+This extension now fully supports Multi-Root Workspaces. The extension previously used the first root folder in your workspace to configure and run both phpcs and phpcbf. The new system allows each workspace to be configured and run independently with respect to the root folder of the open file being sniffed. This means you can have phpcs functionality in one folder and have it disabled in another within a workspace.
+
 ## Linter Installation
 
 Before using this plugin, you must ensure that `phpcs` is installed on your system. The preferred method is using [composer](https://getcomposer.org/) for both system-wide and project-wide installations.
 
 Once phpcs is installed, you can proceed to install the vscode-phpsab plugin if it is not yet installed.
 
-> **NOTE:** This plugin can detect whether your project has been set up to use phpcbf via composer and use the project specific `phpcs & phpcbf` over the system-wide installation of `phpcs & phpcbf` automatically. This feature requires that both composer.json and composer.lock file exist in your workspace root or the `phpsab.composerJsonPath` in order to check for the composer dependency. If you wish to bypass this feature you can set the `phpsab.executablePath` configuration setting.
+> **NOTE:** This plugin can detect whether your project has been set up to use phpcbf via composer and use the project specific `phpcs & phpcbf` over the system-wide installation of `phpcs & phpcbf` automatically. This feature requires that both composer.json and composer.lock file exist in your workspace root or the `phpsab.composerJsonPath` in order to check for the composer dependency. If you wish to bypass this feature you can set the `phpsab.executablePathCS` and `phpsab.executablePathCBF` configuration settings.
 
 > **NOTE:** `phpcbf` is installed along with `phpcs`.
 
@@ -40,6 +43,7 @@ The `phpcs` linter can be installed globally using the Composer Dependency Manag
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
+1. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
 
 ### Project-wide Installation
 
@@ -67,19 +71,19 @@ in your user, workspace or folder preferences.
 
 ### **phpsab.fixerEnable**
 
-[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
 This setting controls whether `phpcbf` fixer is enabled.
 
 ### **phpsab.snifferEnable**
 
-[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
 This setting controls whether `phpcs` sniffer is enabled.
 
 ### **phpsab.executablePathCS**
 
-[ *Scope:* All | Optional | *Type:* string | *Default:* null ]
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the executable path for `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
 If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcs' in your path.
@@ -93,7 +97,7 @@ If omitted, the plugin will try to locate the path parsing your composer configu
 
 ### **phpsab.executablePathCBF**
 
-[ *Scope:* All | Optional | *Type:* string | *Default:* null ]
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the executable path for the `phpcbf`. You may specify the absolute path or workspace relative path to the `phpcbf` executable.
 If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcbf' in your path..
@@ -105,7 +109,7 @@ If omitted, the plugin will try to locate the path parsing your composer configu
 
 ### **phpsab.standard**
 
-[ *Scope:* All | Optional | *Type:* string | *Default:* null ]
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the coding standard used by `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
 
@@ -193,9 +197,9 @@ The following values are applicable:
     }
     ```
 
-### **phpsab.autoConfigSearch**
+### **phpsab.autoRulesetSearch**
 
-[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
 Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides `phpsab.standard` configuration when a ruleset is found. If `phpcs` finds a configuration file through auto search this extension should similarly find that configuration file and apply fixes based on the same configuration.
 
@@ -203,7 +207,7 @@ Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpc
 
 ### **phpsab.allowedAutoRulesets**
 
-[ _Scope:_ All | Optional | _Type:_ array | _Default:_ [] ]
+[ *Scope:* Resource | Optional | *Type:* array | *Default:* [] ]
 
 An array of filenames that could contain a valid phpcs ruleset.
 
@@ -239,7 +243,7 @@ Determines if the Sniffer includes the source of the diagnostic data with error 
 
 ### **phpsab.composerJsonPath**
 
-[ *Scope:* All | Optional | *Type:* string | *Default:* composer.json ]
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
 
 This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 

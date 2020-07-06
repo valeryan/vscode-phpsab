@@ -12,6 +12,6 @@ export interface ResourceSettings {
     executablePathCS: string;
     composerJsonPath: string;
     standard: string | null;
-    autoConfigSearch: boolean;
+    autoRulesetSearch: boolean;
     allowedAutoRulesets: string[];
 }

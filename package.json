@@ -78,7 +78,7 @@
                     "default": null,
                     "description": "Optional. The default config to use or global standard. Can be overridden if auto search is enabled."
                 },
-                "phpsab.autoConfigSearch": {
+                "phpsab.autoRulesetSearch": {
                     "scope": "resource",
                     "type": "boolean",
                     "default": true,

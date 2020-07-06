@@ -45,7 +45,7 @@ export class Configuration {
                     "composer.json"
                 ),
                 standard: config.get("standard", ""),
-                autoConfigSearch: config.get("autoConfigSearch", true),
+                autoRulesetSearch: config.get("autoRulesetSearch", true),
                 allowedAutoRulesets: config.get("allowedAutoRulesets", [
                     ".phpcs.xml",
                     "phpcs.xml",

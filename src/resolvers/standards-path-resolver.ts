@@ -22,7 +22,7 @@ export class StandardsPathResolver extends PathResolverBase {
     async resolve(): Promise<string> {
         let configured =
             this.config.standard !== null ? this.config.standard : "";
-        if (this.config.autoConfigSearch === false) {
+        if (this.config.autoRulesetSearch === false) {
             return configured;
         }
 
