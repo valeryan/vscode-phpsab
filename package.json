@@ -133,11 +133,9 @@
     },
     "scripts": {
         "vscode:prepublish": "webpack --mode production",
-		"webpack": "webpack --mode development",
-		"webpack-dev": "webpack --mode development --watch",
-        "lint": "eslint . --ext .ts,.tsx",
-        "test-compile": "tsc -p ./",
-        "test": "node ./out/test/runTest.js"
+        "webpack": "webpack --mode development",
+        "webpack-dev": "webpack --mode development --watch",
+        "lint": "eslint . --ext .ts,.tsx"
     },
     "dependencies": {
         "cross-spawn": "^7.0.3",
