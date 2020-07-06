@@ -1,4 +1,7 @@
 # Change Log
+## 0.0.7
+-   Fix typescript error with lodash
+
 ## 0.0.6
 -   Add better multi-root workspace support
 -   The setting AutoConfigSearch is renamed to AutoRulesetSearch to make its purpose more clear
