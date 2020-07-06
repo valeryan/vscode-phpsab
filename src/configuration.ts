@@ -5,26 +5,28 @@
 "use strict";
 
 import * as path from "path";
+import * as fs from "fs";
 import { Settings } from "./interfaces/settings";
 import { ResourceSettings } from "./interfaces/resource-settings";
 import { PathResolver } from "./resolvers/path-resolver";
-import { workspace, window, WorkspaceConfiguration, Uri } from "vscode";
+import { workspace, WorkspaceConfiguration, Uri, window } from "vscode";
 
 export class Configuration {
+    debug: boolean;
+    config: WorkspaceConfiguration;
+    constructor() {
+        this.config = workspace.getConfiguration("phpsab");
+        this.debug = this.config.get("debug", false);
+    }
+
     /**
      * Load from configuration
      */
     public async load() {
-        let config: WorkspaceConfiguration;
-        let rootPath: string;
-
-        const editor = window.activeTextEditor;
-        if (!editor || !workspace.workspaceFolders) {
+        if (!workspace.workspaceFolders) {
             throw new Error("Unable to load configuration.");
         }
-        const resource = editor.document.uri;
-        config = workspace.getConfiguration("phpsab", resource);
-        rootPath = this.resolveRootPath(resource);
+
         const resourcesSettings: Array<ResourceSettings> = [];
 
         for (
@@ -58,7 +60,7 @@ export class Configuration {
             settings = await this.resolveCBFExecutablePath(settings);
             settings = await this.resolveCSExecutablePath(settings);
 
-            settings = await this.validate(settings);
+            settings = await this.validate(settings, workspace.workspaceFolders[index].name);
 
             resourcesSettings.splice(index, 0, settings);
         }
@@ -66,10 +68,10 @@ export class Configuration {
         // update settings from config
         let settings: Settings = {
             resources: resourcesSettings,
-            snifferMode: config.get("snifferMode", "onSave"),
-            snifferShowSources: config.get("snifferShowSources", false),
-            snifferTypeDelay: config.get("snifferTypeDelay", 250),
-            debug: config.get("debug", false),
+            snifferMode: this.config.get("snifferMode", "onSave"),
+            snifferShowSources: this.config.get("snifferShowSources", false),
+            snifferTypeDelay: this.config.get("snifferTypeDelay", 250),
+            debug: this.debug,
         };
 
         if (settings.debug) {
@@ -138,14 +140,31 @@ export class Configuration {
     }
 
     private async validate(
-        settings: ResourceSettings
+        settings: ResourceSettings,
+        resource: string
     ): Promise<ResourceSettings> {
-        if (settings.snifferEnable && !settings.executablePathCS) {
+        if (settings.snifferEnable && !await this.executableExist(settings.executablePathCS)) {
+            if (this.debug === true) {
+                console.log("The phpcs executable was not found for " + resource);
+            }
             settings.snifferEnable = false;
         }
-        if (settings.fixerEnable && !settings.executablePathCBF) {
+        if (settings.fixerEnable && !await this.executableExist(settings.executablePathCBF)) {
+            if (this.debug === true) {
+                console.log("The phpcbf executable was not found for " + resource);
+            }
             settings.fixerEnable = false;
         }
         return settings;
+    }
+
+    private async executableExist(path: string) {
+        if (!path) {
+            return false;
+        }
+        if (fs.existsSync(path)) {
+            return true;
+        }
+        return false;
     }
 }
