@@ -25,7 +25,7 @@ import { Settings } from "./interfaces/settings";
 import { PHPCSReport, PHPCSMessageType } from "./interfaces/phpcs-report";
 import { StandardsPathResolver } from "./resolvers/standards-path-resolver";
 import { spawn } from "child_process";
-import debounce from "lodash.debounce";
+import { debounce } from "lodash";
 
 const enum runConfig {
     save = "onSave",

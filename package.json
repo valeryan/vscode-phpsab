@@ -141,7 +141,7 @@
     },
     "dependencies": {
         "cross-spawn": "^7.0.3",
-        "lodash.debounce": "^4.0.8"
+        "lodash": "^4.17.15"
     },
     "devDependencies": {
         "@types/cross-spawn": "^6.0.2",
