@@ -32,7 +32,7 @@
     "activationEvents": [
         "onLanguage:php"
     ],
-    "main": "./out/extension",
+    "main": "./dist/extension",
     "contributes": {
         "commands": [
             {
@@ -132,11 +132,11 @@
         }
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "lint": "eslint -c .eslintrc.js --ext .ts ./",
-        "watch": "tsc -watch -p ./",
-        "pretest": "npm run compile",
+        "vscode:prepublish": "webpack --mode production",
+		"webpack": "webpack --mode development",
+		"webpack-dev": "webpack --mode development --watch",
+        "lint": "eslint . --ext .ts,.tsx",
+        "test-compile": "tsc -p ./",
         "test": "node ./out/test/runTest.js"
     },
     "dependencies": {
@@ -162,8 +162,11 @@
         "glob": "^7.1.4",
         "mocha": "^8.0.1",
         "source-map-support": "^0.5.12",
+        "ts-loader": "^7.0.5",
         "typescript": "^3.9.6",
         "vscode-test": "^1.4.0",
-        "vscode-uri": "^2.1.2"
+        "vscode-uri": "^2.1.2",
+        "webpack": "^4.43.0",
+        "webpack-cli": "^3.3.12"
     }
 }
