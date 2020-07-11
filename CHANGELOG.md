@@ -1,4 +1,8 @@
 # Change Log
+## 0.0.8
+-   Swap to webpack for bundling to reduce extension size
+-   Revert removal of the php task killer
+
 ## 0.0.7
 -   Fix typescript error with lodash
 
