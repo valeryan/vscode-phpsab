@@ -1,4 +1,7 @@
 # Change Log
+## 0.0.10
+-   Dependency Update for lodash
+
 ## 0.0.9
 -   Swap to webpack for bundling to reduce extension size
 -   Revert removal of the php task killer
