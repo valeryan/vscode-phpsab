@@ -1,4 +1,8 @@
 # Change Log
+## 0.0.11
+-  Remove phpclikill method. 
+-  Update dependencies
+
 ## 0.0.10
 -   Dependency Update for lodash
 

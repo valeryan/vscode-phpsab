@@ -32,35 +32,6 @@ const enum runConfig {
     type = "onType",
 }
 
-/**
- * Kills PHP CLIs.
- *
- * @param command
- *   The process to kill.
- */
-function phpCliKill(command: ChildProcess) {
-    if (!/^win/.test(process.platform)) {
-        exec(
-            `ps -ef | awk '/phpcs/ {print $2" "$8" "$4" "$7}'`,
-            (err, stdout) => {
-                if (err) {
-                    window.showErrorMessage(
-                        "Sniffer: Error trying to kill PHP CLI, you may need to kill the process yourself."
-                    );
-                }
-                stdout.split("\n").forEach($process => {
-                    const killable = $process.split(" ");
-                    if (killable[1] === "php" && parseInt(killable[2]) > 90) {
-                        exec(`kill ${killable[0]}`);
-                    }
-                });
-            }
-        );
-    }
-
-    command.kill();
-}
-
 export class Sniffer {
     public config!: Settings;
 
@@ -274,8 +245,6 @@ export class Sniffer {
         sniffer.stdout.on("data", (data) => (stdout += data));
         sniffer.stderr.on("data", (data) => (stderr += data));
 
-        token.onCancellationRequested(() => !sniffer.killed && phpCliKill(sniffer));
-
         const done = new Promise((resolve, reject) => {
             sniffer.on("close", () => {
                 if (token.isCancellationRequested || !stdout) {
@@ -334,7 +303,6 @@ export class Sniffer {
                 this.runnerCancellations.delete(document.uri);
             });
         });
-        setTimeout(() => !sniffer.killed && phpCliKill(sniffer), 3000);
 
         window.setStatusBarMessage("PHP Sniffer: validating…", done);
 
