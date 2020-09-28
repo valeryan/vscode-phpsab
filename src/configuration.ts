@@ -7,14 +7,16 @@
 import * as path from "path";
 import * as fs from "fs";
 import { Settings } from "./interfaces/settings";
+import { Logger, LogLevel } from "./logger";
 import { ResourceSettings } from "./interfaces/resource-settings";
 import { PathResolver } from "./resolvers/path-resolver";
-import { workspace, WorkspaceConfiguration, Uri, window } from "vscode";
+import { workspace, WorkspaceConfiguration, Uri } from "vscode";
 
 export class Configuration {
     debug: boolean;
     config: WorkspaceConfiguration;
-    constructor() {
+
+    constructor(private logger: Logger) {
         this.config = workspace.getConfiguration("phpsab");
         this.debug = this.config.get("debug", false);
     }
@@ -62,7 +64,10 @@ export class Configuration {
             settings = await this.resolveCBFExecutablePath(settings);
             settings = await this.resolveCSExecutablePath(settings);
 
-            settings = await this.validate(settings, workspace.workspaceFolders[index].name);
+            settings = await this.validate(
+                settings,
+                workspace.workspaceFolders[index].name
+            );
 
             resourcesSettings.splice(index, 0, settings);
         }
@@ -76,12 +81,9 @@ export class Configuration {
             debug: this.debug,
         };
 
-        if (settings.debug) {
-            console.log("----- PHPSAB CONFIGURATION -----");
-            console.log(settings);
-            console.log("----- PHPSAB CONFIGURATION END -----");
-        }
-
+        let logLevel: LogLevel = settings.debug ? 'INFO' : 'ERROR';
+        this.logger.setOutputLevel(logLevel);
+        this.logger.logInfo('CONFIGURATION', settings);
         return settings;
     }
 
@@ -145,16 +147,18 @@ export class Configuration {
         settings: ResourceSettings,
         resource: string
     ): Promise<ResourceSettings> {
-        if (settings.snifferEnable && !await this.executableExist(settings.executablePathCS)) {
-            if (this.debug === true) {
-                console.log("The phpcs executable was not found for " + resource);
-            }
+        if (
+            settings.snifferEnable &&
+            !(await this.executableExist(settings.executablePathCS))
+        ) {
+            this.logger.logInfo("The phpcs executable was not found for " + resource);
             settings.snifferEnable = false;
         }
-        if (settings.fixerEnable && !await this.executableExist(settings.executablePathCBF)) {
-            if (this.debug === true) {
-                console.log("The phpcbf executable was not found for " + resource);
-            }
+        if (
+            settings.fixerEnable &&
+            !(await this.executableExist(settings.executablePathCBF))
+        ) {
+            this.logger.logInfo("The phpcbf executable was not found for " + resource);
             settings.fixerEnable = false;
         }
         return settings;
