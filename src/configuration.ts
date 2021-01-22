@@ -39,6 +39,7 @@ export class Configuration {
             const rootPath = this.resolveRootPath(resource);
             let settings: ResourceSettings = {
                 fixerEnable: config.get("fixerEnable", true),
+                fixerArguments: config.get("fixerArguments", []),
                 workspaceRoot: rootPath,
                 executablePathCBF: config.get("executablePathCBF", ""),
                 executablePathCS: config.get("executablePathCS", ""),
@@ -55,6 +56,7 @@ export class Configuration {
                     "ruleset.xml",
                 ]),
                 snifferEnable: config.get("snifferEnable", true),
+                snifferArguments: config.get("snifferArguments", []),
             };
 
             settings = await this.resolveCBFExecutablePath(settings);

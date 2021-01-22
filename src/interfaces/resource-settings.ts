@@ -7,7 +7,9 @@
 export interface ResourceSettings {
     workspaceRoot: string;
     fixerEnable: boolean;
+    fixerArguments: string[];
     snifferEnable: boolean;
+    snifferArguments: string[];
     executablePathCBF: string;
     executablePathCS: string;
     composerJsonPath: string;

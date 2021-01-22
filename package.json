@@ -51,6 +51,12 @@
                     "default": true,
                     "description": "Control if this fixer is enabled for PHP files or not."
                 },
+                "phpsab.fixerArguments": {
+                    "scope": "resource",
+                    "type": "array",
+                    "default": [],
+                    "description": "Additional arguments passed to phpcbf"
+                },
                 "phpsab.executablePathCBF": {
                     "scope": "resource",
                     "type": "string",
@@ -102,6 +108,12 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Control if this sniffer is enabled for PHP files or not."
+                },
+                "phpsab.snifferArguments": {
+                    "scope": "resource",
+                    "type": "array",
+                    "default": [],
+                    "description": "Additional arguments passed to phpcs"
                 },
                 "phpsab.snifferMode": {
                     "type": "string",
