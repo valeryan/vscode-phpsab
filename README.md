@@ -75,11 +75,41 @@ in your user, workspace or folder preferences.
 
 This setting controls whether `phpcbf` fixer is enabled.
 
+### **phpsab.fixerArguments**
+[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
+
+Passes additional arguments to `phpcbf` runner.
+
+_Example_
+```bash
+{
+    phpsab.fixerArguments: ["-n", "--ignore=tests/*"]
+}
+    
+# Translated
+phpcbf -n --ignore=tests/* <file>
+```
+
 ### **phpsab.snifferEnable**
 
 [ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
 This setting controls whether `phpcs` sniffer is enabled.
+
+### **phpsab.snifferArguments**
+[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
+
+Passes additional arguments to `phpcs` runner.
+
+_Example_
+```bash
+{
+    phpsab.snifferArguments: ["-n", "--ignore=tests/*"]
+}
+
+# Translated
+phpcs -n --ignore=tests/* <file>
+```
 
 ### **phpsab.executablePathCS**
 
