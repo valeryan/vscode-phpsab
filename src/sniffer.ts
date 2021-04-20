@@ -158,7 +158,7 @@ export class Sniffer {
      * @param fileName
      * @param standard
      */
-    private getArgs(document: TextDocument, standard: string) {
+    private getArgs(document: TextDocument, standard: string, additionalArguments: string[]) {
         // Process linting paths.
         let filePath = document.fileName;
 
@@ -170,6 +170,7 @@ export class Sniffer {
         }
         args.push(`--stdin-path=${filePath}`);
         args.push("-");
+        args = args.concat(additionalArguments);
         return args;
     }
 
@@ -195,6 +196,19 @@ export class Sniffer {
             console.time("sniffer");
         }
 
+        const additionalArguments = resourceConf.snifferArguments.filter((arg) => {
+            if (arg.indexOf('--report') === -1 &&
+                arg.indexOf('--standard') === -1 &&
+                arg.indexOf('--stdin-path') === -1 &&
+                arg !== '-q' &&
+                arg !== '-'
+            ) {
+                return true;
+            }
+
+            return false;
+        });
+
         const oldRunner = this.runnerCancellations.get(document.uri);
         if (oldRunner) {
             oldRunner.cancel();
@@ -210,7 +224,7 @@ export class Sniffer {
             resourceConf,
             this.config.debug
         ).resolve();
-        const lintArgs = this.getArgs(document, standard);
+        const lintArgs = this.getArgs(document, standard, additionalArguments);
 
         let fileText = document.getText();
 

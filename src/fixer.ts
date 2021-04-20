@@ -48,7 +48,7 @@ export class Fixer {
      * @param fileName
      * @param standard
      */
-    private getArgs(document: TextDocument, standard: string) {
+    private getArgs(document: TextDocument, standard: string, additionalArguments: string[]) {
         // Process linting paths.
         let filePath = document.fileName;
 
@@ -59,6 +59,7 @@ export class Fixer {
         }
         args.push(`--stdin-path=${filePath}`);
         args.push("-");
+        args = args.concat(additionalArguments);
         return args;
     }
 
@@ -87,6 +88,18 @@ export class Fixer {
             console.time("fixer");
         }
 
+        const additionalArguments = resourceConf.fixerArguments.filter((arg) => {
+            if (arg.indexOf('--standard') === -1 &&
+                arg.indexOf('--stdin-path') === -1 &&
+                arg !== '-q' &&
+                arg !== '-'
+            ) {
+                return true;
+            }
+
+            return false;
+        });
+
         // setup and spawn fixer process
         const standard = await new StandardsPathResolver(
             document,
@@ -94,7 +107,7 @@ export class Fixer {
             this.config.debug
         ).resolve();
 
-        const lintArgs = this.getArgs(document, standard);
+        const lintArgs = this.getArgs(document, standard, additionalArguments);
 
         let fileText = document.getText();
 
