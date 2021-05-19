@@ -16,9 +16,10 @@ Visual Studio Code must be installed in order to use this plugin. If Visual Stud
 
 or keyboard shortcut `alt+shift+f` vs code default formatter shortcut
 
-or right mouse context menu `Format Document`
+or right mouse context menu `Format Document`.
 
-or if format on save is enabled save document
+### Format on save
+You can also use this formatter with Format on Save enabled. Format on save has two modes: `File` and `Modified`. This extension implements support for the modified mode by using phpcbf with the `Git Modified` filter that is provided by phpcbf. 
 
 ## Multi-Root Workspace Support
 This extension now fully supports Multi-Root Workspaces. The extension previously used the first root folder in your workspace to configure and run both phpcs and phpcbf. The new system allows each workspace to be configured and run independently with respect to the root folder of the open file being sniffed. This means you can have phpcs functionality in one folder and have it disabled in another within a workspace.
