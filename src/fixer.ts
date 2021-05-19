@@ -58,8 +58,8 @@ export class Fixer {
             args.push("--standard=" + standard);
         }
         args.push(`--stdin-path=${filePath}`);
-        args.push("-");
         args = args.concat(additionalArguments);
+        args.push("-");
         return args;
     }
 
@@ -67,7 +67,10 @@ export class Fixer {
      * run the fixer process
      * @param document
      */
-    private async format(document: TextDocument) {
+    private async format(document: TextDocument, fullDocument: boolean) {
+        if (this.config.debug) {
+            console.log("----- FIXER -----");
+        }
         const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
         if (!workspaceFolder) {
             return "";
@@ -107,6 +110,10 @@ export class Fixer {
             this.config.debug
         ).resolve();
 
+        // Add git modified filter if vscode is trying to use a range of document
+        if (!fullDocument) {
+            additionalArguments.push('--filter=GitModified');
+        }
         const lintArgs = this.getArgs(document, standard, additionalArguments);
 
         let fileText = document.getText();
@@ -122,7 +129,6 @@ export class Fixer {
         };
 
         if (this.config.debug) {
-            console.log("----- FIXER -----");
             console.log(
                 "FIXER args: " +
                     resourceConf.executablePathCBF +
@@ -231,23 +237,31 @@ export class Fixer {
         return result;
     }
 
+    private documentFullRange = (document: TextDocument) => new Range(
+        new Position(0, 0),
+        document.lineAt(document.lineCount - 1).range.end,
+    );
+
+    private  isFullDocumentRange = (range: Range, document: TextDocument) => range.isEqual(this.documentFullRange(document));
+
     /**
      * Setup wrapper to format for extension
      * @param document
      */
     public registerDocumentProvider(
-        document: TextDocument
+        document: TextDocument,
+        range: Range
     ): ProviderResult<TextEdit[]> {
         return new Promise((resolve, reject) => {
-            let lastLine = document.lineAt(document.lineCount - 1);
-            let range = new Range(new Position(0, 0), lastLine.range.end);
+            const fullRange = this.documentFullRange(document);
+            const isFullDocument = this.isFullDocumentRange(range, document);
 
-            this.format(document)
+            this.format(document, isFullDocument)
                 .then((text) => {
                     if (text.length > 0) {
-                        resolve([new TextEdit(range, text)]);
+                        resolve([new TextEdit(fullRange, text)]);
                     }
-                    resolve();
+                    resolve([]);
                 })
                 .catch((err) => {
                     window.showErrorMessage(err);
