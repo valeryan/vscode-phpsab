@@ -4,7 +4,7 @@
  * ------------------------------------------------------------------------------------------ */
 "use strict";
 
-import { commands, ExtensionContext, languages, window } from "vscode";
+import { commands, ExtensionContext, languages } from "vscode";
 import { Fixer } from "./fixer";
 import { Sniffer } from "./sniffer";
 import { Configuration } from "./configuration";
@@ -24,11 +24,11 @@ function activateFixer(context: ExtensionContext, settings: Settings) {
 
     // register as document formatter for php
     context.subscriptions.push(
-        languages.registerDocumentFormattingEditProvider(
+        languages.registerDocumentRangeFormattingEditProvider(
             { scheme: "file", language: "php" },
             {
-                provideDocumentFormattingEdits: (document) => {
-                    return fixer.registerDocumentProvider(document);
+                provideDocumentRangeFormattingEdits: (document, range) => {
+                    return fixer.registerDocumentProvider(document, range);
                 },
             }
         )
