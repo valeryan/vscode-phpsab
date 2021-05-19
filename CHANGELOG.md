@@ -1,5 +1,7 @@
 # Change Log
-
+## 0.0.13
+- Dependency Update
+- Github Action to publish on tags
 ## 0.0.12
 - Add support of options
 - Dependency Updates
