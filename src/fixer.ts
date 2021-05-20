@@ -272,7 +272,7 @@ export class Fixer {
                     if (text.length > 0) {
                         resolve([new TextEdit(fullRange, text)]);
                     }
-                    resolve([]);
+                    throw new Error("PHPCBF returned an empty document");
                 })
                 .catch((err) => {
                     window.showErrorMessage(err);
