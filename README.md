@@ -284,7 +284,7 @@ This setting allows you to override the path to your composer.json file when it 
 
 [ *Scope:* All | Optional | *Type:* boolean | Default: false ]
 
-Write debug information to the PHP Sniffer & Beautifier debug console and enable the display extra notices.
+Write debug information to the PHP Sniffer & Beautifier output channel and enable the display extra notices.
 
 ### The phpcs report contains invalid json
 
