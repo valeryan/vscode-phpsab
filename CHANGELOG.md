@@ -1,4 +1,8 @@
 # Change Log
+
+## 0.0.14
+- Add support for only fixing modified lines of code
+- Add a logging library that send debug info an output channel
 ## 0.0.13
 - Dependency Update
 - Github Action to publish on tags
