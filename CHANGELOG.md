@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.0.15
+- Changed fixer to throw an exception if an empty document is returned.
+
 ## 0.0.14
 - Add support for only fixing modified lines of code
 - Add a logging library that send debug info an output channel
