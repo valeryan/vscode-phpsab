@@ -10,12 +10,13 @@ import * as fs from "fs";
 import { PathResolverBase } from "./path-resolver-base";
 import { TextDocument, workspace } from "vscode";
 import { ResourceSettings } from "../interfaces/resource-settings";
+import { Logger } from "../logger";
 
 export class StandardsPathResolver extends PathResolverBase {
     constructor(
         private document: TextDocument,
         private config: ResourceSettings,
-        private debug: boolean
+        private logger: Logger
     ) {
         super();
     }
@@ -61,12 +62,7 @@ export class StandardsPathResolver extends PathResolverBase {
                 files.push(path + file);
             });
         });
-
-        if (this.debug) {
-            console.log("----- PHPSAB SEARCH PATHS -----");
-            console.log(searchPaths);
-            console.log("----- PHPSAB SEARCH PATHS END -----");
-        }
+        this.logger.logInfo('Standards Search paths: ', searchPaths);
 
         for (let i = 0, len = files.length; i < len; i++) {
             let c = files[i];

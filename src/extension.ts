@@ -6,12 +6,21 @@
 
 import { commands, ExtensionContext, languages } from "vscode";
 import { Fixer } from "./fixer";
+import { Logger } from "./logger";
 import { Sniffer } from "./sniffer";
 import { Configuration } from "./configuration";
 import { Settings } from "./interfaces/settings";
 
-function activateFixer(context: ExtensionContext, settings: Settings) {
-    let fixer = new Fixer(context.subscriptions, settings);
+// the application insights key (also known as instrumentation key)
+const extensionName = process.env.EXTENSION_NAME || "dev.prettier-vscode";
+const extensionVersion = process.env.EXTENSION_VERSION || "0.0.0";
+
+function activateFixer(
+    context: ExtensionContext,
+    settings: Settings,
+    logger: Logger
+) {
+    const fixer = new Fixer(context.subscriptions, settings, logger);
 
     // register format from command pallet
     context.subscriptions.push(
@@ -35,8 +44,12 @@ function activateFixer(context: ExtensionContext, settings: Settings) {
     );
 }
 
-function activateSniffer(context: ExtensionContext, settings: Settings) {
-    let sniffer = new Sniffer(context.subscriptions, settings);
+function activateSniffer(
+    context: ExtensionContext,
+    settings: Settings,
+    logger: Logger
+) {
+    const sniffer = new Sniffer(context.subscriptions, settings, logger);
     context.subscriptions.push(sniffer);
 }
 
@@ -45,8 +58,13 @@ function activateSniffer(context: ExtensionContext, settings: Settings) {
  * @param context
  */
 export async function activate(context: ExtensionContext) {
-    let configuration = new Configuration();
-    let settings = await configuration.load();
-    activateFixer(context, settings);
-    activateSniffer(context, settings);
+    const logger = new Logger();
+    // Always output extension information to channel on activate
+    logger.logInfo(`Extension Name: ${extensionName}.`);
+    logger.logInfo(`Extension Version: ${extensionVersion}.`);
+
+    const configuration = new Configuration(logger);
+    const settings = await configuration.load();
+    activateFixer(context, settings, logger);
+    activateSniffer(context, settings, logger);
 }

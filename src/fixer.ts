@@ -1,3 +1,7 @@
+/* --------------------------------------------------------------------------------------------
+ * Copyright (c) 2019 Samuel Hilson. All rights reserved.
+ * Licensed under the MIT License. See License.md in the project root for license information.
+ * ------------------------------------------------------------------------------------------ */
 "use strict";
 
 import * as spawn from "cross-spawn";
@@ -16,11 +20,18 @@ import {
     workspace,
     ConfigurationChangeEvent,
 } from "vscode";
-import { SpawnSyncOptions, SpawnSyncOptionsWithBufferEncoding, SpawnSyncOptionsWithStringEncoding } from "child_process";
+import { SpawnSyncOptions } from "child_process";
+import { Logger } from "./logger";
 export class Fixer {
     public config!: Settings;
 
-    constructor(subscriptions: Disposable[], config: Settings) {
+    constructor(
+        subscriptions: Disposable[],
+
+        config: Settings,
+
+        private logger: Logger
+    ) {
         this.config = config;
         workspace.onDidChangeConfiguration(
             this.loadSettings,
@@ -38,7 +49,7 @@ export class Fixer {
         ) {
             return;
         }
-        let configuration = new Configuration();
+        let configuration = new Configuration(this.logger);
         let config = await configuration.load();
         this.config = config;
     }
@@ -48,7 +59,11 @@ export class Fixer {
      * @param fileName
      * @param standard
      */
-    private getArgs(document: TextDocument, standard: string, additionalArguments: string[]) {
+    private getArgs(
+        document: TextDocument,
+        standard: string,
+        additionalArguments: string[]
+    ) {
         // Process linting paths.
         let filePath = document.fileName;
 
@@ -68,9 +83,6 @@ export class Fixer {
      * @param document
      */
     private async format(document: TextDocument, fullDocument: boolean) {
-        if (this.config.debug) {
-            console.log("----- FIXER -----");
-        }
         const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
         if (!workspaceFolder) {
             return "";
@@ -86,34 +98,30 @@ export class Fixer {
             );
             return "";
         }
+        this.logger.time("Fixer");
 
-        if (this.config.debug) {
-            console.time("fixer");
-        }
+        const additionalArguments = resourceConf.fixerArguments.filter(
+            (arg) => {
+                if (
+                    arg.indexOf("--standard") === -1 &&
+                    arg.indexOf("--stdin-path") === -1 &&
+                    arg !== "-q" &&
+                    arg !== "-"
+                ) {
+                    return true;
+                }
 
-        const additionalArguments = resourceConf.fixerArguments.filter((arg) => {
-            if (arg.indexOf('--standard') === -1 &&
-                arg.indexOf('--stdin-path') === -1 &&
-                arg !== '-q' &&
-                arg !== '-'
-            ) {
-                return true;
+                return false;
             }
-
-            return false;
-        });
+        );
 
         // setup and spawn fixer process
         const standard = await new StandardsPathResolver(
             document,
             resourceConf,
-            this.config.debug
+            this.logger
         ).resolve();
 
-        // Add git modified filter if vscode is trying to use a range of document
-        if (!fullDocument) {
-            additionalArguments.push('--filter=GitModified');
-        }
         const lintArgs = this.getArgs(document, standard, additionalArguments);
 
         let fileText = document.getText();
@@ -128,14 +136,12 @@ export class Fixer {
             input: fileText,
         };
 
-        if (this.config.debug) {
-            console.log(
-                "FIXER args: " +
-                    resourceConf.executablePathCBF +
-                    " " +
-                    lintArgs.join(" ")
-            );
-        }
+        this.logger.logInfo(
+            "FIXER COMMAND: " +
+                resourceConf.executablePathCBF +
+                " " +
+                lintArgs.join(" ")
+        );
 
         const fixer = spawn.sync(
             resourceConf.executablePathCBF,
@@ -217,18 +223,10 @@ export class Fixer {
             }
             default:
                 error = errors[fixer.status];
-                if (this.config.debug) {
-                    console.log("----- FIXER STDOUT -----");
-                    console.log(fixed);
-                    console.log("----- FIXER STDOUT END -----");
-                }
+                this.logger.logError(fixed);
         }
 
-        if (this.config.debug) {
-            console.log(fixer);
-            console.timeEnd("fixer");
-            console.log("----- FIXER END -----");
-        }
+        this.logger.timeEnd("Fixer");
 
         if (error !== "") {
             return Promise.reject(error);
@@ -237,12 +235,25 @@ export class Fixer {
         return result;
     }
 
-    private documentFullRange = (document: TextDocument) => new Range(
-        new Position(0, 0),
-        document.lineAt(document.lineCount - 1).range.end,
-    );
+    /**
+     * Get the document range
+     * @param document TextDocument
+     * @returns Range
+     */
+    private documentFullRange = (document: TextDocument) =>
+        new Range(
+            new Position(0, 0),
+            document.lineAt(document.lineCount - 1).range.end
+        );
 
-    private  isFullDocumentRange = (range: Range, document: TextDocument) => range.isEqual(this.documentFullRange(document));
+    /**
+     *
+     * @param range Range
+     * @param document TextDocument
+     * @returns boolean
+     */
+    private isFullDocumentRange = (range: Range, document: TextDocument) =>
+        range.isEqual(this.documentFullRange(document));
 
     /**
      * Setup wrapper to format for extension

@@ -1,6 +1,5 @@
 The MIT License (MIT)
 
-Copyright (c) 2015 Ioannis Kappas
 Copyright (c) 2018 Samuel Hilson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
