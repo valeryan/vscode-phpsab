@@ -7,7 +7,7 @@
 This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) provides an interface to [phpcs & phpcbf](http://pear.php.net/package/PHP_CodeSniffer/). It will be used with files that have the “PHP” language mode. This extension is designed to use auto configuration search mechanism to apply rulesets to files within a workspace. This is useful for developers who work with many different projects that have different coding standards.
 
 ## Maintenance Status
-A while ago I moved on from php and now work in dotnet. I do currently have the bandwidth to work on this project. As far as I can tell this project is still fully functional in its current state. If you want to take over this project or just be an additionly maintainer and help solve any of the issues that are present, please contact me.
+A while ago I moved on from PHP and now work in DotNet. I don't currently have the bandwidth to work on this project. As far as I can tell this project is still fully functional in its current state. If you want to take over this project or just be an additionly maintainer and help solve any of the issues that are present, please contact me.
 
 ## Installation
 
