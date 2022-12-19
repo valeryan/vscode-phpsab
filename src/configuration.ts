@@ -19,6 +19,9 @@ export class Configuration {
     constructor(private logger: Logger) {
         this.config = workspace.getConfiguration("phpsab");
         this.debug = this.config.get("debug", false);
+
+        let logLevel: LogLevel = this.debug ? 'INFO' : 'ERROR';
+        this.logger.setOutputLevel(logLevel);
     }
 
     /**
@@ -80,9 +83,6 @@ export class Configuration {
             snifferTypeDelay: this.config.get("snifferTypeDelay", 250),
             debug: this.debug,
         };
-
-        let logLevel: LogLevel = settings.debug ? 'INFO' : 'ERROR';
-        this.logger.setOutputLevel(logLevel);
         this.logger.logInfo('CONFIGURATION', settings);
         return settings;
     }
