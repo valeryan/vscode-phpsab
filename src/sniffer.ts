@@ -56,7 +56,7 @@ export class Sniffer {
         private logger: Logger
     ) {
         this.config = config;
-        if (config.resources[0].snifferEnable === false) {
+        if (config.resources.filter(folder => folder.snifferEnable === true).length === 0) {
             return;
         }
         workspace.onDidChangeConfiguration(
