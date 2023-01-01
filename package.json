@@ -172,11 +172,11 @@
         "glob": "^7.1.4",
         "mocha": "^8.1.1",
         "source-map-support": "^0.5.12",
-        "ts-loader": "^7.0.5",
+        "ts-loader": "^9.4.2",
         "typescript": "^3.9.6",
         "vscode-test": "^1.4.0",
         "vscode-uri": "^2.1.2",
-        "webpack": "^4.43.0",
-        "webpack-cli": "^3.3.12"
+        "webpack": "^5.75.0",
+        "webpack-cli": "^5.0.1"
     }
 }
