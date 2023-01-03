@@ -1,5 +1,23 @@
 # Change Log
+## 0.0.16
+* Bump path-parse from 1.0.6 to 1.0.7 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/61
+* Bump minimist from 1.2.5 to 1.2.6 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/70
+* Bump ansi-regex from 3.0.0 to 3.0.1 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/72
+* Bump terser from 4.8.0 to 4.8.1 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/73
+* Bump loader-utils from 1.4.0 to 1.4.2 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/76
+* Bump decode-uri-component from 0.2.0 to 0.2.2 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/77
+* Set logLevel in configuration before attempting to log info. by @stormrockwell in https://github.com/valeryan/vscode-phpsab/pull/78
+* Fix Sniffer from exiting early based on the first folder's settings by @stormrockwell in https://github.com/valeryan/vscode-phpsab/pull/79
+* Bump flat and mocha by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/80
+* Bump json5 from 1.0.1 to 1.0.2 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/82
+* Bump glob-parent from 5.1.1 to 5.1.2 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/83
+* Bump minimatch and mocha by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/84
+* Bump nanoid and mocha by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/85
 
+## New Contributors
+* @stormrockwell made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/78
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v.0.0.15...v.0.0.16
 ## 0.0.15
 - Changed fixer to throw an exception if an empty document is returned.
 

@@ -1,8 +1,8 @@
 # vscode-phpcbf
 
-[![Current Version](https://vsmarketplacebadge.apphb.com/version/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
-[![Install Count](https://vsmarketplacebadge.apphb.com/installs/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
-[![Open Issues](https://vsmarketplacebadge.apphb.com/rating/ValeryanM.vscode-phpsab.svg)](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab)
+![Current Version](https://img.shields.io/visual-studio-marketplace/v/ValeryanM.vscode-phpsab)
+![Installs](https://img.shields.io/visual-studio-marketplace/i/ValeryanM.vscode-phpsab)
+![GitHub issues](https://img.shields.io/github/issues-raw/valeryan/vscode-phpsab)
 
 Integrates [phpcs & phpcbf](https://github.com/squizlabs/PHP_CodeSniffer.git) into [Visual Studio Code](https://code.visualstudio.com/).
 
