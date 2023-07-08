@@ -14,5 +14,5 @@ export abstract class PathResolverBase {
         this.pathSeparator = /^win/.test(process.platform) ? "\\" : "/";
     }
 
-    abstract async resolve(): Promise<string>;
+    abstract resolve(): Promise<string>;
 }
