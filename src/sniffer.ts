@@ -257,7 +257,7 @@ export class Sniffer {
         sniffer.stdout.on("data", (data) => (stdout += data));
         sniffer.stderr.on("data", (data) => (stderr += data));
 
-        const done = new Promise((resolve, reject) => {
+        const done = new Promise<void>((resolve, reject) => {
             sniffer.on("close", () => {
                 if (token.isCancellationRequested || !stdout) {
                     resolve();
@@ -305,7 +305,11 @@ export class Sniffer {
                     if (stderr) {
                         message += `${stderr}\n`;
                     }
-                    message += error.toString();
+                    if (error instanceof Error) {
+                        message += error.toString();
+                    } else {
+                        message += 'Unexpected error';
+                    }
                     window.showErrorMessage(message);
                     this.logger.logError(message);
                     reject(message);
