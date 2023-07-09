@@ -210,6 +210,9 @@ export class Fixer {
       }
       default:
         error = errors[fixer.status];
+        if (fixed.length > 0){
+            error += "\n" + fixed;
+        }
         this.logger.logError(fixed);
     }
 
