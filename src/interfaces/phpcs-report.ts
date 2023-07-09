@@ -4,33 +4,33 @@
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 export const enum PHPCSMessageType {
-    ERROR = "ERROR",
-    WARNING = "WARNING",
+  ERROR = "ERROR",
+  WARNING = "WARNING",
 }
 
 export interface PHPCSMessage {
-    message: string;
-    source: string;
-    severity: number;
-    fixable: boolean;
-    type: PHPCSMessageType;
-    line: number;
-    column: number;
+  message: string;
+  source: string;
+  severity: number;
+  fixable: boolean;
+  type: PHPCSMessageType;
+  line: number;
+  column: number;
 }
 
 export interface PHPCSCounts {
-    errors: number;
-    warning: number;
-    fixable?: number;
+  errors: number;
+  warning: number;
+  fixable?: number;
 }
 
 export interface PHPCSFileStatus extends PHPCSCounts {
-    messages: PHPCSMessage[];
+  messages: PHPCSMessage[];
 }
 
 export interface PHPCSReport {
-    totals: PHPCSCounts;
-    files: {
-        [key: string]: PHPCSFileStatus;
-    };
+  totals: PHPCSCounts;
+  files: {
+    [key: string]: PHPCSFileStatus;
+  };
 }
