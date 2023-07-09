@@ -99,7 +99,7 @@ export class Configuration {
   protected async resolveCBFExecutablePath(
     settings: ResourceSettings
   ): Promise<ResourceSettings> {
-    if (settings.executablePathCBF === null) {
+    if (settings.executablePathCBF === null || settings.executablePathCBF === "") {
       let executablePathResolver = new PathResolver(settings, "phpcbf");
       settings.executablePathCBF = await executablePathResolver.resolve();
     } else if (
@@ -121,7 +121,7 @@ export class Configuration {
   protected async resolveCSExecutablePath(
     settings: ResourceSettings
   ): Promise<ResourceSettings> {
-    if (settings.executablePathCS === null) {
+    if (settings.executablePathCS === null || settings.executablePathCS === "") {
       let executablePathResolver = new PathResolver(settings, "phpcs");
       settings.executablePathCS = await executablePathResolver.resolve();
     } else if (
