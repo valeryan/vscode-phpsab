@@ -128,6 +128,11 @@ If omitted, the plugin will try to locate the path parsing your composer configu
 "C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat"
 ```
 
+> If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+```
+C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
+```
+
 ### **phpsab.executablePathCBF**
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
@@ -138,6 +143,10 @@ If omitted, the plugin will try to locate the path parsing your composer configu
 > **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
 ```
 "C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat"
+```
+> If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+```
+C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
 ```
 
 ### **phpsab.standard**
