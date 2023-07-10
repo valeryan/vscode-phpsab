@@ -8,6 +8,8 @@ This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) prov
 ## Maintenance Status
 A while ago I moved on from PHP and now work in DotNet. I don't currently have the bandwidth to work on this project. As far as I can tell this project is still fully functional in its current state. If you want to take over this project or just be an additionly maintainer and help solve any of the issues that are present, please contact me.
 
+In June 2023 [jonathanbossenger](https://github.com/jonathanbossenger) reached out to me and offered to help with maintaining the extension. I have added him as a contibutor and he will be monitoring new issues and helping me review PRs. I will still be around to help out if needed.
+
 ## Installation
 
 Visual Studio Code must be installed in order to use this plugin. If Visual Studio Code is not installed, please follow the instructions [here](https://code.visualstudio.com/Docs/editor/setup).
