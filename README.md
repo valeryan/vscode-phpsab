@@ -1,4 +1,5 @@
 # PHP Sniffer & Beautifier for VS Code
+
 ![Current Version](https://img.shields.io/visual-studio-marketplace/v/ValeryanM.vscode-phpsab)
 ![Installs](https://img.shields.io/visual-studio-marketplace/i/ValeryanM.vscode-phpsab)
 ![GitHub issues](https://img.shields.io/github/issues-raw/valeryan/vscode-phpsab)
@@ -6,6 +7,7 @@
 This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) provides an interface to [phpcs & phpcbf](http://pear.php.net/package/PHP_CodeSniffer/). It will be used with files that have the “PHP” language mode. This extension is designed to use auto configuration search mechanism to apply rulesets to files within a workspace. This is useful for developers who work with many different projects that have different coding standards.
 
 ## Maintenance Status
+
 A while ago I moved on from PHP and now work in DotNet. I don't currently have the bandwidth to work on this project. As far as I can tell this project is still fully functional in its current state. If you want to take over this project or just be an additionly maintainer and help solve any of the issues that are present, please contact me.
 
 In June 2023 [jonathanbossenger](https://github.com/jonathanbossenger) reached out to me and offered to help with maintaining the extension. I have added him as a contibutor and he will be monitoring new issues and helping me review PRs. I will still be around to help out if needed.
@@ -23,9 +25,11 @@ or keyboard shortcut `alt+shift+f` vs code default formatter shortcut
 or right mouse context menu `Format Document`.
 
 ### Format on save
+
 You can also use this formatter with Format on Save enabled. Format on save has two modes: `File` and `Modified`. This extension implements support for the modified mode by using phpcbf with the `Git Modified` filter that is provided by phpcbf. 
 
 ## Multi-Root Workspace Support
+
 This extension now fully supports Multi-Root Workspaces. The extension previously used the first root folder in your workspace to configure and run both phpcs and phpcbf. The new system allows each workspace to be configured and run independently with respect to the root folder of the open file being sniffed. This means you can have phpcs functionality in one folder and have it disabled in another within a workspace.
 
 ## Linter Installation
@@ -68,6 +72,10 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 1. Type ext install phpsab to find the extension.
 1. Press Enter or click the cloud icon to install it.
 1. Restart Visual Studio Code!
+
+### Docker support
+
+If you would like to run phpcs in your docker containers using this extension, a [fork exists](https://github.com/mtbdata711/vscode-phpsab-docker) that will provide you with Docker support.
 
 ## Basic Configuration
 
