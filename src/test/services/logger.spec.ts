@@ -1,15 +1,57 @@
-import * as assert from 'assert';
-
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
 import * as vscode from 'vscode';
-// import * as myExtension from '../../extension';
+import * as assert from 'assert';
+import * as sinon from 'sinon';
+import { Logger } from '../../logger';
 
-suite('Extension Test Suite', () => {
-  vscode.window.showInformationMessage('Start all tests.');
+suite('Logger Test Suite', () => {
+  let logger: Logger;
+  let appendLineSpy: sinon.SinonSpy;
 
-  test('Sample test', () => {
-    assert.strictEqual([1, 2, 3].indexOf(1), -1);
-    assert.strictEqual([1, 2, 3].indexOf(0), -1);
+  setup(() => {
+    logger = new Logger();
+    appendLineSpy = sinon.spy(logger['outputChannel'], 'appendLine');
+  });
+
+  teardown(() => {
+    appendLineSpy.restore();
+  });
+
+  test('Logger should log info messages', () => {
+    logger.setOutputLevel('INFO');
+    logger.logInfo('Test info message');
+    assert.ok(appendLineSpy.calledWithMatch(/Test info message/));
+  });
+
+  test('Logger should log error messages', () => {
+    logger.setOutputLevel('ERROR');
+    logger.logError('Test error message');
+    assert.ok(appendLineSpy.calledWithMatch(/Test error message/));
+  });
+
+  test('Logger should not log info messages when level is ERROR', () => {
+    logger.setOutputLevel('ERROR');
+    logger.logInfo('Test info message');
+    assert.ok(appendLineSpy.notCalled);
+  });
+
+  test('Logger should start and end time', () => {
+    logger.setOutputLevel('INFO');
+    logger.time('Test');
+    assert.ok(appendLineSpy.calledWithMatch(/Test running/));
+    logger.timeEnd('Test');
+    assert.ok(appendLineSpy.calledWithMatch(/Test ran for/));
+  });
+
+  test('Logger should log error objects', () => {
+    logger.setOutputLevel('ERROR');
+    const error = new Error('Test error');
+    logger.logError('Test error message', error);
+    assert.ok(appendLineSpy.calledWithMatch(/Test error/));
+  });
+
+  test('Logger should log error strings', () => {
+    logger.setOutputLevel('ERROR');
+    logger.logError('Test error message', 'Test error string');
+    assert.ok(appendLineSpy.calledWithMatch(/Test error string/));
   });
 });

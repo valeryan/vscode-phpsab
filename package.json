@@ -153,7 +153,8 @@
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "sinon": "^17.0.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
@@ -161,6 +162,7 @@
     "@types/lodash.debounce": "^4.0.9",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.16",
+    "@types/sinon": "^17.0.3",
     "@types/vscode": "^1.86.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
