@@ -1,182 +1,185 @@
 {
-    "name": "vscode-phpsab",
-    "displayName": "PHP Sniffer & Beautifier",
-    "description": "PHP Sniffer & Beautifier for Visual Studio Code",
-    "version": "0.0.16",
-    "icon": "php_logo.png",
-    "publisher": "valeryanm",
-    "homepage": "https://github.com/valeryan/vscode-phpsab",
-    "license": "MIT",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/valeryan/vscode-phpsab.git"
-    },
-    "bugs": {
-        "url": "https://github.com/valeryan/vscode-phpsab/issues"
-    },
-    "engines": {
-        "vscode": "^1.46.0"
-    },
-    "categories": [
-        "Formatters",
-        "Linters",
-        "Other"
+  "name": "vscode-phpsab",
+  "displayName": "PHP Sniffer & Beautifier",
+  "description": "PHP Sniffer & Beautifier for Visual Studio Code",
+  "version": "0.0.16",
+  "icon": "php_logo.png",
+  "publisher": "valeryanm",
+  "homepage": "https://github.com/valeryan/vscode-phpsab",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/valeryan/vscode-phpsab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/valeryan/vscode-phpsab/issues"
+  },
+  "engines": {
+    "vscode": "^1.46.0"
+  },
+  "categories": [
+    "Formatters",
+    "Linters",
+    "Other"
+  ],
+  "keywords": [
+    "php",
+    "phpcs",
+    "phpcbf",
+    "linter",
+    "fixer"
+  ],
+  "activationEvents": [
+    "onLanguage:php"
+  ],
+  "main": "./dist/extension",
+  "contributes": {
+    "commands": [
+      {
+        "command": "fixer.fix",
+        "title": "PHPCBF: Fix this file",
+        "when": "!inOutput && editorFocus && editorLangId == php"
+      }
     ],
-    "keywords": [
-        "php",
-        "phpcs",
-        "phpcbf",
-        "linter",
-        "fixer"
-    ],
-    "activationEvents": [
-        "onLanguage:php"
-    ],
-    "main": "./dist/extension",
-    "contributes": {
-        "commands": [
-            {
-                "command": "fixer.fix",
-                "title": "PHPCBF: Fix this file",
-                "when": "!inOutput && editorFocus && editorLangId == php"
-            }
-        ],
-        "configuration": {
-            "title": "PHP Sniffer & Fixer Configuration options",
-            "type": "object",
-            "properties": {
-                "phpsab.fixerEnable": {
-                    "scope": "resource",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Control if this fixer is enabled for PHP files or not."
-                },
-                "phpsab.fixerArguments": {
-                    "scope": "resource",
-                    "type": "array",
-                    "default": [],
-                    "description": "Additional arguments passed to phpcbf"
-                },
-                "phpsab.executablePathCBF": {
-                    "scope": "resource",
-                    "type": "string",
-                    "default": null,
-                    "description": "Optional. The default path to the phpcbf executable. Can be overridden if auto search is enabled."
-                },
-                "phpsab.executablePathCS": {
-                    "scope": "resource",
-                    "type": "string",
-                    "default": null,
-                    "description": "Optional. The default path to the phpcs executable. Can be overridden if auto search is enabled."
-                },
-                "phpsab.composerJsonPath": {
-                    "scope": "resource",
-                    "type": "string",
-                    "default": "composer.json",
-                    "description": "The path to composer.json"
-                },
-                "phpsab.standard": {
-                    "scope": "resource",
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "default": null,
-                    "description": "Optional. The default config to use or global standard. Can be overridden if auto search is enabled."
-                },
-                "phpsab.autoRulesetSearch": {
-                    "scope": "resource",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Automatically search for a ruleset file to use as configuration. Overrides custom standards defined above."
-                },
-                "phpsab.allowedAutoRulesets": {
-                    "scope": "resource",
-                    "type": "array",
-                    "default": [
-                        ".phpcs.xml",
-                        ".phpcs.xml.dist",
-                        "phpcs.xml",
-                        "phpcs.xml.dist",
-                        "phpcs.ruleset.xml",
-                        "ruleset.xml"
-                    ],
-                    "description": "Filenames to search for that contain the ruleset for fixers."
-                },
-                "phpsab.snifferEnable": {
-                    "scope": "resource",
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Control if this sniffer is enabled for PHP files or not."
-                },
-                "phpsab.snifferArguments": {
-                    "scope": "resource",
-                    "type": "array",
-                    "default": [],
-                    "description": "Additional arguments passed to phpcs"
-                },
-                "phpsab.snifferMode": {
-                    "type": "string",
-                    "default": "onSave",
-                    "enum": [
-                        "onSave",
-                        "onType"
-                    ],
-                    "markdownDescription": "When to run `phpcs`."
-                },
-                "phpsab.snifferTypeDelay": {
-                    "type": "number",
-                    "default": 250,
-                    "minimum": 0,
-                    "markdownDescription": "When `phpsab.snifferMode` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run."
-                },
-                "phpsab.snifferShowSources": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Control if phpcs report should include sniff sources."
-                },
-                "phpsab.debug": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Write debug info to the console"
-                }
-            }
+    "configuration": {
+      "title": "PHP Sniffer & Fixer Configuration options",
+      "type": "object",
+      "properties": {
+        "phpsab.fixerEnable": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Control if this fixer is enabled for PHP files or not."
+        },
+        "phpsab.fixerArguments": {
+          "scope": "resource",
+          "type": "array",
+          "default": [],
+          "description": "Additional arguments passed to phpcbf"
+        },
+        "phpsab.executablePathCBF": {
+          "scope": "resource",
+          "type": "string",
+          "default": null,
+          "description": "Optional. The default path to the phpcbf executable. Can be overridden if auto search is enabled."
+        },
+        "phpsab.executablePathCS": {
+          "scope": "resource",
+          "type": "string",
+          "default": null,
+          "description": "Optional. The default path to the phpcs executable. Can be overridden if auto search is enabled."
+        },
+        "phpsab.composerJsonPath": {
+          "scope": "resource",
+          "type": "string",
+          "default": "composer.json",
+          "description": "The path to composer.json"
+        },
+        "phpsab.standard": {
+          "scope": "resource",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Optional. The default config to use or global standard. Can be overridden if auto search is enabled."
+        },
+        "phpsab.autoRulesetSearch": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically search for a ruleset file to use as configuration. Overrides custom standards defined above."
+        },
+        "phpsab.allowedAutoRulesets": {
+          "scope": "resource",
+          "type": "array",
+          "default": [
+            ".phpcs.xml",
+            ".phpcs.xml.dist",
+            "phpcs.xml",
+            "phpcs.xml.dist",
+            "phpcs.ruleset.xml",
+            "ruleset.xml"
+          ],
+          "description": "Filenames to search for that contain the ruleset for fixers."
+        },
+        "phpsab.snifferEnable": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Control if this sniffer is enabled for PHP files or not."
+        },
+        "phpsab.snifferArguments": {
+          "scope": "resource",
+          "type": "array",
+          "default": [],
+          "description": "Additional arguments passed to phpcs"
+        },
+        "phpsab.snifferMode": {
+          "type": "string",
+          "default": "onSave",
+          "enum": [
+            "onSave",
+            "onType"
+          ],
+          "markdownDescription": "When to run `phpcs`."
+        },
+        "phpsab.snifferTypeDelay": {
+          "type": "number",
+          "default": 250,
+          "minimum": 0,
+          "markdownDescription": "When `phpsab.snifferMode` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run."
+        },
+        "phpsab.snifferShowSources": {
+          "type": "boolean",
+          "default": false,
+          "description": "Control if phpcs report should include sniff sources."
+        },
+        "phpsab.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Write debug info to the console"
         }
-    },
-    "scripts": {
-        "vscode:prepublish": "webpack --mode production",
-        "webpack": "webpack --mode development",
-        "webpack-dev": "webpack --mode development --watch",
-        "lint": "eslint . --ext .ts,.tsx"
-    },
-    "dependencies": {
-        "cross-spawn": "^7.0.3",
-        "lodash": "^4.17.21"
-    },
-    "devDependencies": {
-        "@types/cross-spawn": "^6.0.2",
-        "@types/glob": "^8.1.0",
-        "@types/lodash.debounce": "^4.0.7",
-        "@types/mocha": "^10.0.1",
-        "@types/node": "^20.4.1",
-        "@types/vscode": "^1.80.0",
-        "@typescript-eslint/eslint-plugin": "^5.61.0",
-        "@typescript-eslint/parser": "^5.61.0",
-        "@vscode/test-electron": "^2.3.3",
-        "eslint": "^8.44.0",
-        "eslint-config-prettier": "^8.8.0",
-        "eslint-config-standard": "^17.1.0",
-        "eslint-plugin-import": "^2.27.5",
-        "eslint-plugin-node": "^11.1.0",
-        "eslint-plugin-promise": "^6.1.1",
-        "eslint-plugin-standard": "^5.0.0",
-        "glob": "^10.3.3",
-        "mocha": "^10.2.0",
-        "source-map-support": "^0.5.21",
-        "ts-loader": "^9.4.4",
-        "typescript": "^5.1.6",
-        "vscode-uri": "^3.0.7",
-        "webpack": "^5.88.1",
-        "webpack-cli": "^5.1.4"
+      }
     }
+  },
+  "scripts": {
+    "compile": "rm -rf out && tsc -p ./",
+    "vscode:prepublish": "webpack --mode production",
+    "webpack": "webpack --mode development",
+    "webpack-dev": "webpack --mode development --watch",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "npm run compile && vscode-test"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.3",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
+    "@types/glob": "^8.1.0",
+    "@types/lodash.debounce": "^4.0.9",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.16",
+    "@types/vscode": "^1.86.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-standard": "^5.0.0",
+    "glob": "^10.3.10",
+    "mocha": "^10.2.0",
+    "source-map-support": "^0.5.21",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "vscode-uri": "^3.0.8",
+    "webpack": "^5.90.1",
+    "webpack-cli": "^5.1.4"
+  }
 }
