@@ -8,9 +8,11 @@ This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) prov
 
 ## Maintenance Status
 
-A while ago I moved on from PHP and now work in DotNet. I don't currently have the bandwidth to work on this project. As far as I can tell this project is still fully functional in its current state. If you want to take over this project or just be an additionly maintainer and help solve any of the issues that are present, please contact me.
+A while ago I moved on from PHP and now work in DotNet. I don't currently have the bandwidth to work on this project. As far as I can tell this project is still fully functional in its current state. If you want to take over this project or just be an additional maintainer and help solve any of the issues that are present, please contact me.
 
-In June 2023 [jonathanbossenger](https://github.com/jonathanbossenger) reached out to me and offered to help with maintaining the extension. I have added him as a contibutor and he will be monitoring new issues and helping me review PRs. I will still be around to help out if needed.
+In June 2023 [jonathanbossenger](https://github.com/jonathanbossenger) reached out to me and offered to help with maintaining the extension. I have added him as a contributor and he will be monitoring new issues and helping me review PRs. I will still be around to help out if needed.
+
+In January 2024 [seebeen](https://github.com/seebeen) signed on to be a maintainer for this project and has been granted contributor status.
 
 ## Installation
 
@@ -26,7 +28,7 @@ or right mouse context menu `Format Document`.
 
 ### Format on save
 
-You can also use this formatter with Format on Save enabled. Format on save has two modes: `File` and `Modified`. This extension implements support for the modified mode by using phpcbf with the `Git Modified` filter that is provided by phpcbf. 
+You can also use this formatter with Format on Save enabled. Format on save has two modes: `File` and `Modified`. This extension implements support for the modified mode by using phpcbf with the `Git Modified` filter that is provided by phpcbf.
 
 ## Multi-Root Workspace Support
 
@@ -98,7 +100,7 @@ _Example_
 {
     phpsab.fixerArguments: ["-n", "--ignore=tests/*"]
 }
-    
+
 # Translated
 phpcbf -n --ignore=tests/* <file>
 ```
