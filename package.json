@@ -15,7 +15,7 @@
     "url": "https://github.com/valeryan/vscode-phpsab/issues"
   },
   "engines": {
-    "vscode": "^1.46.0"
+    "vscode": "^1.86.0"
   },
   "categories": [
     "Formatters",
@@ -154,8 +154,7 @@
   "dependencies": {
     "cross-spawn": "^7.0.3",
     "lodash": "^4.17.21",
-    "sinon": "^17.0.1",
-    "vscode": "^1.1.37"
+    "sinon": "^17.0.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
@@ -171,6 +170,7 @@
     "eslint-config-prettier": "^9.1.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.3.3",
+    "vscode": "^1.1.37",
     "webpack": "^5.90.3",
     "webpack-cli": "^5.1.4"
   }
