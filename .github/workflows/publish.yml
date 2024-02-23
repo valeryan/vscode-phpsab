@@ -1,9 +1,10 @@
 on:
   push:
     tags:
-      - "*"
+      - '*'
   release:
     types: [published]
+  workflow_dispatch:
 
 env:
   TAG_NAME: ${{ github.ref_name }}
@@ -54,7 +55,7 @@ jobs:
       - name: Checkout Updated Repo
         uses: actions/checkout@v4
         with:
-          ref: "master"
+          ref: 'master'
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Re-point Tag
