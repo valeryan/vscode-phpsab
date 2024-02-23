@@ -8,28 +8,25 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Set up Xvfb
+      uses: coactions/setup-xvfb@v1
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 20
 
-    - name: Install Xvfb
-      run: sudo apt-get install xvfb
-
-    - name: Start Xvfb
-      run: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-
     - name: Install dependencies
       run: npm install
 
-    - name: Set DISPLAY environment variable
-      run: export DISPLAY=:99
-
     - name: Run tests
-      run: npm run test
+      run: npm test
