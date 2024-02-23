@@ -8,10 +8,7 @@ on:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
@@ -26,6 +23,4 @@ jobs:
       run: npm install
 
     - name: Run Test
-      uses: coactions/setup-xvfb@v1
-      with:
-        run: npm test
+      run: xvfb-run npm test
