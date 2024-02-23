@@ -3,16 +3,16 @@
  * Copyright (c) 2020 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { window } from "vscode";
+import { window } from 'vscode';
 
-export type LogLevel = "INFO" | "ERROR";
+export type LogLevel = 'INFO' | 'ERROR';
 
 export class Logger {
   private outputChannel = window.createOutputChannel(
-    "PHP Sniffer & Beautifier"
+    'PHP Sniffer & Beautifier',
   );
 
-  private logLevel: LogLevel = "ERROR";
+  private logLevel: LogLevel = 'ERROR';
 
   private startTime: {
     [key: string]: Date;
@@ -28,24 +28,24 @@ export class Logger {
    * @param message The message to append to the output channel
    */
   public logInfo(message: string, data?: unknown): void {
-    if (this.logLevel === "ERROR") {
+    if (this.logLevel === 'ERROR') {
       return;
     }
-    this.logMessage(message, "INFO");
+    this.logMessage(message, 'INFO');
     if (data) {
       this.logObject(data);
     }
   }
 
   public logError(message: string, error?: Error | string) {
-    this.logMessage(message, "ERROR");
-    if (typeof error === "string") {
+    this.logMessage(message, 'ERROR');
+    if (typeof error === 'string') {
       // Errors as a string usually only happen with
       // plugins that don't return the expected error.
       this.outputChannel.appendLine(error);
     } else if (error?.message || error?.stack) {
       if (error?.message) {
-        this.logMessage(error.message, "ERROR");
+        this.logMessage(error.message, 'ERROR');
       }
       if (error?.stack) {
         this.outputChannel.appendLine(error.stack);
@@ -60,7 +60,7 @@ export class Logger {
    */
   public time(key: string) {
     this.startTime[key] = new Date();
-    this.logInfo(key + " running");
+    this.logInfo(key + ' running');
   }
 
   /**
@@ -71,7 +71,7 @@ export class Logger {
     let timeDiff = endTime.valueOf() - this.startTime[key].valueOf();
     // strip the ms
     let seconds = timeDiff / 1000;
-    this.logInfo(key + " ran for " + seconds + " seconds");
+    this.logInfo(key + ' ran for ' + seconds + ' seconds');
   }
 
   public show() {

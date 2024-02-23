@@ -2,26 +2,26 @@
  * Copyright (c) 2019 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-"use strict";
+'use strict';
 
-import * as spawn from "cross-spawn";
-import { Configuration } from "./configuration";
-import { Settings } from "./interfaces/settings";
-import { StandardsPathResolver } from "./resolvers/standards-path-resolver";
-import { ConsoleError } from "./interfaces/console-error";
+import { SpawnSyncOptions } from 'child_process';
+import * as spawn from 'cross-spawn';
 import {
-  window,
-  TextDocument,
-  Range,
-  Position,
-  TextEdit,
-  ProviderResult,
-  Disposable,
-  workspace,
   ConfigurationChangeEvent,
-} from "vscode";
-import { SpawnSyncOptions } from "child_process";
-import { Logger } from "./logger";
+  Disposable,
+  Position,
+  ProviderResult,
+  Range,
+  TextDocument,
+  TextEdit,
+  window,
+  workspace,
+} from 'vscode';
+import { Configuration } from './configuration';
+import { ConsoleError } from './interfaces/console-error';
+import { Settings } from './interfaces/settings';
+import { Logger } from './logger';
+import { StandardsPathResolver } from './resolvers/standards-path-resolver';
 export class Fixer {
   public config!: Settings;
 
@@ -30,7 +30,7 @@ export class Fixer {
 
     config: Settings,
 
-    private logger: Logger
+    private logger: Logger,
   ) {
     this.config = config;
     workspace.onDidChangeConfiguration(this.loadSettings, this, subscriptions);
@@ -40,8 +40,8 @@ export class Fixer {
    */
   public async loadSettings(event: ConfigurationChangeEvent) {
     if (
-      !event.affectsConfiguration("phpsab") &&
-      !event.affectsConfiguration("editor.formatOnSaveTimeout")
+      !event.affectsConfiguration('phpsab') &&
+      !event.affectsConfiguration('editor.formatOnSaveTimeout')
     ) {
       return;
     }
@@ -58,19 +58,19 @@ export class Fixer {
   private getArgs(
     document: TextDocument,
     standard: string,
-    additionalArguments: string[]
+    additionalArguments: string[],
   ) {
     // Process linting paths.
     let filePath = document.fileName;
 
     let args = [];
-    args.push("-q");
-    if (standard !== "") {
-      args.push("--standard=" + standard);
+    args.push('-q');
+    if (standard !== '') {
+      args.push('--standard=' + standard);
     }
     args.push(`--stdin-path=${filePath}`);
     args = args.concat(additionalArguments);
-    args.push("-");
+    args.push('-');
     return args;
   }
 
@@ -81,27 +81,27 @@ export class Fixer {
   private async format(document: TextDocument, fullDocument: boolean) {
     const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
     if (!workspaceFolder) {
-      return "";
+      return '';
     }
     const resourceConf = this.config.resources[workspaceFolder.index];
-    if (document.languageId !== "php") {
-      return "";
+    if (document.languageId !== 'php') {
+      return '';
     }
 
     if (resourceConf.fixerEnable === false) {
       window.showInformationMessage(
-        "Fixer is disable for this workspace or PHPCBF was not found for this workspace."
+        'Fixer is disable for this workspace or PHPCBF was not found for this workspace.',
       );
-      return "";
+      return '';
     }
-    this.logger.time("Fixer");
+    this.logger.time('Fixer');
 
     const additionalArguments = resourceConf.fixerArguments.filter((arg) => {
       if (
-        arg.indexOf("--standard") === -1 &&
-        arg.indexOf("--stdin-path") === -1 &&
-        arg !== "-q" &&
-        arg !== "-"
+        arg.indexOf('--standard') === -1 &&
+        arg.indexOf('--stdin-path') === -1 &&
+        arg !== '-q' &&
+        arg !== '-'
       ) {
         return true;
       }
@@ -113,7 +113,7 @@ export class Fixer {
     const standard = await new StandardsPathResolver(
       document,
       resourceConf,
-      this.logger
+      this.logger,
     ).resolve();
 
     const lintArgs = this.getArgs(document, standard, additionalArguments);
@@ -126,33 +126,33 @@ export class Fixer {
           ? resourceConf.workspaceRoot
           : undefined,
       env: process.env,
-      encoding: "utf8",
+      encoding: 'utf8',
       input: fileText,
     };
 
     this.logger.logInfo(
-      "FIXER COMMAND: " +
+      'FIXER COMMAND: ' +
         resourceConf.executablePathCBF +
-        " " +
-        lintArgs.join(" ")
+        ' ' +
+        lintArgs.join(' '),
     );
 
     const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
     const stdout = fixer.stdout.toString().trim();
 
-    let fixed = stdout + "\n";
+    let fixed = stdout + '\n';
 
     let errors: { [key: number]: string } = {
-      3: "FIXER: A general script execution error occurred.",
-      16: "FIXER: Configuration error of the application.",
-      32: "FIXER: Configuration error of a Fixer.",
-      64: "FIXER: Exception raised within the application.",
-      255: "FIXER: A Fatal execution error occurred.",
+      3: 'FIXER: A general script execution error occurred.',
+      16: 'FIXER: Configuration error of the application.',
+      32: 'FIXER: Configuration error of a Fixer.',
+      64: 'FIXER: Exception raised within the application.',
+      255: 'FIXER: A Fatal execution error occurred.',
     };
 
-    let error: string = "";
-    let result: string = "";
-    let message: string = "No fixable errors were found.";
+    let error: string = '';
+    let result: string = '';
+    let message: string = 'No fixable errors were found.';
 
     /**
      * fixer exit codes:
@@ -164,18 +164,18 @@ export class Fixer {
     switch (fixer.status) {
       case null: {
         // deal with some special case errors
-        error = "A General Execution error occurred.";
+        error = 'A General Execution error occurred.';
 
         if (fixer.error === undefined) {
           break;
         }
         const execError: ConsoleError = fixer.error;
-        if (execError.code === "ETIMEDOUT") {
-          error = "FIXER: Formatting the document timed out.";
+        if (execError.code === 'ETIMEDOUT') {
+          error = 'FIXER: Formatting the document timed out.';
         }
 
-        if (execError.code === "ENOENT") {
-          error = "FIXER: " + execError.message + ". executablePath not found.";
+        if (execError.code === 'ENOENT') {
+          error = 'FIXER: ' + execError.message + '. executablePath not found.';
         }
         break;
       }
@@ -188,7 +188,7 @@ export class Fixer {
       case 1: {
         if (fixed.length > 0 && fixed !== fileText) {
           result = fixed;
-          message = "All fixable errors were fixed correctly.";
+          message = 'All fixable errors were fixed correctly.';
         }
 
         if (this.config.debug) {
@@ -200,7 +200,7 @@ export class Fixer {
       case 2: {
         if (fixed.length > 0 && fixed !== fileText) {
           result = fixed;
-          message = "FIXER failed to fix some of the fixable errors.";
+          message = 'FIXER failed to fix some of the fixable errors.';
         }
 
         if (this.config.debug) {
@@ -210,15 +210,15 @@ export class Fixer {
       }
       default:
         error = errors[fixer.status];
-        if (fixed.length > 0){
-            error += "\n" + fixed;
+        if (fixed.length > 0) {
+          error += '\n' + fixed;
         }
         this.logger.logError(fixed);
     }
 
-    this.logger.timeEnd("Fixer");
+    this.logger.timeEnd('Fixer');
 
-    if (error !== "") {
+    if (error !== '') {
       return Promise.reject(error);
     }
 
@@ -233,7 +233,7 @@ export class Fixer {
   private documentFullRange = (document: TextDocument) =>
     new Range(
       new Position(0, 0),
-      document.lineAt(document.lineCount - 1).range.end
+      document.lineAt(document.lineCount - 1).range.end,
     );
 
   /**
@@ -251,7 +251,7 @@ export class Fixer {
    */
   public registerDocumentProvider(
     document: TextDocument,
-    range: Range
+    range: Range,
   ): ProviderResult<TextEdit[]> {
     return new Promise((resolve, reject) => {
       const fullRange = this.documentFullRange(document);
@@ -262,7 +262,7 @@ export class Fixer {
           if (text.length > 0) {
             resolve([new TextEdit(fullRange, text)]);
           }
-          throw new Error("PHPCBF returned an empty document");
+          throw new Error('PHPCBF returned an empty document');
         })
         .catch((err) => {
           window.showErrorMessage(err);

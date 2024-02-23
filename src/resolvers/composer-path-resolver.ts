@@ -3,12 +3,12 @@
  * Copyright (c) 2018 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-"use strict";
+'use strict';
 
-import * as path from "path";
-import * as fs from "fs";
+import * as fs from 'fs';
+import * as path from 'path';
 
-import { PathResolverBase } from "./path-resolver-base";
+import { PathResolverBase } from './path-resolver-base';
 
 export class ComposerPathResolver extends PathResolverBase {
   protected readonly _workspaceRoot: string;
@@ -29,14 +29,14 @@ export class ComposerPathResolver extends PathResolverBase {
   constructor(
     executableFile: string,
     workspaceRoot: string,
-    workingPath: string = ""
+    workingPath: string = '',
   ) {
     super();
     this._executableFile = executableFile;
     this._workspaceRoot = workspaceRoot;
     this._workingPath = path.isAbsolute(workingPath)
       ? workingPath
-      : path.join(workspaceRoot, workingPath).replace(/composer.json$/, "");
+      : path.join(workspaceRoot, workingPath).replace(/composer.json$/, '');
   }
 
   public get workspaceRoot(): string {
@@ -50,7 +50,7 @@ export class ComposerPathResolver extends PathResolverBase {
   public get composerJsonPath(): string {
     if (!this._composerJsonPath) {
       this._composerJsonPath = fs.realpathSync(
-        path.join(this.workingPath, "composer.json")
+        path.join(this.workingPath, 'composer.json'),
       );
     }
     return this._composerJsonPath;
@@ -59,7 +59,7 @@ export class ComposerPathResolver extends PathResolverBase {
   public get composerLockPath(): string {
     if (!this._composerLockPath) {
       this._composerLockPath = fs.realpathSync(
-        path.join(this.workingPath, "composer.lock")
+        path.join(this.workingPath, 'composer.lock'),
       );
     }
     return this._composerLockPath;
@@ -94,23 +94,23 @@ export class ComposerPathResolver extends PathResolverBase {
     // Safely load composer.lock
     let dependencies = null;
     try {
-      dependencies = JSON.parse(fs.readFileSync(this.composerLockPath, "utf8"));
+      dependencies = JSON.parse(fs.readFileSync(this.composerLockPath, 'utf8'));
     } catch (error) {
       dependencies = {};
     }
 
     // Determine phpcbf dependency.
     let search = [];
-    if (dependencies["packages-dev"]) {
-      search.push(dependencies["packages-dev"]);
+    if (dependencies['packages-dev']) {
+      search.push(dependencies['packages-dev']);
     }
-    if (dependencies["packages"]) {
-      search.push(dependencies["packages"]);
+    if (dependencies['packages']) {
+      search.push(dependencies['packages']);
     }
 
     return search.some((pkgs) => {
       let match = pkgs.filter((pkg: any) => {
-        return pkg.name === "squizlabs/php_codesniffer";
+        return pkg.name === 'squizlabs/php_codesniffer';
       });
       return match.length !== 0;
     });
@@ -121,32 +121,32 @@ export class ComposerPathResolver extends PathResolverBase {
    */
   getVendorPath(): string {
     let basePath = path.dirname(this.composerJsonPath);
-    let vendorPath = path.join(basePath, "vendor", "bin", this._executableFile);
+    let vendorPath = path.join(basePath, 'vendor', 'bin', this._executableFile);
 
     // Safely load composer.json
     let config = null;
     try {
-      config = JSON.parse(fs.readFileSync(this.composerJsonPath, "utf8"));
+      config = JSON.parse(fs.readFileSync(this.composerJsonPath, 'utf8'));
     } catch (error) {
       config = {};
     }
 
     // Check vendor-bin configuration
-    if (config["config"] && config["config"]["vendor-dir"]) {
+    if (config['config'] && config['config']['vendor-dir']) {
       vendorPath = path.join(
         basePath,
-        config["config"]["vendor-dir"],
-        "bin",
-        this._executableFile
+        config['config']['vendor-dir'],
+        'bin',
+        this._executableFile,
       );
     }
 
     // Check bin-bin configuration
-    if (config["config"] && config["config"]["bin-dir"]) {
+    if (config['config'] && config['config']['bin-dir']) {
       vendorPath = path.join(
         basePath,
-        config["config"]["bin-dir"],
-        this._executableFile
+        config['config']['bin-dir'],
+        this._executableFile,
       );
     }
 
@@ -168,15 +168,15 @@ export class ComposerPathResolver extends PathResolverBase {
         } else {
           let relativeVendorPath = path.relative(
             this.workspaceRoot,
-            vendorPath
+            vendorPath,
           );
           throw new Error(
-            `Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to run "composer install" or set your executablePaths for phpcs & phpcbf manually.`
+            `Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to run "composer install" or set your executablePaths for phpcs & phpcbf manually.`,
           );
         }
       }
     }
 
-    return resolvedPath === null ? "" : resolvedPath;
+    return resolvedPath === null ? '' : resolvedPath;
   }
 }

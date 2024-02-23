@@ -3,11 +3,11 @@
  * Copyright (c) Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-"use strict";
+'use strict';
 
-import { PathResolverBase } from "./path-resolver-base";
-import { ComposerPathResolver } from "./composer-path-resolver";
-import { GlobalPathResolver } from "./global-path-resolver";
+import { ComposerPathResolver } from './composer-path-resolver';
+import { GlobalPathResolver } from './global-path-resolver';
+import { PathResolverBase } from './path-resolver-base';
 
 export interface PathResolverOptions {
   workspaceRoot: string | null;
@@ -27,8 +27,8 @@ export class PathResolver extends PathResolverBase {
         new ComposerPathResolver(
           this.executableFile,
           options.workspaceRoot,
-          options.composerJsonPath
-        )
+          options.composerJsonPath,
+        ),
       );
     }
     this.resolvers.push(new GlobalPathResolver(this.executableFile));
@@ -46,7 +46,7 @@ export class PathResolver extends PathResolverBase {
 
     if (resolvedPath === null) {
       throw new Error(
-        `Unable to locate ${this.executableFile}. Please add ${this.executableFile} to your global path or use composer dependency manager to install it in your project locally.`
+        `Unable to locate ${this.executableFile}. Please add ${this.executableFile} to your global path or use composer dependency manager to install it in your project locally.`,
       );
     }
 
