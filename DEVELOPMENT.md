@@ -24,3 +24,6 @@ To run the development version of the `vscode-phpsab` extension:
 -   press `Start Debugging` button or hit F5
 
 This will launch a new VS Code window named `Extension Development Host`, automatically using the development version of the `vscode-phpsab` extension.
+
+## Publishing Releases
+Using the Release system on Github, draft a new release with the desired version tag. The github workflow should handle updating the package.json version and publishing the release to both Vs Marketplace and the Open VSX Registry. These both require a PAT to be set in the security section on github.com and will occasionally need to be updated or rotated if the publishing workflow fails.
