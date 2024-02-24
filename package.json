@@ -32,7 +32,7 @@
   "activationEvents": [
     "onLanguage:php"
   ],
-  "main": "./dist/extension",
+  "main": "./out/main.js",
   "contributes": {
     "commands": [
       {
@@ -145,11 +145,13 @@
   },
   "scripts": {
     "compile": "rimraf out && tsc -p ./",
-    "vscode:prepublish": "webpack --mode production",
-    "webpack": "webpack --mode development",
-    "webpack-dev": "webpack --mode development --watch",
-    "lint": "eslint . --ext .ts,.tsx",
-    "test": "npm run compile && vscode-test"
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "lint": "eslint src --ext ts",
+    "pretest": "npm run compile && npm run lint",
+    "test": "vscode-test"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
@@ -159,6 +161,7 @@
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/lodash": "^4.14.202",
+    "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.20",
     "@types/sinon": "^17.0.3",
     "@types/vscode": "^1.86.0",
@@ -166,12 +169,11 @@
     "@typescript-eslint/parser": "^7.0.2",
     "@vscode/test-cli": "^0.0.6",
     "@vscode/test-electron": "^2.3.9",
+    "esbuild": "^0.20.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "rimraf": "^5.0.5",
     "ts-loader": "^9.5.1",
-    "typescript": "^5.3.3",
-    "webpack": "^5.90.3",
-    "webpack-cli": "^5.1.4"
+    "typescript": "^5.3.3"
   }
 }
