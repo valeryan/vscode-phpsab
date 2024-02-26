@@ -4,7 +4,7 @@ import { Uri, workspace } from 'vscode';
 import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
-import { PathResolver } from './resolvers/path-resolver';
+import { createPathResolver } from './resolvers/path-resolver';
 
 /**
  * Attempt to find the root path for a workspace or resource
@@ -26,7 +26,7 @@ const resolveCBFExecutablePath = async (
   settings: ResourceSettings,
 ): Promise<ResourceSettings> => {
   if (!settings.executablePathCBF) {
-    let executablePathResolver = new PathResolver(settings, 'phpcbf');
+    let executablePathResolver = createPathResolver(settings, 'phpcbf');
     settings.executablePathCBF = await executablePathResolver.resolve();
   } else if (
     !path.isAbsolute(settings.executablePathCBF) &&
@@ -48,7 +48,7 @@ const resolveCSExecutablePath = async (
   settings: ResourceSettings,
 ): Promise<ResourceSettings> => {
   if (!settings.executablePathCS) {
-    let executablePathResolver = new PathResolver(settings, 'phpcs');
+    let executablePathResolver = createPathResolver(settings, 'phpcs');
     settings.executablePathCS = await executablePathResolver.resolve();
   } else if (
     !path.isAbsolute(settings.executablePathCS) &&

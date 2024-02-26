@@ -25,7 +25,7 @@ import {
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
-import { StandardsPathResolver } from './resolvers/standards-path-resolver';
+import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 
 const enum runConfig {
@@ -214,7 +214,7 @@ export class Sniffer {
     this.runnerCancellations.set(document.uri, runner);
     const { token } = runner;
 
-    const standard = await new StandardsPathResolver(
+    const standard = await createStandardsPathResolver(
       document,
       resourceConf,
     ).resolve();

@@ -1,69 +1,75 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Ioannis Kappas. All rights reserved.
- * Copyright (c) Samuel Hilson. All rights reserved.
- * Licensed under the MIT License. See License.md in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-import * as fs from 'fs';
+import * as fs from 'node:fs/promises';
 import { TextDocument, workspace } from 'vscode';
+import { PathResolver } from '../interfaces/path-resolver';
 import { ResourceSettings } from '../interfaces/resource-settings';
 import { logger } from '../logger';
-import { PathResolverBase } from './path-resolver-base';
+import {
+  getPlatformExtension,
+  getPlatformPathSeparator,
+} from './path-resolver-utils';
 
-export class StandardsPathResolver extends PathResolverBase {
-  constructor(
-    private document: TextDocument,
-    private config: ResourceSettings,
-  ) {
-    super();
-  }
-  async resolve(): Promise<string> {
-    let configured = this.config.standard ?? '';
-    if (this.config.autoRulesetSearch === false) {
-      return configured;
-    }
-
-    let resolvedPath: string | null = null;
-    const resource = this.document.uri;
-    const folder = workspace.getWorkspaceFolder(resource);
-    if (!folder) {
-      return '';
-    }
-    let workspaceRoot = folder.uri.fsPath + this.pathSeparator;
-    let localPath = resource.fsPath.replace(workspaceRoot, '');
-    let paths = localPath
-      .split(this.pathSeparator)
-      .filter((path) => path.includes('.php') !== true);
-
-    let searchPaths = [];
-
-    // create search paths based on file location
-    for (let i = 0, len = paths.length; i < len; i++) {
-      searchPaths.push(
-        workspaceRoot + paths.join(this.pathSeparator) + this.pathSeparator,
-      );
-      paths.pop();
-    }
-    searchPaths.push(workspaceRoot);
-
-    // check each search path for an allowed ruleset
-    let allowed = this.config.allowedAutoRulesets;
-
-    let files: string[] = [];
-
-    searchPaths.map((path) => {
-      allowed.forEach((file) => {
-        files.push(path + file);
-      });
-    });
-    logger.debug('Standards Search paths: ', searchPaths);
-
-    for (let i = 0, len = files.length; i < len; i++) {
-      let c = files[i];
-      if (fs.existsSync(c)) {
-        return (resolvedPath = c);
+export const createStandardsPathResolver = (
+  document: TextDocument,
+  config: ResourceSettings,
+): PathResolver => {
+  const extension = getPlatformExtension();
+  const pathSeparator = getPlatformPathSeparator();
+  return {
+    extension,
+    pathSeparator,
+    resolve: async () => {
+      let configured = config.standard ?? '';
+      if (config.autoRulesetSearch === false) {
+        return configured;
       }
-    }
 
-    return resolvedPath === null ? configured : resolvedPath;
-  }
-}
+      let resolvedPath: string | null = null;
+      const resource = document.uri;
+      const folder = workspace.getWorkspaceFolder(resource);
+      if (!folder) {
+        return '';
+      }
+
+      let workspaceRoot = folder.uri.fsPath + pathSeparator;
+      let localPath = resource.fsPath.replace(workspaceRoot, '');
+      let paths = localPath
+        .split(pathSeparator)
+        .filter((path) => path.includes('.php') !== true);
+
+      let searchPaths = [];
+
+      // create search paths based on file location
+      for (let i = 0, len = paths.length; i < len; i++) {
+        searchPaths.push(
+          workspaceRoot + paths.join(pathSeparator) + pathSeparator,
+        );
+        paths.pop();
+      }
+      searchPaths.push(workspaceRoot);
+
+      // check each search path for an allowed ruleset
+      let allowed = config.allowedAutoRulesets;
+
+      let files: string[] = [];
+
+      searchPaths.map((path) => {
+        allowed.forEach((file) => {
+          files.push(path + file);
+        });
+      });
+      logger.debug('Standards Search paths: ', searchPaths);
+
+      for (let i = 0, len = files.length; i < len; i++) {
+        let c = files[i];
+        try {
+          await fs.access(c, fs.constants.R_OK | fs.constants.W_OK);
+          return (resolvedPath = c);
+        } catch (error) {
+          continue;
+        }
+      }
+
+      return resolvedPath ?? configured;
+    },
+  };
+};

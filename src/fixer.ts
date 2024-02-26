@@ -20,7 +20,7 @@ import {
 import { ConsoleError } from './interfaces/console-error';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
-import { StandardsPathResolver } from './resolvers/standards-path-resolver';
+import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 export class Fixer {
   public config!: Settings;
@@ -103,7 +103,7 @@ export class Fixer {
     });
 
     // setup and spawn fixer process
-    const standard = await new StandardsPathResolver(
+    const standard = await createStandardsPathResolver(
       document,
       resourceConf,
     ).resolve();
