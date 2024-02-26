@@ -22,11 +22,11 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { Configuration } from './configuration';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
-import { Logger } from './logger';
+import { logger } from './logger';
 import { StandardsPathResolver } from './resolvers/standards-path-resolver';
+import { loadSettings } from './settings';
 
 const enum runConfig {
   save = 'onSave',
@@ -49,11 +49,7 @@ export class Sniffer {
    */
   private runnerCancellations: Map<Uri, CancellationTokenSource> = new Map();
 
-  constructor(
-    subscriptions: Disposable[],
-    config: Settings,
-    private logger: Logger,
-  ) {
+  constructor(subscriptions: Disposable[], config: Settings) {
     this.config = config;
     if (
       config.resources.filter((folder) => folder.snifferEnable === true)
@@ -96,8 +92,7 @@ export class Sniffer {
       return;
     }
 
-    let configuration = new Configuration(this.logger);
-    let config = await configuration.load();
+    let config = await loadSettings();
     this.config = config;
 
     if (
@@ -193,7 +188,7 @@ export class Sniffer {
     if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
       return;
     }
-    this.logger.time('Sniffer');
+    logger.startTimer('Sniffer');
 
     const additionalArguments = resourceConf.snifferArguments.filter((arg) => {
       if (
@@ -222,7 +217,6 @@ export class Sniffer {
     const standard = await new StandardsPathResolver(
       document,
       resourceConf,
-      this.logger,
     ).resolve();
     const lintArgs = this.getArgs(document, standard, additionalArguments);
 
@@ -237,11 +231,8 @@ export class Sniffer {
       encoding: 'utf8',
       tty: true,
     };
-    this.logger.logInfo(
-      'SNIFFER COMMAND: ' +
-        resourceConf.executablePathCS +
-        ' ' +
-        lintArgs.join(' '),
+    logger.info(
+      `SNIFFER COMMAND: ${resourceConf.executablePathCS} ${lintArgs.join(' ')}`,
     );
 
     const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
@@ -305,7 +296,7 @@ export class Sniffer {
             message += 'Unexpected error';
           }
           window.showErrorMessage(message);
-          this.logger.logError(message);
+          logger.error(message);
           reject(message);
         }
         this.diagnosticCollection.set(document.uri, diagnostics);
@@ -315,6 +306,6 @@ export class Sniffer {
     });
 
     window.setStatusBarMessage('PHP Sniffer: validating…', done);
-    this.logger.timeEnd('Sniffer');
+    logger.endTimer('Sniffer');
   }
 }

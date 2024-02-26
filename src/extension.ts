@@ -5,22 +5,18 @@
 'use strict';
 
 import { commands, ExtensionContext, languages } from 'vscode';
-import { Configuration } from './configuration';
 import { Fixer } from './fixer';
 import { Settings } from './interfaces/settings';
-import { Logger } from './logger';
+import { logger } from './logger';
+import { loadSettings } from './settings';
 import { Sniffer } from './sniffer';
 
 // the application insights key (also known as instrumentation key)
-const extensionName = process.env.EXTENSION_NAME || 'dev.prettier-vscode';
+const extensionName = process.env.EXTENSION_NAME || 'valeryanm.php-sab';
 const extensionVersion = process.env.EXTENSION_VERSION || '0.0.0';
 
-function activateFixer(
-  context: ExtensionContext,
-  settings: Settings,
-  logger: Logger,
-) {
-  const fixer = new Fixer(context.subscriptions, settings, logger);
+const activateFixer = (context: ExtensionContext, settings: Settings) => {
+  const fixer = new Fixer(context.subscriptions, settings);
 
   // register format from command pallet
   context.subscriptions.push(
@@ -42,29 +38,23 @@ function activateFixer(
       },
     ),
   );
-}
+};
 
-function activateSniffer(
-  context: ExtensionContext,
-  settings: Settings,
-  logger: Logger,
-) {
-  const sniffer = new Sniffer(context.subscriptions, settings, logger);
+const activateSniffer = (context: ExtensionContext, settings: Settings) => {
+  const sniffer = new Sniffer(context.subscriptions, settings);
   context.subscriptions.push(sniffer);
-}
+};
 
 /**
  * Activate Extension
  * @param context
  */
-export async function activate(context: ExtensionContext) {
-  const logger = new Logger();
+export const activate = async (context: ExtensionContext) => {
   // Always output extension information to channel on activate
-  logger.logInfo(`Extension Name: ${extensionName}.`);
-  logger.logInfo(`Extension Version: ${extensionVersion}.`);
+  logger.log(`Extension Name: ${extensionName}.`);
+  logger.log(`Extension Version: ${extensionVersion}.`);
 
-  const configuration = new Configuration(logger);
-  const settings = await configuration.load();
-  activateFixer(context, settings, logger);
-  activateSniffer(context, settings, logger);
-}
+  const settings = await loadSettings();
+  activateFixer(context, settings);
+  activateSniffer(context, settings);
+};

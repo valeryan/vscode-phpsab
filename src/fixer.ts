@@ -17,21 +17,15 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { Configuration } from './configuration';
 import { ConsoleError } from './interfaces/console-error';
 import { Settings } from './interfaces/settings';
-import { Logger } from './logger';
+import { logger } from './logger';
 import { StandardsPathResolver } from './resolvers/standards-path-resolver';
+import { loadSettings } from './settings';
 export class Fixer {
   public config!: Settings;
 
-  constructor(
-    subscriptions: Disposable[],
-
-    config: Settings,
-
-    private logger: Logger,
-  ) {
+  constructor(subscriptions: Disposable[], config: Settings) {
     this.config = config;
     workspace.onDidChangeConfiguration(this.loadSettings, this, subscriptions);
   }
@@ -45,8 +39,7 @@ export class Fixer {
     ) {
       return;
     }
-    let configuration = new Configuration(this.logger);
-    let config = await configuration.load();
+    let config = await loadSettings();
     this.config = config;
   }
 
@@ -94,7 +87,7 @@ export class Fixer {
       );
       return '';
     }
-    this.logger.time('Fixer');
+    logger.startTimer('Fixer');
 
     const additionalArguments = resourceConf.fixerArguments.filter((arg) => {
       if (
@@ -113,7 +106,6 @@ export class Fixer {
     const standard = await new StandardsPathResolver(
       document,
       resourceConf,
-      this.logger,
     ).resolve();
 
     const lintArgs = this.getArgs(document, standard, additionalArguments);
@@ -130,11 +122,8 @@ export class Fixer {
       input: fileText,
     };
 
-    this.logger.logInfo(
-      'FIXER COMMAND: ' +
-        resourceConf.executablePathCBF +
-        ' ' +
-        lintArgs.join(' '),
+    logger.info(
+      `FIXER COMMAND: ${resourceConf.executablePathCBF} ${lintArgs.join(' ')}`,
     );
 
     const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
@@ -175,7 +164,7 @@ export class Fixer {
         }
 
         if (execError.code === 'ENOENT') {
-          error = 'FIXER: ' + execError.message + '. executablePath not found.';
+          error = `FIXER: ${execError.message}. executablePath not found.`;
         }
         break;
       }
@@ -213,10 +202,10 @@ export class Fixer {
         if (fixed.length > 0) {
           error += '\n' + fixed;
         }
-        this.logger.logError(fixed);
+        logger.error(fixed);
     }
 
-    this.logger.timeEnd('Fixer');
+    logger.endTimer('Fixer');
 
     if (error !== '') {
       return Promise.reject(error);

@@ -3,25 +3,21 @@
  * Copyright (c) Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-'use strict';
-
 import * as fs from 'fs';
-
 import { TextDocument, workspace } from 'vscode';
 import { ResourceSettings } from '../interfaces/resource-settings';
-import { Logger } from '../logger';
+import { logger } from '../logger';
 import { PathResolverBase } from './path-resolver-base';
 
 export class StandardsPathResolver extends PathResolverBase {
   constructor(
     private document: TextDocument,
     private config: ResourceSettings,
-    private logger: Logger,
   ) {
     super();
   }
   async resolve(): Promise<string> {
-    let configured = this.config.standard !== null ? this.config.standard : '';
+    let configured = this.config.standard ?? '';
     if (this.config.autoRulesetSearch === false) {
       return configured;
     }
@@ -59,7 +55,7 @@ export class StandardsPathResolver extends PathResolverBase {
         files.push(path + file);
       });
     });
-    this.logger.logInfo('Standards Search paths: ', searchPaths);
+    logger.debug('Standards Search paths: ', searchPaths);
 
     for (let i = 0, len = files.length; i < len; i++) {
       let c = files[i];
