@@ -1,9 +1,10 @@
-import * as fs from 'node:fs/promises';
-import * as path from 'path';
+import fs from 'node:fs/promises';
 import { PathResolver } from '../interfaces/path-resolver';
 import {
+  getEnvPathSeparator,
   getPlatformExtension,
   getPlatformPathSeparator,
+  joinPaths,
 } from './path-resolver-utils';
 
 export const createGlobalPathResolver = (executable: string): PathResolver => {
@@ -13,12 +14,12 @@ export const createGlobalPathResolver = (executable: string): PathResolver => {
     extension,
     pathSeparator,
     resolve: async () => {
-      let envSeparator = /^win/.test(process.platform) ? ';' : ':';
+      let envSeparator = getEnvPathSeparator();
       let resolvedPath: string | null = null;
       const envPath = process.env.PATH || '';
       let globalPaths: string[] = envPath.split(envSeparator);
       for (const globalPath of globalPaths) {
-        let testPath = path.join(globalPath, executable);
+        let testPath = joinPaths(globalPath, executable);
         try {
           await fs.access(testPath, fs.constants.X_OK);
           resolvedPath = testPath;
