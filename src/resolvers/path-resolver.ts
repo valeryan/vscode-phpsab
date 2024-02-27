@@ -15,12 +15,12 @@ const resolvePath = async (resolvers: PathResolver[]): Promise<string> => {
   let resolvedPath: string | null = null;
   for (const resolver of resolvers) {
     const resolverPath = await resolver.resolve();
-    if (resolvedPath !== resolverPath) {
+    if (resolverPath) {
       resolvedPath = resolverPath;
       break;
     }
   }
-  if (resolvedPath === null) {
+  if (!resolvedPath) {
     throw new Error(`Unable to locate the executable.`);
   }
   return resolvedPath;
