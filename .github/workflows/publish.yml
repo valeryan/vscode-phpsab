@@ -1,19 +1,11 @@
 name: Deploy Extension
 
 on:
-  push:
-    tags:
-      - '*'
   release:
     types: [published]
-  workflow_dispatch:
 
 env:
   TAG_NAME: ${{ github.ref_name }}
-
-permissions:
-  contents: write
-  pull-requests: write
 
 jobs:
   version:
@@ -51,7 +43,7 @@ jobs:
         run: |
           git add .
           git commit -m "published version update: ${TAG_NAME}"
-          git push origin HEAD:main
+          git push origin HEAD:main -f
 
       - name: Checkout Updated Repo
         uses: actions/checkout@v4
