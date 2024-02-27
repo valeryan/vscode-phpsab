@@ -138,11 +138,9 @@ phpcs -n --ignore=tests/* <file>
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the executable path for `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
-If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcs' in your environment path.
+If omitted, the plugin will try to locate `phpcs` using you local composer.json, then your global environment path.
 
 > **NOTE:** `phpcbf` is installed along with `phpcs`.
-
-> **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
 
 ```json
 {
@@ -161,9 +159,7 @@ C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\ph
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the executable path for the `phpcbf`. You may specify the absolute path or workspace relative path to the `phpcbf` executable.
-If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcbf' in your environment path..
-
-> **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
+If omitted, the extension will try to locate `phpcbf` using you local composer.json, then your global environment path.
 
 ```json
 {
