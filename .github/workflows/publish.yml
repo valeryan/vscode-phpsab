@@ -27,7 +27,7 @@ jobs:
 
       - name: Setup Git
         run: |
-          git config user.name valeryan
+          git config user.name Samuel Hilson (Workflow Action)
           git config user.email samrhilson@gmail.com
 
       - name: Setup Node
@@ -50,17 +50,17 @@ jobs:
         run: |
           git add .
           git commit -m "published version update: ${TAG_NAME}"
-          git push origin HEAD:master
+          git push origin HEAD:main
 
       - name: Checkout Updated Repo
         uses: actions/checkout@v4
         with:
-          ref: 'master'
+          ref: 'main'
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Re-point Tag
         run: |
-          git tag ${TAG_NAME} master -f
+          git tag ${TAG_NAME} main -f
           git push origin -f --tags
 
   deploy:

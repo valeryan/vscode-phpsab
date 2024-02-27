@@ -3,7 +3,6 @@ name: Run Unit Tests
 on:
   pull_request:
     branches:
-      - master
       - main
 
 jobs:
@@ -11,16 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Run Test
-      run: xvfb-run npm test
+      - name: Run Test
+        run: xvfb-run npm test
