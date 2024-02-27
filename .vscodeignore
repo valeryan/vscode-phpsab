@@ -8,3 +8,4 @@ src/**
 **/*.map
 **/*.ts
 **/.vscode-test.*
+node_modules
