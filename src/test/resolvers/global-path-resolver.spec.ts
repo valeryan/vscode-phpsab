@@ -1,6 +1,6 @@
 import assert from 'assert';
-import * as fs from 'node:fs';
-import * as sinon from 'sinon';
+import fs from 'node:fs';
+import sinon from 'sinon';
 import { createGlobalPathResolver } from '../../resolvers/global-path-resolver';
 import * as pathUtils from '../../resolvers/path-resolver-utils';
 

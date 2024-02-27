@@ -1,4 +1,4 @@
-import * as fs from 'node:fs/promises';
+import fs from 'node:fs/promises';
 import { TextDocument, workspace } from 'vscode';
 import { PathResolver } from '../interfaces/path-resolver';
 import { ResourceSettings } from '../interfaces/resource-settings';

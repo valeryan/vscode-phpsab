@@ -1,5 +1,5 @@
 import assert from 'assert';
-import * as sinon from 'sinon';
+import sinon from 'sinon';
 import { window } from 'vscode';
 import { logger } from '../../logger';
 
