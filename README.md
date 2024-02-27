@@ -8,7 +8,9 @@ This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) prov
 
 ## Maintenance Status
 
-A while ago I moved on from PHP and now work in DotNet. I don't currently have the bandwidth to work on this project. As far as I can tell this project is still fully functional in its current state. If you want to take over this project or just be an additional maintainer and help solve any of the issues that are present, please contact me.
+My focus has shifted away from PHP to .NET development, I'm currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with me.
+
+### Active Maintainers
 
 In June 2023 [jonathanbossenger](https://github.com/jonathanbossenger) reached out to me and offered to help with maintaining the extension. I have added him as a contributor and he will be monitoring new issues and helping me review PRs. I will still be around to help out if needed.
 
@@ -54,6 +56,7 @@ The `phpcs` linter can be installed globally using the Composer Dependency Manag
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
+
 1. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
 
 ### Project-wide Installation
@@ -91,11 +94,13 @@ in your user, workspace or folder preferences.
 This setting controls whether `phpcbf` fixer is enabled.
 
 ### **phpsab.fixerArguments**
-[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
+
+[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
 
 Passes additional arguments to `phpcbf` runner.
 
 _Example_
+
 ```bash
 {
     phpsab.fixerArguments: ["-n", "--ignore=tests/*"]
@@ -112,11 +117,13 @@ phpcbf -n --ignore=tests/* <file>
 This setting controls whether `phpcs` sniffer is enabled.
 
 ### **phpsab.snifferArguments**
-[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
+
+[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
 
 Passes additional arguments to `phpcs` runner.
 
 _Example_
+
 ```bash
 {
     phpsab.snifferArguments: ["-n", "--ignore=tests/*"]
@@ -136,11 +143,13 @@ If omitted, the plugin will try to locate the path parsing your composer configu
 > **NOTE:** `phpcbf` is installed along with `phpcs`.
 
 > **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
+
 ```
 "C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat"
 ```
 
 > If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+
 ```
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
 ```
@@ -153,10 +162,13 @@ This setting controls the executable path for the `phpcbf`. You may specify the 
 If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcbf' in your path..
 
 > **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
+
 ```
 "C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat"
 ```
+
 > If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+
 ```
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
 ```
@@ -261,7 +273,7 @@ Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpc
 
 ### **phpsab.allowedAutoRulesets**
 
-[ *Scope:* Resource | Optional | *Type:* array | *Default:* [] ]
+[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [] ]
 
 An array of filenames that could contain a valid phpcs ruleset.
 
@@ -322,6 +334,6 @@ This extension is based off of the `phpcs` extension created by [Ioannis Kappas]
 ## Contributing and Licensing
 
 The project is hosted on [GitHub](https://github.com/valeryan/vscode-phpsab) where you can [report issues](https://github.com/valeryan/vscode-phpsab/issues), fork
-the project and submit pull requests. See the [development guide](https://github.com/valeryan/vscode-phpsab/blob/master/DEVELOPMENT.md) for details.
+the project and submit pull requests. See the [development guide](https://github.com/valeryan/vscode-phpsab/blob/main/DEVELOPMENT.md) for details.
 
-The project is available under [MIT license](https://github.com/valeryan/vscode-phpsab/blob/master/LICENSE.md), which allows modification and redistribution for both commercial and non-commercial purposes.
+The project is available under [MIT license](https://github.com/valeryan/vscode-phpsab/blob/main/LICENSE.md), which allows modification and redistribution for both commercial and non-commercial purposes.
