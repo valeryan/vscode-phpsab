@@ -1,55 +1,53 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Ioannis Kappas. All rights reserved.
- * Copyright (c) Samuel Hilson. All rights reserved.
- * Licensed under the MIT License. See License.md in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-"use strict";
+import { PathResolver } from '../interfaces/path-resolver';
+import { createComposerPathResolver } from './composer-path-resolver';
+import { createGlobalPathResolver } from './global-path-resolver';
+import {
+  getPlatformExtension,
+  getPlatformPathSeparator,
+} from './path-resolver-utils';
 
-import { PathResolverBase } from "./path-resolver-base";
-import { ComposerPathResolver } from "./composer-path-resolver";
-import { GlobalPathResolver } from "./global-path-resolver";
-
-export interface PathResolverOptions {
-    workspaceRoot: string | null;
-    composerJsonPath: string;
+interface PathResolverOptions {
+  workspaceRoot: string | null;
+  composerJsonPath: string;
 }
 
-export class PathResolver extends PathResolverBase {
-    protected executableFile: string;
-
-    private resolvers: PathResolverBase[] = [];
-
-    constructor(options: PathResolverOptions, executable: string) {
-        super();
-        this.executableFile = executable + this.extension;
-        if (options.workspaceRoot !== null) {
-            this.resolvers.push(
-                new ComposerPathResolver(
-                    this.executableFile,
-                    options.workspaceRoot,
-                    options.composerJsonPath
-                )
-            );
-        }
-        this.resolvers.push(new GlobalPathResolver(this.executableFile));
+const resolvePath = async (resolvers: PathResolver[]): Promise<string> => {
+  let resolvedPath: string | null = null;
+  for (const resolver of resolvers) {
+    const resolverPath = await resolver.resolve();
+    if (resolvedPath !== resolverPath) {
+      resolvedPath = resolverPath;
+      break;
     }
+  }
+  if (resolvedPath === null) {
+    throw new Error(`Unable to locate the executable.`);
+  }
+  return resolvedPath;
+};
 
-    async resolve(): Promise<string> {
-        let resolvedPath: string | null = null;
-        for (var i = 0, len = this.resolvers.length; i < len; i++) {
-            let resolverPath = await this.resolvers[i].resolve();
-            if (resolvedPath !== resolverPath) {
-                resolvedPath = resolverPath;
-                break;
-            }
-        }
+export const createPathResolver = (
+  options: PathResolverOptions,
+  executable: string,
+): PathResolver => {
+  const executableFile = executable + getPlatformExtension();
+  const resolvers: PathResolver[] = [];
+  if (options.workspaceRoot !== null) {
+    resolvers.push(
+      createComposerPathResolver(
+        executableFile,
+        options.workspaceRoot,
+        options.composerJsonPath,
+      ),
+    );
+  }
+  resolvers.push(createGlobalPathResolver(executableFile));
 
-        if (resolvedPath === null) {
-            throw new Error(
-                `Unable to locate ${this.executableFile}. Please add ${this.executableFile} to your global path or use composer dependency manager to install it in your project locally.`
-            );
-        }
-
-        return resolvedPath;
-    }
-}
+  return {
+    extension: getPlatformExtension(),
+    pathSeparator: getPlatformPathSeparator(),
+    resolve: async () => {
+      return resolvePath(resolvers);
+    },
+  };
+};

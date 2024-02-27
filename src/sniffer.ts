@@ -1,322 +1,304 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) 2019 wongjn. All rights reserved.
- * Copyright (c) 2019 Samuel Hilson. All rights reserved.
- * Licensed under the MIT License. See License.md in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-"use strict";
-
+import { debounce } from 'lodash';
+import { spawn } from 'node:child_process';
 import {
-    Disposable,
-    workspace,
-    DiagnosticCollection,
-    languages,
-    Uri,
-    CancellationTokenSource,
-    ConfigurationChangeEvent,
-    TextDocumentChangeEvent,
-    TextDocument,
-    Diagnostic,
-    Range,
-    DiagnosticSeverity,
-    window,
-} from "vscode";
-import { Configuration } from "./configuration";
-import { Settings } from "./interfaces/settings";
-import { PHPCSReport, PHPCSMessageType } from "./interfaces/phpcs-report";
-import { StandardsPathResolver } from "./resolvers/standards-path-resolver";
-import { spawn } from "child_process";
-import { debounce } from "lodash";
-import { Logger } from "./logger";
+  CancellationTokenSource,
+  ConfigurationChangeEvent,
+  Diagnostic,
+  DiagnosticCollection,
+  DiagnosticSeverity,
+  Disposable,
+  Range,
+  TextDocument,
+  TextDocumentChangeEvent,
+  Uri,
+  languages,
+  window,
+  workspace,
+} from 'vscode';
+import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
+import { Settings } from './interfaces/settings';
+import { logger } from './logger';
+import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
+import { loadSettings } from './settings';
 
 const enum runConfig {
-    save = "onSave",
-    type = "onType",
+  save = 'onSave',
+  type = 'onType',
 }
 
-export class Sniffer {
-    public config!: Settings;
+let settingsCache: Settings;
+const diagnosticCollection: DiagnosticCollection =
+  languages.createDiagnosticCollection('php');
 
-    private diagnosticCollection: DiagnosticCollection = languages.createDiagnosticCollection(
-        "php"
-    );
+/**
+ * The active validator listener.
+ */
+let validatorListener: Disposable;
 
-    /**
-     * The active validator listener.
-     */
-    private validatorListener?: Disposable;
+/**
+ * Token to cancel a current validation runs.
+ */
+const runnerCancellations: Map<Uri, CancellationTokenSource> = new Map();
 
-    /**
-     * Token to cancel a current validation runs.
-     */
-    private runnerCancellations: Map<Uri, CancellationTokenSource> = new Map();
+const getSettings = async () => {
+  if (!settingsCache) {
+    settingsCache = await loadSettings();
+  }
+  return settingsCache;
+};
 
-    constructor(
-        subscriptions: Disposable[],
-        config: Settings,
-        private logger: Logger
+/**
+ * Build the arguments needed to execute sniffer
+ * @param fileName
+ * @param standard
+ */
+const getArgs = (
+  document: TextDocument,
+  standard: string,
+  additionalArguments: string[],
+) => {
+  // Process linting paths.
+  let filePath = document.fileName;
+
+  let args = [];
+  args.push('--report=json');
+  args.push('-q');
+  if (standard !== '') {
+    args.push('--standard=' + standard);
+  }
+  args.push(`--stdin-path=${filePath}`);
+  args.push('-');
+  args = args.concat(additionalArguments);
+  return args;
+};
+
+/**
+ * Lints a document.
+ *
+ * @param document - The document to lint.
+ */
+const validate = async (document: TextDocument) => {
+  const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
+  if (!workspaceFolder) {
+    return;
+  }
+  const settings = await getSettings();
+  const resourceConf = settings.resources[workspaceFolder.index];
+  if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
+    return;
+  }
+  logger.startTimer('Sniffer');
+
+  const additionalArguments = resourceConf.snifferArguments.filter((arg) => {
+    if (
+      arg.indexOf('--report') === -1 &&
+      arg.indexOf('--standard') === -1 &&
+      arg.indexOf('--stdin-path') === -1 &&
+      arg !== '-q' &&
+      arg !== '-'
     ) {
-        this.config = config;
-        if (config.resources.filter(folder => folder.snifferEnable === true).length === 0) {
-            return;
-        }
-        workspace.onDidChangeConfiguration(
-            this.onConfigChange,
-            this,
-            subscriptions
-        );
-        workspace.onDidOpenTextDocument(this.validate, this, subscriptions);
-        workspace.onDidCloseTextDocument(
-            this.clearDocumentDiagnostics,
-            this,
-            subscriptions
-        );
-        workspace.onDidChangeWorkspaceFolders(
-            this.refresh,
-            this,
-            subscriptions
-        );
-
-        this.refresh();
-        this.setValidatorListener();
+      return true;
     }
 
-    /**
-     * Dispose this object.
-     */
-    public dispose(): void {
-        this.diagnosticCollection.clear();
-        this.diagnosticCollection.dispose();
-    }
+    return false;
+  });
 
-    /**
-     * Reacts on configuration change.
-     *
-     * @param event - The configuration change event.
-     */
-    protected async onConfigChange(event: ConfigurationChangeEvent) {
-        if (!event.affectsConfiguration("phpsab")) {
-            return;
+  const oldRunner = runnerCancellations.get(document.uri);
+  if (oldRunner) {
+    oldRunner.cancel();
+    oldRunner.dispose();
+  }
+
+  const runner = new CancellationTokenSource();
+  runnerCancellations.set(document.uri, runner);
+  const { token } = runner;
+
+  const standard = await createStandardsPathResolver(
+    document,
+    resourceConf,
+  ).resolve();
+  const lintArgs = getArgs(document, standard, additionalArguments);
+
+  let fileText = document.getText();
+
+  const options = {
+    cwd:
+      resourceConf.workspaceRoot !== null
+        ? resourceConf.workspaceRoot
+        : undefined,
+    env: process.env,
+    encoding: 'utf8',
+    tty: true,
+  };
+  logger.info(
+    `SNIFFER COMMAND: ${resourceConf.executablePathCS} ${lintArgs.join(' ')}`,
+  );
+
+  const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
+
+  sniffer.stdin.write(fileText);
+  sniffer.stdin.end();
+
+  let stdout = '';
+  let stderr = '';
+
+  sniffer.stdout.on('data', (data) => (stdout += data));
+  sniffer.stderr.on('data', (data) => (stderr += data));
+
+  const done = new Promise<void>((resolve, reject) => {
+    sniffer.on('close', () => {
+      if (token.isCancellationRequested || !stdout) {
+        resolve();
+        return;
+      }
+      const diagnostics: Diagnostic[] = [];
+      try {
+        const { files }: PHPCSReport = JSON.parse(stdout);
+        for (const file in files) {
+          files[file].messages.forEach(
+            ({ message, line, column, type, source }) => {
+              const zeroLine = line - 1;
+              const ZeroColumn = column - 1;
+
+              const range = new Range(
+                zeroLine,
+                ZeroColumn,
+                zeroLine,
+                ZeroColumn,
+              );
+              const severity =
+                type === PHPCSMessageType.ERROR
+                  ? DiagnosticSeverity.Error
+                  : DiagnosticSeverity.Warning;
+              let output = message;
+              if (settings.snifferShowSources) {
+                output += `\n(${source})`;
+              }
+              const diagnostic = new Diagnostic(range, output, severity);
+              diagnostic.source = 'phpcs';
+              diagnostics.push(diagnostic);
+            },
+          );
         }
-
-        let configuration = new Configuration(this.logger);
-        let config = await configuration.load();
-        this.config = config;
-
-        if (
-            event.affectsConfiguration("phpsab.snifferMode") ||
-            event.affectsConfiguration("phpsab.snifferTypeDelay")
-        ) {
-            this.setValidatorListener();
+        resolve();
+      } catch (error) {
+        let message = '';
+        if (stdout) {
+          message += `${stdout}\n`;
         }
-
-        this.refresh();
-    }
-
-    /**
-     * Sets the validation event listening.
-     */
-    protected setValidatorListener(): void {
-        if (this.validatorListener) {
-            this.validatorListener.dispose();
+        if (stderr) {
+          message += `${stderr}\n`;
         }
-        const run: runConfig = this.config.snifferMode as runConfig;
-        const delay: number = this.config.snifferTypeDelay;
-
-        if (run === (runConfig.type as string)) {
-            const validator = debounce(
-                ({ document }: TextDocumentChangeEvent): void => {
-                    this.validate(document);
-                },
-                delay
-            );
-            this.validatorListener = workspace.onDidChangeTextDocument(
-                validator
-            );
+        if (error instanceof Error) {
+          message += error.toString();
         } else {
-            this.validatorListener = workspace.onDidSaveTextDocument(
-                this.validate,
-                this
-            );
+          message += 'Unexpected error';
         }
-    }
+        window.showErrorMessage(message);
+        logger.error(message);
+        reject(message);
+      }
+      diagnosticCollection.set(document.uri, diagnostics);
+      runner.dispose();
+      runnerCancellations.delete(document.uri);
+    });
+  });
 
-    /**
-     * Refreshes validation on any open documents.
-     */
-    protected refresh(): void {
-        this.diagnosticCollection!.clear();
+  window.setStatusBarMessage('PHP Sniffer: validating…', done);
+  logger.endTimer('Sniffer');
+};
 
-        workspace.textDocuments.forEach(this.validate, this);
-    }
+/**
+ * Refreshes validation on any open documents.
+ */
+const refresh = (): void => {
+  diagnosticCollection!.clear();
 
-    /**
-     * Clears diagnostics from a document.
-     *
-     * @param document - The document to clear diagnostics of.
-     */
-    protected clearDocumentDiagnostics({ uri }: TextDocument): void {
-        this.diagnosticCollection.delete(uri);
-    }
+  workspace.textDocuments.forEach(validate);
+};
 
-    /**
-     * Build the arguments needed to execute sniffer
-     * @param fileName
-     * @param standard
-     */
-    private getArgs(document: TextDocument, standard: string, additionalArguments: string[]) {
-        // Process linting paths.
-        let filePath = document.fileName;
+/**
+ * Clears diagnostics from a document.
+ *
+ * @param document - The document to clear diagnostics of.
+ */
+const clearDocumentDiagnostics = ({ uri }: TextDocument): void => {
+  diagnosticCollection.delete(uri);
+};
 
-        let args = [];
-        args.push("--report=json");
-        args.push("-q");
-        if (standard !== "") {
-            args.push("--standard=" + standard);
-        }
-        args.push(`--stdin-path=${filePath}`);
-        args.push("-");
-        args = args.concat(additionalArguments);
-        return args;
-    }
+/**
+ * Sets the validation event listening.
+ */
+const setValidatorListener = async (): Promise<void> => {
+  if (validatorListener) {
+    validatorListener.dispose();
+  }
+  const settings = await getSettings();
+  const run: runConfig = settings.snifferMode as runConfig;
+  const delay: number = settings.snifferTypeDelay;
 
-    /**
-     * Lints a document.
-     *
-     * @param document - The document to lint.
-     */
-    protected async validate(document: TextDocument) {
-        const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-        if (!workspaceFolder) {
-            return;
-        }
-        const resourceConf = this.config.resources[workspaceFolder.index];
-        if (
-            document.languageId !== "php" ||
-            resourceConf.snifferEnable === false
-        ) {
-            return;
-        }
-        this.logger.time("Sniffer");
+  if (run === (runConfig.type as string)) {
+    const validator = debounce(
+      ({ document }: TextDocumentChangeEvent): void => {
+        validate(document);
+      },
+      delay,
+    );
+    validatorListener = workspace.onDidChangeTextDocument(validator);
+  } else {
+    validatorListener = workspace.onDidSaveTextDocument(validate);
+  }
+};
 
-        const additionalArguments = resourceConf.snifferArguments.filter((arg) => {
-            if (arg.indexOf('--report') === -1 &&
-                arg.indexOf('--standard') === -1 &&
-                arg.indexOf('--stdin-path') === -1 &&
-                arg !== '-q' &&
-                arg !== '-'
-            ) {
-                return true;
-            }
+/**
+ * Reacts on configuration change.
+ *
+ * @param event - The configuration change event.
+ */
+const onConfigChange = async (event: ConfigurationChangeEvent) => {
+  if (!event.affectsConfiguration('phpsab')) {
+    return;
+  }
+  settingsCache = await loadSettings();
 
-            return false;
-        });
+  if (
+    event.affectsConfiguration('phpsab.snifferMode') ||
+    event.affectsConfiguration('phpsab.snifferTypeDelay')
+  ) {
+    setValidatorListener();
+  }
 
-        const oldRunner = this.runnerCancellations.get(document.uri);
-        if (oldRunner) {
-            oldRunner.cancel();
-            oldRunner.dispose();
-        }
+  refresh();
+};
 
-        const runner = new CancellationTokenSource();
-        this.runnerCancellations.set(document.uri, runner);
-        const { token } = runner;
+/**
+ * Dispose this object.
+ */
+export const disposeSniffer = (): void => {
+  diagnosticCollection.clear();
+  diagnosticCollection.dispose();
+};
 
-        const standard = await new StandardsPathResolver(
-            document,
-            resourceConf,
-            this.logger
-        ).resolve();
-        const lintArgs = this.getArgs(document, standard, additionalArguments);
+export const activateSniffer = async (
+  subscriptions: Disposable[],
+  settings: Settings,
+) => {
+  settingsCache = settings;
+  if (
+    settings.resources.filter((folder) => folder.snifferEnable === true)
+      .length === 0
+  ) {
+    return;
+  }
+  workspace.onDidChangeConfiguration(onConfigChange, null, subscriptions);
+  workspace.onDidOpenTextDocument(validate, null, subscriptions);
+  workspace.onDidCloseTextDocument(
+    clearDocumentDiagnostics,
+    null,
+    subscriptions,
+  );
+  workspace.onDidChangeWorkspaceFolders(refresh, this, subscriptions);
 
-        let fileText = document.getText();
-
-        const options = {
-            cwd:
-                resourceConf.workspaceRoot !== null
-                    ? resourceConf.workspaceRoot
-                    : undefined,
-            env: process.env,
-            encoding: "utf8",
-            tty: true,
-        };
-        this.logger.logInfo(
-            "SNIFFER COMMAND: " +
-                        resourceConf.executablePathCS +
-                        " " +
-                        lintArgs.join(" ")
-        );
-
-        const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
-
-        sniffer.stdin.write(fileText);
-        sniffer.stdin.end();
-
-        let stdout = "";
-        let stderr = "";
-
-        sniffer.stdout.on("data", (data) => (stdout += data));
-        sniffer.stderr.on("data", (data) => (stderr += data));
-
-        const done = new Promise((resolve, reject) => {
-            sniffer.on("close", () => {
-                if (token.isCancellationRequested || !stdout) {
-                    resolve();
-                    return;
-                }
-                const diagnostics: Diagnostic[] = [];
-                try {
-                    const { files }: PHPCSReport = JSON.parse(stdout);
-                    for (const file in files) {
-                        files[file].messages.forEach(
-                            ({ message, line, column, type, source }) => {
-                                const zeroLine = line - 1;
-                                const ZeroColumn = column - 1;
-
-                                const range = new Range(
-                                    zeroLine,
-                                    ZeroColumn,
-                                    zeroLine,
-                                    ZeroColumn
-                                );
-                                const severity =
-                                    type === PHPCSMessageType.ERROR
-                                        ? DiagnosticSeverity.Error
-                                        : DiagnosticSeverity.Warning;
-                                let output = message;
-                                if (this.config.snifferShowSources) {
-                                    output += `\n(${source})`;
-                                }
-                                const diagnostic = new Diagnostic(
-                                    range,
-                                    output,
-                                    severity
-                                );
-                                diagnostic.source = "phpcs";
-                                diagnostics.push(diagnostic);
-                            }
-                        );
-                    }
-                    resolve();
-                } catch (error) {
-                    let message = "";
-                    if (stdout) {
-                        message += `${stdout}\n`;
-                    }
-                    if (stderr) {
-                        message += `${stderr}\n`;
-                    }
-                    message += error.toString();
-                    window.showErrorMessage(message);
-                    this.logger.logError(message);
-                    reject(message);
-                }
-                this.diagnosticCollection.set(document.uri, diagnostics);
-                runner.dispose();
-                this.runnerCancellations.delete(document.uri);
-            });
-        });
-
-        window.setStatusBarMessage("PHP Sniffer: validating…", done);
-        this.logger.timeEnd("Sniffer");
-    }
-}
+  refresh();
+  setValidatorListener();
+};

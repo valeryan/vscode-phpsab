@@ -1,4 +1,5 @@
 # PHP Sniffer & Beautifier for VS Code
+
 ![Current Version](https://img.shields.io/visual-studio-marketplace/v/ValeryanM.vscode-phpsab)
 ![Installs](https://img.shields.io/visual-studio-marketplace/i/ValeryanM.vscode-phpsab)
 ![GitHub issues](https://img.shields.io/github/issues-raw/valeryan/vscode-phpsab)
@@ -6,7 +7,14 @@
 This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) provides an interface to [phpcs & phpcbf](http://pear.php.net/package/PHP_CodeSniffer/). It will be used with files that have the “PHP” language mode. This extension is designed to use auto configuration search mechanism to apply rulesets to files within a workspace. This is useful for developers who work with many different projects that have different coding standards.
 
 ## Maintenance Status
-A while ago I moved on from PHP and now work in DotNet. I don't currently have the bandwidth to work on this project. As far as I can tell this project is still fully functional in its current state. If you want to take over this project or just be an additionly maintainer and help solve any of the issues that are present, please contact me.
+
+My focus has shifted away from PHP to .NET development, I'm currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with me.
+
+### Active Maintainers
+
+In June 2023 [jonathanbossenger](https://github.com/jonathanbossenger) reached out to me and offered to help with maintaining the extension. I have added him as a contributor and he will be monitoring new issues and helping me review PRs. I will still be around to help out if needed.
+
+In January 2024 [seebeen](https://github.com/seebeen) signed on to be a maintainer for this project and has been granted contributor status.
 
 ## Installation
 
@@ -21,9 +29,11 @@ or keyboard shortcut `alt+shift+f` vs code default formatter shortcut
 or right mouse context menu `Format Document`.
 
 ### Format on save
-You can also use this formatter with Format on Save enabled. Format on save has two modes: `File` and `Modified`. This extension implements support for the modified mode by using phpcbf with the `Git Modified` filter that is provided by phpcbf. 
+
+You can also use this formatter with Format on Save enabled. Format on save has two modes: `File` and `Modified`. This extension implements support for the modified mode by using phpcbf with the `Git Modified` filter that is provided by phpcbf.
 
 ## Multi-Root Workspace Support
+
 This extension now fully supports Multi-Root Workspaces. The extension previously used the first root folder in your workspace to configure and run both phpcs and phpcbf. The new system allows each workspace to be configured and run independently with respect to the root folder of the open file being sniffed. This means you can have phpcs functionality in one folder and have it disabled in another within a workspace.
 
 ## Linter Installation
@@ -46,6 +56,7 @@ The `phpcs` linter can be installed globally using the Composer Dependency Manag
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
+
 1. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
 
 ### Project-wide Installation
@@ -67,6 +78,10 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 1. Press Enter or click the cloud icon to install it.
 1. Restart Visual Studio Code!
 
+### Docker support
+
+If you would like to run phpcs in your docker containers using this extension, a [fork exists](https://github.com/mtbdata711/vscode-phpsab-docker) that will provide you with Docker support.
+
 ## Basic Configuration
 
 There are various options that can be configured to control how the plugin operates which can be set
@@ -79,16 +94,18 @@ in your user, workspace or folder preferences.
 This setting controls whether `phpcbf` fixer is enabled.
 
 ### **phpsab.fixerArguments**
-[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
+
+[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
 
 Passes additional arguments to `phpcbf` runner.
 
 _Example_
+
 ```bash
 {
     phpsab.fixerArguments: ["-n", "--ignore=tests/*"]
 }
-    
+
 # Translated
 phpcbf -n --ignore=tests/* <file>
 ```
@@ -100,11 +117,13 @@ phpcbf -n --ignore=tests/* <file>
 This setting controls whether `phpcs` sniffer is enabled.
 
 ### **phpsab.snifferArguments**
-[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
+
+[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
 
 Passes additional arguments to `phpcs` runner.
 
 _Example_
+
 ```bash
 {
     phpsab.snifferArguments: ["-n", "--ignore=tests/*"]
@@ -119,13 +138,22 @@ phpcs -n --ignore=tests/* <file>
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the executable path for `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
-If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcs' in your path.
+If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcs' in your environment path.
 
 > **NOTE:** `phpcbf` is installed along with `phpcs`.
 
 > **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
+
+```json
+{
+    "phpsab.executablePathCS": "C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat"
+}
 ```
-"C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat"
+
+> If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+
+```
+C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
 ```
 
 ### **phpsab.executablePathCBF**
@@ -133,11 +161,20 @@ If omitted, the plugin will try to locate the path parsing your composer configu
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
 This setting controls the executable path for the `phpcbf`. You may specify the absolute path or workspace relative path to the `phpcbf` executable.
-If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcbf' in your path..
+If omitted, the plugin will try to locate the path parsing your composer configuration or look for an entry for 'phpcbf' in your environment path..
 
 > **NOTE for Windows users:** If the linter is installed globally, you must set the path to make this plugin work (example below). After saving this setting, don't forget to reload VSCode!
+
+```json
+{
+    "phpsab.executablePathCBF": "C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat"
+}
 ```
-"C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat"
+
+> If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+
+```
+C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
 ```
 
 ### **phpsab.standard**
@@ -240,7 +277,7 @@ Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpc
 
 ### **phpsab.allowedAutoRulesets**
 
-[ *Scope:* Resource | Optional | *Type:* array | *Default:* [] ]
+[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [] ]
 
 An array of filenames that could contain a valid phpcs ruleset.
 
@@ -301,6 +338,6 @@ This extension is based off of the `phpcs` extension created by [Ioannis Kappas]
 ## Contributing and Licensing
 
 The project is hosted on [GitHub](https://github.com/valeryan/vscode-phpsab) where you can [report issues](https://github.com/valeryan/vscode-phpsab/issues), fork
-the project and submit pull requests. See the [development guide](https://github.com/valeryan/vscode-phpsab/blob/master/DEVELOPMENT.md) for details.
+the project and submit pull requests. See the [development guide](https://github.com/valeryan/vscode-phpsab/blob/main/DEVELOPMENT.md) for details.
 
-The project is available under [MIT license](https://github.com/valeryan/vscode-phpsab/blob/master/LICENSE.md), which allows modification and redistribution for both commercial and non-commercial purposes.
+The project is available under [MIT license](https://github.com/valeryan/vscode-phpsab/blob/main/LICENSE.md), which allows modification and redistribution for both commercial and non-commercial purposes.

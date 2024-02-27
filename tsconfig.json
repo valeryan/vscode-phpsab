@@ -1,16 +1,24 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"target": "es2019",
-		"lib": ["ES2019"],
-		"outDir": "out",
-		"sourceMap": true,
-		"rootDir": "src",
-        "strict": true
-	},
-	"include": [
-		"src/**/*.ts",
-		"./node_modules/vscode/vscode.d.ts",
-		"./node_modules/vscode/lib/*",
-	]
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "esnext",
+    "allowJs": true,
+    "lib": ["es2020"],
+    "outDir": "out",
+    "sourceMap": true,
+    "strict": true,
+    "rootDir": "src",
+    "baseUrl": "./",
+    "paths": {
+      "@phpsab/*": ["src/*"]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "alwaysStrict": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", ".vscode-test"]
 }

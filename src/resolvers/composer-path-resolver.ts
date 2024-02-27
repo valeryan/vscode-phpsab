@@ -1,191 +1,118 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Ioannis Kappas. All rights reserved.
- * Copyright (c) 2018 Samuel Hilson. All rights reserved.
- * Licensed under the MIT License. See License.md in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-"use strict";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { PathResolver } from '../interfaces/path-resolver';
+import {
+  getPlatformExtension,
+  getPlatformPathSeparator,
+  joinPaths,
+} from './path-resolver-utils';
 
-import * as path from "path";
-import * as fs from "fs";
+const hasComposerDependency = async (
+  composerLockPath: string,
+): Promise<boolean> => {
+  let dependencies = null;
+  try {
+    const lockFile = await fs.readFile(composerLockPath, 'utf8');
+    dependencies = JSON.parse(lockFile);
+  } catch (error) {
+    dependencies = {};
+  }
 
-import { PathResolverBase } from "./path-resolver-base";
+  let search = [];
+  if (dependencies['packages-dev']) {
+    search.push(dependencies['packages-dev']);
+  }
+  if (dependencies['packages']) {
+    search.push(dependencies['packages']);
+  }
 
-export class ComposerPathResolver extends PathResolverBase {
-    protected readonly _workspaceRoot: string;
-    protected readonly _workingPath: string;
+  return search.some((pkgs) => {
+    let match = pkgs.filter((pkg: any) => {
+      return pkg.name === 'squizlabs/php_codesniffer';
+    });
+    return match.length !== 0;
+  });
+};
 
-    protected _composerJsonPath!: string;
-    protected _composerLockPath!: string;
+const getVendorPath = async (
+  composerJsonPath: string,
+  executableFile: string,
+): Promise<string> => {
+  let basePath = path.dirname(composerJsonPath);
+  let vendorPath = joinPaths(basePath, 'vendor', 'bin', executableFile);
 
-    protected _executableFile: string;
+  let config = null;
+  try {
+    const composerFile = await fs.readFile(composerJsonPath, 'utf8');
+    config = JSON.parse(composerFile);
+  } catch (error) {
+    config = {};
+  }
 
-    /**
-     * Class constructor.
-     *
-     * @param executableFile The executable file.
-     * @param workspaceRoot The workspace path.
-     * @param composerJsonPath The path to composer.json.
-     */
-    constructor(
-        executableFile: string,
-        workspaceRoot: string,
-        workingPath: string = ""
-    ) {
-        super();
-        this._executableFile = executableFile;
-        this._workspaceRoot = workspaceRoot;
-        this._workingPath = path.isAbsolute(workingPath)
-            ? workingPath
-            : path
-                  .join(workspaceRoot, workingPath)
-                  .replace(/composer.json$/, "");
-    }
+  if (config['config'] && config['config']['vendor-dir']) {
+    vendorPath = joinPaths(
+      basePath,
+      config['config']['vendor-dir'],
+      'bin',
+      executableFile,
+    );
+  }
 
-    public get workspaceRoot(): string {
-        return this._workspaceRoot;
-    }
+  if (config['config'] && config['config']['bin-dir']) {
+    vendorPath = joinPaths(
+      basePath,
+      config['config']['bin-dir'],
+      executableFile,
+    );
+  }
 
-    public get workingPath(): string {
-        return this._workingPath;
-    }
+  return vendorPath;
+};
 
-    public get composerJsonPath(): string {
-        if (!this._composerJsonPath) {
-            this._composerJsonPath = fs.realpathSync(
-                path.join(this.workingPath, "composer.json")
-            );
-        }
-        return this._composerJsonPath;
-    }
+export const createComposerPathResolver = (
+  executableFile: string,
+  workspaceRoot: string,
+  workingPath: string = '',
+): PathResolver => {
+  return {
+    extension: getPlatformExtension(),
+    pathSeparator: getPlatformPathSeparator(),
+    resolve: async () => {
+      let resolvedPath: string | null = null;
+      const fullWorkingPath = path.isAbsolute(workingPath)
+        ? workingPath
+        : joinPaths(workspaceRoot, workingPath).replace(/composer.json$/, '');
 
-    public get composerLockPath(): string {
-        if (!this._composerLockPath) {
-            this._composerLockPath = fs.realpathSync(
-                path.join(this.workingPath, "composer.lock")
-            );
-        }
-        return this._composerLockPath;
-    }
-
-    /**
-     * Determine whether composer.json exists at the root path.
-     */
-    hasComposerJson(): boolean {
-        try {
-            return fs.existsSync(this.composerJsonPath);
-        } catch (error) {
-            return false;
-        }
-    }
-
-    /**
-     * Determine whether composer.lock exists at the root path.
-     */
-    hasComposerLock(): boolean {
-        try {
-            return fs.existsSync(this.composerLockPath);
-        } catch (error) {
-            return false;
-        }
-    }
-
-    /**
-     * Determine whether phpcbf is set as a composer dependency.
-     */
-    hasComposerDependency(): boolean {
-        // Safely load composer.lock
-        let dependencies = null;
-        try {
-            dependencies = JSON.parse(
-                fs.readFileSync(this.composerLockPath, "utf8")
-            );
-        } catch (error) {
-            dependencies = {};
-        }
-
-        // Determine phpcbf dependency.
-        let search = [];
-        if (dependencies["packages-dev"]) {
-            search.push(dependencies["packages-dev"]);
-        }
-        if (dependencies["packages"]) {
-            search.push(dependencies["packages"]);
-        }
-
-        return search.some((pkgs) => {
-            let match = pkgs.filter((pkg: any) => {
-                return pkg.name === "squizlabs/php_codesniffer";
-            });
-            return match.length !== 0;
-        });
-    }
-
-    /**
-     * Get the composer vendor path.
-     */
-    getVendorPath(): string {
-        let basePath = path.dirname(this.composerJsonPath);
-        let vendorPath = path.join(
-            basePath,
-            "vendor",
-            "bin",
-            this._executableFile
+      let composerJsonPath = '';
+      let composerLockPath = '';
+      try {
+        composerJsonPath = await fs.realpath(
+          joinPaths(fullWorkingPath, 'composer.json'),
         );
 
-        // Safely load composer.json
-        let config = null;
+        composerLockPath = await fs.realpath(
+          joinPaths(fullWorkingPath, 'composer.lock'),
+        );
+      } catch (error) {
+        return '';
+      }
+
+      const vendorPath = await getVendorPath(composerJsonPath, executableFile);
+      const hasPhpcs = await hasComposerDependency(composerLockPath);
+
+      if (hasPhpcs && vendorPath) {
         try {
-            config = JSON.parse(fs.readFileSync(this.composerJsonPath, "utf8"));
+          fs.access(vendorPath, fs.constants.R_OK || fs.constants.W_OK);
+          resolvedPath = vendorPath;
         } catch (error) {
-            config = {};
+          const relativeVendorPath = path.relative(workspaceRoot, vendorPath);
+          throw new Error(
+            `Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to run "composer install" or set your executablePaths for phpcs & phpcbf manually.`,
+          );
         }
+      }
 
-        // Check vendor-bin configuration
-        if (config["config"] && config["config"]["vendor-dir"]) {
-            vendorPath = path.join(
-                basePath,
-                config["config"]["vendor-dir"],
-                "bin",
-                this._executableFile
-            );
-        }
-
-        // Check bin-bin configuration
-        if (config["config"] && config["config"]["bin-dir"]) {
-            vendorPath = path.join(
-                basePath,
-                config["config"]["bin-dir"],
-                this._executableFile
-            );
-        }
-
-        return vendorPath;
-    }
-
-    async resolve(): Promise<string> {
-        let resolvedPath: string | null = null;
-        if (this.workspaceRoot) {
-            // Determine whether composer.json and composer.lock exist and phpcbf is defined as a dependency.
-            if (
-                this.hasComposerJson() &&
-                this.hasComposerLock() &&
-                this.hasComposerDependency()
-            ) {
-                let vendorPath = this.getVendorPath();
-                if (fs.existsSync(vendorPath)) {
-                    resolvedPath = vendorPath;
-                } else {
-                    let relativeVendorPath = path.relative(
-                        this.workspaceRoot,
-                        vendorPath
-                    );
-                    throw new Error(
-                        `Composer phpcs dependency is configured but was not found under ${relativeVendorPath}. You may need to run "composer install" or set your executablePaths for phpcs & phpcbf manually.`
-                    );
-                }
-            }
-        }
-
-        return resolvedPath === null ? "" : resolvedPath;
-    }
-}
+      return resolvedPath ?? '';
+    },
+  };
+};

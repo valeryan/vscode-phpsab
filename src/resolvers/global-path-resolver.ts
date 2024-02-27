@@ -1,37 +1,34 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Ioannis Kappas. All rights reserved.
- * Copyright (c) 2018 Samuel Hilson. All rights reserved.
- * Licensed under the MIT License. See License.md in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-"use strict";
+import fs from 'node:fs/promises';
+import { PathResolver } from '../interfaces/path-resolver';
+import {
+  getEnvPathSeparator,
+  getPlatformExtension,
+  getPlatformPathSeparator,
+  joinPaths,
+} from './path-resolver-utils';
 
-import * as path from "path";
-import * as fs from "fs";
-
-import { PathResolverBase } from "./path-resolver-base";
-
-export class GlobalPathResolver extends PathResolverBase {
-    protected executableFile: string;
-
-    constructor(executable: string) {
-        super();
-
-        this.executableFile = executable;
-    }
-    async resolve(): Promise<string> {
-        let resolvedPath: string | null = null;
-        let pathSeparator = /^win/.test(process.platform) ? ";" : ":";
-        const envPath = process.env.PATH === undefined ? "" : process.env.PATH;
-        let globalPaths: string[] = envPath.split(pathSeparator);
-        globalPaths.some((globalPath: string) => {
-            let testPath = path.join(globalPath, this.executableFile);
-            if (fs.existsSync(testPath)) {
-                resolvedPath = testPath;
-                return true;
-            }
-            return false;
-        });
-
-        return resolvedPath === null ? "" : resolvedPath;
-    }
-}
+export const createGlobalPathResolver = (executable: string): PathResolver => {
+  const extension = getPlatformExtension();
+  const pathSeparator = getPlatformPathSeparator();
+  return {
+    extension,
+    pathSeparator,
+    resolve: async () => {
+      let envSeparator = getEnvPathSeparator();
+      let resolvedPath: string | null = null;
+      const envPath = process.env.PATH || '';
+      let globalPaths: string[] = envPath.split(envSeparator);
+      for (const globalPath of globalPaths) {
+        let testPath = joinPaths(globalPath, executable);
+        try {
+          await fs.access(testPath, fs.constants.X_OK);
+          resolvedPath = testPath;
+          break; // Stop loop if path is found
+        } catch (error) {
+          // Continue loop if path is not found
+        }
+      }
+      return resolvedPath ?? '';
+    },
+  };
+};

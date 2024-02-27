@@ -1,5 +1,9 @@
 {
-	"recommendations": [
-        "dbaeumer.vscode-eslint"
-    ]
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "bmewburn.vscode-intelephense-client",
+    "mehedidracula.php-namespace-resolver",
+    "neilbrayfield.php-docblocker",
+    "rifi2k.format-html-in-php"
+  ]
 }
