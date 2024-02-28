@@ -3,6 +3,7 @@
 ![Current Version](https://img.shields.io/visual-studio-marketplace/v/ValeryanM.vscode-phpsab)
 ![Installs](https://img.shields.io/visual-studio-marketplace/i/ValeryanM.vscode-phpsab)
 ![GitHub issues](https://img.shields.io/github/issues-raw/valeryan/vscode-phpsab)
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 Integrates [phpcs & phpcbf](https://github.com/squizlabs/PHP_CodeSniffer.git) into [Visual Studio Code](https://code.visualstudio.com/).
 
@@ -26,7 +27,9 @@ To run the development version of the `vscode-phpsab` extension:
 This will launch a new VS Code window named `Extension Development Host`, automatically using the development version of the `vscode-phpsab` extension.
 
 ## Installing the Development Version
+
 To install a development version of this extension for testing you will need to install the vsce package and package the project into a `.vsix` file.
+
 -   Install vsce: `npm install -g @vscode/vsce`
 -   In the root of the project run: `vsce package`
 -   From the VSCode main menu, select "Extensions", click the `...` on the Extensions tab.
@@ -34,4 +37,9 @@ To install a development version of this extension for testing you will need to 
 -   After installing, you may need to reload VSCode.
 
 ## Publishing Releases
+
 Using the Release system on Github, draft a new release with the desired version tag. The github workflow should handle updating the package.json version and publishing the release to both Vs Marketplace and the Open VSX Registry. These both require a PAT to be set in the security section on github.com and will occasionally need to be updated or rotated if the publishing workflow fails.
+
+## Commit Messages
+
+In order to provide some unit to commit messages and make the changelog more valuable we will use commitizen. To make a commit message use `git cz` and follow the prompts.
