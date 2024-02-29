@@ -15,7 +15,7 @@ export const createGlobalPathResolver = (executable: string): PathResolver => {
     pathSeparator,
     resolve: async () => {
       let envSeparator = getEnvPathSeparator();
-      let resolvedPath: string | null = null;
+      let resolvedPath: string = '';
       const envPath = process.env.PATH || '';
       let globalPaths: string[] = envPath.split(envSeparator);
       for (const globalPath of globalPaths) {
@@ -28,7 +28,7 @@ export const createGlobalPathResolver = (executable: string): PathResolver => {
           // Continue loop if path is not found
         }
       }
-      return resolvedPath ?? '';
+      return resolvedPath;
     },
   };
 };

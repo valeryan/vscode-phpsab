@@ -12,15 +12,15 @@ interface PathResolverOptions {
 }
 
 const resolvePath = async (resolvers: PathResolver[]): Promise<string> => {
-  let resolvedPath: string | null = null;
+  let resolvedPath: string = '';
   for (const resolver of resolvers) {
     const resolverPath = await resolver.resolve();
-    if (resolvedPath !== resolverPath) {
+    if (resolverPath) {
       resolvedPath = resolverPath;
       break;
     }
   }
-  if (resolvedPath === null) {
+  if (!resolvedPath) {
     throw new Error(`Unable to locate the executable.`);
   }
   return resolvedPath;
@@ -32,7 +32,7 @@ export const createPathResolver = (
 ): PathResolver => {
   const executableFile = executable + getPlatformExtension();
   const resolvers: PathResolver[] = [];
-  if (options.workspaceRoot !== null) {
+  if (options.workspaceRoot) {
     resolvers.push(
       createComposerPathResolver(
         executableFile,

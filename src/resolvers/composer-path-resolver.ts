@@ -78,7 +78,7 @@ export const createComposerPathResolver = (
     extension: getPlatformExtension(),
     pathSeparator: getPlatformPathSeparator(),
     resolve: async () => {
-      let resolvedPath: string | null = null;
+      let resolvedPath: string = '';
       const fullWorkingPath = path.isAbsolute(workingPath)
         ? workingPath
         : joinPaths(workspaceRoot, workingPath).replace(/composer.json$/, '');
@@ -112,7 +112,7 @@ export const createComposerPathResolver = (
         }
       }
 
-      return resolvedPath ?? '';
+      return resolvedPath;
     },
   };
 };
