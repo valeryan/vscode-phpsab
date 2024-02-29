@@ -1,4 +1,8 @@
-# Change Log
+# Changelog
+
+## <small>0.0.18 (2024-02-29)</small>
+
+-   Fix global path resolver (#115) ([d30e3dc](https://github.com/valeryan/vscode-phpsab/commit/d30e3dc))
 
 ## 0.0.17
 
