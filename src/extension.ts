@@ -25,7 +25,7 @@ export const activate = async (context: ExtensionContext) => {
   const settings = await loadSettings();
   activateFixer(context.subscriptions, settings);
   activateSniffer(context.subscriptions, settings);
-  // register format from command pallet
+  // register format from command palette
   context.subscriptions.push(
     commands.registerTextEditorCommand('fixer.fix', (textEditor) => {
       if (textEditor.document.languageId === 'php') {
