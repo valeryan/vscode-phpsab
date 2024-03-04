@@ -1,11 +1,11 @@
-import fs from 'node:fs/promises';
-import { PathResolver } from '../interfaces/path-resolver';
+import { PathResolver } from '@phpsab/interfaces/path-resolver';
 import {
   getEnvPathSeparator,
   getPlatformExtension,
   getPlatformPathSeparator,
-  joinPaths,
-} from './path-resolver-utils';
+} from '@phpsab/resolvers/path-resolver-utils';
+import fs from 'node:fs/promises';
+import { join } from 'node:path';
 
 export const createGlobalPathResolver = (executable: string): PathResolver => {
   const extension = getPlatformExtension();
@@ -19,7 +19,7 @@ export const createGlobalPathResolver = (executable: string): PathResolver => {
       const envPath = process.env.PATH || '';
       let globalPaths: string[] = envPath.split(envSeparator);
       for (const globalPath of globalPaths) {
-        let testPath = joinPaths(globalPath, executable);
+        let testPath = join(globalPath, executable);
         try {
           await fs.access(testPath, fs.constants.X_OK);
           resolvedPath = testPath;

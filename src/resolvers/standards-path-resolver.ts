@@ -1,12 +1,12 @@
-import fs from 'node:fs/promises';
-import { TextDocument, workspace } from 'vscode';
-import { PathResolver } from '../interfaces/path-resolver';
-import { ResourceSettings } from '../interfaces/resource-settings';
-import { logger } from '../logger';
+import { PathResolver } from '@phpsab/interfaces/path-resolver';
+import { ResourceSettings } from '@phpsab/interfaces/settings';
 import {
   getPlatformExtension,
   getPlatformPathSeparator,
-} from './path-resolver-utils';
+} from '@phpsab/resolvers/path-resolver-utils';
+import { logger } from '@phpsab/services/logger';
+import fs from 'node:fs/promises';
+import { TextDocument, workspace } from 'vscode';
 
 export const createStandardsPathResolver = (
   document: TextDocument,

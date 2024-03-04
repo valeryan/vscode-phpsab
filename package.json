@@ -32,7 +32,7 @@
   "activationEvents": [
     "onLanguage:php"
   ],
-  "main": "./out/main.js",
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
@@ -45,35 +45,11 @@
       "title": "PHP Sniffer & Fixer Configuration options",
       "type": "object",
       "properties": {
-        "phpsab.fixerEnable": {
-          "scope": "resource",
+        "phpsab.debug": {
           "type": "boolean",
-          "default": true,
-          "description": "Control if this fixer is enabled for PHP files or not."
-        },
-        "phpsab.fixerArguments": {
-          "scope": "resource",
-          "type": "array",
-          "default": [],
-          "description": "Additional arguments passed to phpcbf"
-        },
-        "phpsab.executablePathCBF": {
-          "scope": "resource",
-          "type": "string",
-          "default": null,
-          "description": "Optional. The default path to the phpcbf executable. Can be overridden if auto search is enabled."
-        },
-        "phpsab.executablePathCS": {
-          "scope": "resource",
-          "type": "string",
-          "default": null,
-          "description": "Optional. The default path to the phpcs executable. Can be overridden if auto search is enabled."
-        },
-        "phpsab.composerJsonPath": {
-          "scope": "resource",
-          "type": "string",
-          "default": "composer.json",
-          "description": "The path to composer.json"
+          "default": false,
+          "description": "Write debug info to the console",
+          "order": 1
         },
         "phpsab.standard": {
           "scope": "resource",
@@ -82,13 +58,15 @@
             "null"
           ],
           "default": null,
-          "description": "Optional. The default config to use or global standard. Can be overridden if auto search is enabled."
+          "description": "(Optional) The name of a coding standard or the file path to a ruleset file. Can be overridden if auto ruleset search is enabled.",
+          "order": 2
         },
         "phpsab.autoRulesetSearch": {
           "scope": "resource",
           "type": "boolean",
           "default": true,
-          "description": "Automatically search for a ruleset file to use as configuration. Overrides custom standards defined above."
+          "description": "Automatically search for a ruleset file to use as configuration. Overrides the default standard defined above if enabled.",
+          "order": 3
         },
         "phpsab.allowedAutoRulesets": {
           "scope": "resource",
@@ -101,19 +79,36 @@
             "phpcs.ruleset.xml",
             "ruleset.xml"
           ],
-          "description": "Filenames to search for that contain the ruleset for fixers."
+          "description": "Filenames to search for that contain the ruleset for fixers.",
+          "order": 4
+        },
+        "phpsab.composerJsonPath": {
+          "scope": "resource",
+          "type": "string",
+          "default": "composer.json",
+          "description": "The path to composer.json",
+          "order": 5
         },
         "phpsab.snifferEnable": {
           "scope": "resource",
           "type": "boolean",
           "default": true,
-          "description": "Control if this sniffer is enabled for PHP files or not."
+          "description": "Control if this sniffer is enabled for PHP files or not.",
+          "order": 6
+        },
+        "phpsab.snifferExecutablePath": {
+          "scope": "resource",
+          "type": "string",
+          "default": null,
+          "description": "(Optional) The default path to the phpcs executable. Setting this will disable auto search executable.",
+          "order": 7
         },
         "phpsab.snifferArguments": {
           "scope": "resource",
           "type": "array",
           "default": [],
-          "description": "Additional arguments passed to phpcs"
+          "description": "Additional arguments passed to phpcs",
+          "order": 8
         },
         "phpsab.snifferMode": {
           "type": "string",
@@ -122,35 +117,68 @@
             "onSave",
             "onType"
           ],
-          "markdownDescription": "When to run `phpcs`."
+          "markdownDescription": "When to run `phpcs`.",
+          "order": 9
         },
         "phpsab.snifferTypeDelay": {
           "type": "number",
           "default": 250,
           "minimum": 0,
-          "markdownDescription": "When `phpsab.snifferMode` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run."
+          "markdownDescription": "When `phpsab.snifferMode` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run.",
+          "order": 10
         },
         "phpsab.snifferShowSources": {
           "type": "boolean",
           "default": false,
-          "description": "Control if phpcs report should include sniff sources."
+          "description": "Control if phpcs report should include sniff sources.",
+          "order": 11
         },
-        "phpsab.debug": {
+        "phpsab.fixerEnable": {
+          "scope": "resource",
           "type": "boolean",
-          "default": false,
-          "description": "Write debug info to the console"
+          "default": true,
+          "description": "Control if this fixer is enabled for PHP files or not.",
+          "order": 12
+        },
+        "phpsab.fixerExecutablePath": {
+          "scope": "resource",
+          "type": "string",
+          "default": null,
+          "description": "(Optional) The default path to the phpcbf executable. Setting this will disable auto search executable.",
+          "order": 13
+        },
+        "phpsab.fixerArguments": {
+          "scope": "resource",
+          "type": "array",
+          "default": [],
+          "description": "Additional arguments passed to phpcbf",
+          "order": 14
+        },
+        "phpsab.executablePathCBF": {
+          "scope": "resource",
+          "type": "string",
+          "default": null,
+          "description": "DEPRECATED: moved to Fixer Executable Path.",
+          "order": 15
+        },
+        "phpsab.executablePathCS": {
+          "scope": "resource",
+          "type": "string",
+          "default": null,
+          "description": "DEPRECATED: moved to Sniffer Executable Path.",
+          "order": 16
         }
       }
     }
   },
   "scripts": {
-    "compile": "rimraf out && tsc -p ./",
     "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild-base": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild-test": "esbuild ./src/**/*.spec.ts --bundle --outdir=out/test --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint src --ext ts",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "npm run esbuild && npm run esbuild-test",
     "test": "vscode-test"
   },
   "dependencies": {

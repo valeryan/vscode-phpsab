@@ -1,15 +1,13 @@
-import { PathResolver } from '../interfaces/path-resolver';
-import { createComposerPathResolver } from './composer-path-resolver';
-import { createGlobalPathResolver } from './global-path-resolver';
+import {
+  PathResolver,
+  PathResolverOptions,
+} from '@phpsab/interfaces/path-resolver';
+import { createComposerPathResolver } from '@phpsab/resolvers/composer-path-resolver';
+import { createGlobalPathResolver } from '@phpsab/resolvers/global-path-resolver';
 import {
   getPlatformExtension,
   getPlatformPathSeparator,
-} from './path-resolver-utils';
-
-interface PathResolverOptions {
-  workspaceRoot: string | null;
-  composerJsonPath: string;
-}
+} from '@phpsab/resolvers/path-resolver-utils';
 
 const resolvePath = async (resolvers: PathResolver[]): Promise<string> => {
   let resolvedPath: string = '';
@@ -32,6 +30,7 @@ export const createPathResolver = (
 ): PathResolver => {
   const executableFile = executable + getPlatformExtension();
   const resolvers: PathResolver[] = [];
+  // Add resolvers to find the executable using composer.
   if (options.workspaceRoot) {
     resolvers.push(
       createComposerPathResolver(
@@ -41,6 +40,7 @@ export const createPathResolver = (
       ),
     );
   }
+  // Add a resolver to search through your systems env path
   resolvers.push(createGlobalPathResolver(executableFile));
 
   return {

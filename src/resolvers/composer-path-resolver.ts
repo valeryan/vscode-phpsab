@@ -1,11 +1,10 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { PathResolver } from '../interfaces/path-resolver';
+import { PathResolver } from '@phpsab/interfaces/path-resolver';
 import {
   getPlatformExtension,
   getPlatformPathSeparator,
-  joinPaths,
-} from './path-resolver-utils';
+} from '@phpsab/resolvers/path-resolver-utils';
+import fs from 'node:fs/promises';
+import path, { join } from 'node:path';
 
 const hasComposerDependency = async (
   composerLockPath: string,
@@ -39,7 +38,7 @@ const getVendorPath = async (
   executableFile: string,
 ): Promise<string> => {
   let basePath = path.dirname(composerJsonPath);
-  let vendorPath = joinPaths(basePath, 'vendor', 'bin', executableFile);
+  let vendorPath = join(basePath, 'vendor', 'bin', executableFile);
 
   let config = null;
   try {
@@ -50,7 +49,7 @@ const getVendorPath = async (
   }
 
   if (config['config'] && config['config']['vendor-dir']) {
-    vendorPath = joinPaths(
+    vendorPath = join(
       basePath,
       config['config']['vendor-dir'],
       'bin',
@@ -59,11 +58,7 @@ const getVendorPath = async (
   }
 
   if (config['config'] && config['config']['bin-dir']) {
-    vendorPath = joinPaths(
-      basePath,
-      config['config']['bin-dir'],
-      executableFile,
-    );
+    vendorPath = join(basePath, config['config']['bin-dir'], executableFile);
   }
 
   return vendorPath;
@@ -81,17 +76,17 @@ export const createComposerPathResolver = (
       let resolvedPath: string = '';
       const fullWorkingPath = path.isAbsolute(workingPath)
         ? workingPath
-        : joinPaths(workspaceRoot, workingPath).replace(/composer.json$/, '');
+        : join(workspaceRoot, workingPath).replace(/composer.json$/, '');
 
       let composerJsonPath = '';
       let composerLockPath = '';
       try {
         composerJsonPath = await fs.realpath(
-          joinPaths(fullWorkingPath, 'composer.json'),
+          join(fullWorkingPath, 'composer.json'),
         );
 
         composerLockPath = await fs.realpath(
-          joinPaths(fullWorkingPath, 'composer.lock'),
+          join(fullWorkingPath, 'composer.lock'),
         );
       } catch (error) {
         return '';

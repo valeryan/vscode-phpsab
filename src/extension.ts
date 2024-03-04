@@ -2,11 +2,14 @@
  * Copyright (c) 2019 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { commands, ExtensionContext, extensions, languages } from 'vscode';
-import { activateFixer, registerFixerAsDocumentProvider } from './fixer';
-import { disposeLogger, logger } from './logger';
-import { loadSettings } from './settings';
-import { activateSniffer, disposeSniffer } from './sniffer';
+import {
+  activateFixer,
+  registerFixerAsDocumentProvider,
+} from '@phpsab/services/fixer';
+import { disposeLogger, logger } from '@phpsab/services/logger';
+import { loadSettings } from '@phpsab/services/settings';
+import { activateSniffer, disposeSniffer } from '@phpsab/services/sniffer';
+import { ExtensionContext, commands, extensions, languages } from 'vscode';
 
 /**
  * Activate Extension

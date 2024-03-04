@@ -1,3 +1,8 @@
+import { ConsoleError } from '@phpsab/interfaces/console-error';
+import { Settings } from '@phpsab/interfaces/settings';
+import { createStandardsPathResolver } from '@phpsab/resolvers/standards-path-resolver';
+import { logger } from '@phpsab/services/logger';
+import { loadSettings } from '@phpsab/services/settings';
 import spawn from 'cross-spawn';
 import { SpawnSyncOptions } from 'node:child_process';
 import {
@@ -11,11 +16,6 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { ConsoleError } from './interfaces/console-error';
-import { Settings } from './interfaces/settings';
-import { logger } from './logger';
-import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
-import { loadSettings } from './settings';
 
 let settingsCache: Settings;
 
@@ -140,10 +140,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   };
 
   logger.info(
-    `FIXER COMMAND: ${resourceConf.executablePathCBF} ${lintArgs.join(' ')}`,
+    `FIXER COMMAND: ${resourceConf.fixerExecutablePath} ${lintArgs.join(' ')}`,
   );
 
-  const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
+  const fixer = spawn.sync(resourceConf.fixerExecutablePath, lintArgs, options);
   const stdout = fixer.stdout.toString().trim();
 
   let fixed = stdout + '\n';

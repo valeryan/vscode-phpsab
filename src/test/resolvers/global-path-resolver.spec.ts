@@ -1,8 +1,8 @@
+import { createGlobalPathResolver } from '@phpsab/resolvers/global-path-resolver';
 import assert from 'assert';
 import fs from 'node:fs';
+import path from 'node:path';
 import sinon from 'sinon';
-import { createGlobalPathResolver } from '../../resolvers/global-path-resolver';
-import * as pathUtils from '../../resolvers/path-resolver-utils';
 
 suite('Global Path Resolver Test Suite', () => {
   let accessStub: sinon.SinonStub;
@@ -18,8 +18,8 @@ suite('Global Path Resolver Test Suite', () => {
     // Stub process.platform to control platform value
     platformStub = sinon.stub(process, 'platform').value('win32');
 
-    // Stub joinPaths method
-    joinPathsStub = sinon.stub(pathUtils, 'joinPaths');
+    // Stub path.join method directly
+    joinPathsStub = sinon.stub(path, 'join');
   });
 
   teardown(() => {

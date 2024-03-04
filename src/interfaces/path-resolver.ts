@@ -3,3 +3,8 @@ export interface PathResolver {
   extension: string;
   pathSeparator: string;
 }
+
+export interface PathResolverOptions {
+  workspaceRoot: string | null;
+  composerJsonPath: string;
+}

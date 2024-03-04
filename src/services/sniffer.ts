@@ -1,3 +1,8 @@
+import { PHPCSMessageType, PHPCSReport } from '@phpsab/interfaces/phpcs-report';
+import { Settings } from '@phpsab/interfaces/settings';
+import { createStandardsPathResolver } from '@phpsab/resolvers/standards-path-resolver';
+import { logger } from '@phpsab/services/logger';
+import { loadSettings } from '@phpsab/services/settings';
 import { debounce } from 'lodash';
 import { spawn } from 'node:child_process';
 import {
@@ -15,11 +20,6 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
-import { Settings } from './interfaces/settings';
-import { logger } from './logger';
-import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
-import { loadSettings } from './settings';
 
 const enum runConfig {
   save = 'onSave',
@@ -131,10 +131,10 @@ const validate = async (document: TextDocument) => {
     tty: true,
   };
   logger.info(
-    `SNIFFER COMMAND: ${resourceConf.executablePathCS} ${lintArgs.join(' ')}`,
+    `SNIFFER COMMAND: ${resourceConf.snifferExecutablePath} ${lintArgs.join(' ')}`,
   );
 
-  const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
+  const sniffer = spawn(resourceConf.snifferExecutablePath, lintArgs, options);
 
   sniffer.stdin.write(fileText);
   sniffer.stdin.end();
