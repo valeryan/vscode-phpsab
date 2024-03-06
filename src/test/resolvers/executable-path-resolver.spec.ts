@@ -1,4 +1,4 @@
-import { createGlobalPathResolver } from '@phpsab/resolvers/global-path-resolver';
+import { createGlobalPathResolver } from '@phpsab/resolvers/executable-path-resolver';
 import assert from 'assert';
 import fs from 'node:fs';
 import path from 'node:path';

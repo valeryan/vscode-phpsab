@@ -1,8 +1,9 @@
 import { ResourceSettings, Settings } from '@phpsab/interfaces/settings';
-import { createPathResolver } from '@phpsab/resolvers/path-resolver';
+import { resolveExecutablePath } from '@phpsab/resolvers/executable-path-resolver';
 import {
   crossPath,
   executableExist,
+  getPlatformExtension,
 } from '@phpsab/resolvers/path-resolver-utils';
 import { logger } from '@phpsab/services/logger';
 import { Uri, commands, window, workspace } from 'vscode';
@@ -25,16 +26,29 @@ const resolveRootPath = (resource: Uri) => {
  */
 const resolveFixerExecutablePath = async (
   settings: ResourceSettings,
+  resourceName: string,
 ): Promise<ResourceSettings> => {
-  // If fixerExecutablePath is set, transform path for cross platform, and validate, disable resolving.
-  if (settings.fixerExecutablePath) {
-    settings.fixerExecutablePath = crossPath(settings.fixerExecutablePath);
+  if (!settings.fixerEnable) {
     return settings;
   }
+  const ext = getPlatformExtension();
+  // Handle fixing configured path for os platform
+  if (settings.fixerExecutablePath) {
+    const path = crossPath(settings.fixerExecutablePath);
+    settings.fixerExecutablePath = path + ext;
+  }
 
-  // Attempt to auto resolve fixer executable
-  let executablePathResolver = createPathResolver(settings, 'phpcbf');
-  settings.fixerExecutablePath = await executablePathResolver.resolve();
+  // Attempt to auto resolve sniffer executable
+  if (!settings.fixerExecutablePath) {
+    let resolvedPath = await resolveExecutablePath(settings, `phpcbf${ext}`);
+    settings.fixerExecutablePath = resolvedPath;
+  }
+
+  // Validate Exe
+  if (!(await executableExist(settings.fixerExecutablePath))) {
+    logger.log(`The phpcbf executable was not found for ${resourceName}`);
+    settings.fixerEnable = false;
+  }
   return settings;
 };
 
@@ -44,39 +58,37 @@ const resolveFixerExecutablePath = async (
  */
 const resolveSnifferExecutablePath = async (
   settings: ResourceSettings,
+  resourceName: string,
 ): Promise<ResourceSettings> => {
-  // If snifferExecutablePath is set, transform path for cross platform, and validate, disable resolving.
-  if (settings.snifferExecutablePath) {
-    settings.snifferExecutablePath = crossPath(settings.snifferExecutablePath);
+  if (!settings.snifferEnable) {
     return settings;
   }
-  // Attempt to auto resolve sniffer executable
-  let executablePathResolver = createPathResolver(settings, 'phpcs');
-  settings.snifferExecutablePath = await executablePathResolver.resolve();
-  return settings;
-};
+  const ext = getPlatformExtension();
+  // Handle fixing configured path for os platform
+  if (settings.snifferExecutablePath) {
+    const path = crossPath(settings.snifferExecutablePath);
+    settings.snifferExecutablePath = path + ext;
+  }
 
-const validate = async (
-  settings: ResourceSettings,
-  resource: string,
-): Promise<ResourceSettings> => {
-  if (
-    settings.snifferEnable &&
-    !(await executableExist(settings.snifferExecutablePath))
-  ) {
-    logger.log(`The phpcs executable was not found for ${resource}`);
+  // Attempt to auto resolve sniffer executable
+  if (!settings.snifferExecutablePath) {
+    let resolvedPath = await resolveExecutablePath(settings, `phpcs${ext}`);
+    settings.snifferExecutablePath = resolvedPath;
+  }
+
+  // Validate Exe
+  if (!(await executableExist(settings.snifferExecutablePath))) {
+    logger.log(`The phpcs executable was not found for ${resourceName}`);
     settings.snifferEnable = false;
   }
-  if (
-    settings.fixerEnable &&
-    !(await executableExist(settings.fixerExecutablePath))
-  ) {
-    logger.log(`The phpcbf executable was not found for ${resource}`);
-    settings.fixerEnable = false;
-  }
   return settings;
 };
 
+/**
+ * Alert user about deprecated settings
+ * @param settingName Name of deprecated setting
+ * @param replacement Name of the setting that replaces this setting
+ */
 const checkDeprecatedSettings = async (
   settingName: string,
   replacement?: string,
@@ -148,6 +160,11 @@ const checkDeprecatedSettings = async (
   }
 };
 
+/**
+ * Open a setting using query
+ * @param source Source of the setting
+ * @param settingName Name of setting that we are opening to
+ */
 const openSettings = async (source: string, settingName: string) => {
   switch (source) {
     case 'User':
@@ -173,6 +190,10 @@ const openSettings = async (source: string, settingName: string) => {
   }
 };
 
+/**
+ * Load all the extension settings
+ * @returns Settings
+ */
 export const loadSettings = async () => {
   if (!workspace.workspaceFolders) {
     throw new Error('Unable to load configuration.');
@@ -182,15 +203,16 @@ export const loadSettings = async () => {
   // Handle per Workspace settings
   for (let index = 0; index < workspace.workspaceFolders.length; index++) {
     const resource = workspace.workspaceFolders[index].uri;
+    const resourceName = workspace.workspaceFolders[index].name;
     const config = workspace.getConfiguration('phpsab', resource);
     const rootPath = resolveRootPath(resource);
+
+    // Load configured or defaults
     let settings: ResourceSettings = {
-      fixerEnable: config.get('fixerEnable', true),
-      fixerArguments: config.get('fixerArguments', []),
       workspaceRoot: rootPath,
-      fixerExecutablePath: config.get('fixerExecutablePath', ''),
-      snifferExecutablePath: config.get('snifferExecutablePath', ''),
-      composerJsonPath: config.get('composerJsonPath', 'composer.json'),
+      composerJsonPath: crossPath(
+        config.get('composerJsonPath', 'composer.json'),
+      ),
       standard: config.get('standard', ''),
       autoRulesetSearch: config.get('autoRulesetSearch', true),
       allowedAutoRulesets: config.get('allowedAutoRulesets', [
@@ -200,13 +222,18 @@ export const loadSettings = async () => {
         'ruleset.xml',
       ]),
       snifferEnable: config.get('snifferEnable', true),
+      snifferExecutablePath: config.get('snifferExecutablePath', ''),
       snifferArguments: config.get('snifferArguments', []),
+      snifferMode: config.get('snifferMode', 'onSave'),
+      snifferShowSources: config.get('snifferShowSources', false),
+      snifferTypeDelay: config.get('snifferTypeDelay', 250),
+      fixerEnable: config.get('fixerEnable', true),
+      fixerExecutablePath: config.get('fixerExecutablePath', ''),
+      fixerArguments: config.get('fixerArguments', []),
     };
 
-    settings = await resolveFixerExecutablePath(settings);
-    settings = await resolveSnifferExecutablePath(settings);
-
-    settings = await validate(settings, workspace.workspaceFolders[index].name);
+    settings = await resolveSnifferExecutablePath(settings, resourceName);
+    settings = await resolveFixerExecutablePath(settings, resourceName);
 
     resourcesSettings.splice(index, 0, settings);
   }
@@ -214,10 +241,7 @@ export const loadSettings = async () => {
   // update settings from config
   const config = workspace.getConfiguration('phpsab');
   let settings: Settings = {
-    resources: resourcesSettings,
-    snifferMode: config.get('snifferMode', 'onSave'),
-    snifferShowSources: config.get('snifferShowSources', false),
-    snifferTypeDelay: config.get('snifferTypeDelay', 250),
+    workspaces: resourcesSettings,
     debug: config.get('debug', false),
   };
 

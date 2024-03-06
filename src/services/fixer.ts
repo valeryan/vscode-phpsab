@@ -93,7 +93,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   if (!workspaceFolder) {
     return '';
   }
-  const resourceConf = settings.resources[workspaceFolder.index];
+  const resourceConf = settings.workspaces[workspaceFolder.index];
   if (document.languageId !== 'php') {
     return '';
   }

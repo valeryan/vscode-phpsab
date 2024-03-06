@@ -9,7 +9,7 @@ This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) prov
 
 ## Maintenance Status
 
-[valeryan](https://gitub.com/valeryan) is the creator of this extension but his focus has shifted away from PHP to .NET development, he is currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with any maintainers on this project.
+[valeryan](https://github.com/valeryan) is the creator of this extension but his focus has shifted away from PHP to .NET development, he is currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with any maintainers on this project.
 
 ### Active Maintainers
 
@@ -35,9 +35,9 @@ You can also use this formatter with Format on Save enabled. Format on save has 
 
 ## Cross Platform Path Support
 
-Going forward all path configuration should be done in a a unix style. This means all paths should be configured using `/`. `/` will represent the root of the OS and on windows will be assumed to be the `C:\` drive. Other drives can be indicated like `/d/` (this would resolve to `/` on linux and the `/d` will be ignored.). For specifying a path for `phpcs` or `phpcbf` do not include any extension such as `.bat`. The extension will resolve all that for you. This will allow the settings for this extension's settings to synchronize across systems and still function.
+Going forward all path configuration should be done in a unix style. This means all paths should be configured using `/`. Where `/` will represent the root of the OS and on windows will be assumed to be the `C:\` drive. Other drives can be indicated like `/d/` (this would resolve to `/` on linux and the `/d` will be ignored). For specifying a path for `phpcs` or `phpcbf` do not include any extension such as `.bat`, it will be added for you. This will allow the settings for this extension to synchronize across systems using vscode settings sync and still function.
 
-> **Note:** The default for this extension is to leave the path configurations empty and and let the auto resolver handle it for you. If you are using this extension but disabling all of its auto-magic handling of paths why are you really using it? ...
+> **Note:** The default for this extension is to leave the path configurations empty or default and let the auto resolver handle it for you. If you are using this extension but disabling all of its auto-magic handling of paths why are you really using it? ...
 
 ## Multi-Root Workspace Support
 
@@ -58,20 +58,20 @@ Once phpcs is installed, you can proceed to install the vscode-phpsab plugin if 
 The `phpcs` linter can be installed globally using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-1. Require `phpcs` package by typing the following in a terminal:
+2. Require `phpcs` package by typing the following in a terminal:
 
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
 
-1. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
+3. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
 
 ### Project-wide Installation
 
 The `phpcs` linter can be installed in your project using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-1. Require `phpcs` package by typing the following at the root of your project in a terminal:
+2. Require `phpcs` package by typing the following at the root of your project in a terminal:
 
     ```bash
     composer require --dev squizlabs/php_codesniffer
@@ -80,18 +80,142 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 ### Plugin Installation
 
 1. Open Visual Studio Code.
-1. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
-1. Type ext install phpsab to find the extension.
-1. Press Enter or click the cloud icon to install it.
-1. Restart Visual Studio Code!
+2. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
+3. Type ext install phpsab to find the extension.
+4. Press Enter or click the cloud icon to install it.
+5. Restart Visual Studio Code!
 
 ### Docker support
 
 If you would like to run phpcs in your docker containers using this extension, a [fork exists](https://github.com/mtbdata711/vscode-phpsab-docker) that will provide you with Docker support.
 
-## Basic Configuration
+## Configuration
 
 There are various options that can be configured to control how the plugin operates which can be set in your user, workspace or folder preferences.
+
+### **phpsab.composerJsonPath**
+
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
+
+Specify the path to your `composer.json` file if it's not located at the workspace root (default). You can provide either the absolute path or a workspace-relative path in a unix style.
+
+```json
+{
+    "phpsab.composerJsonPath": "/Path/to/composer.json"
+}
+```
+
+> **Note:** The extension does not apply any automatic search logic to the composer.json path.
+
+### **phpsab.standard**
+
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
+
+This setting controls the coding standard used by `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
+
+> **NOTE:** While using composer dependency manager over global installation make sure you use the phpcbf commands under your project scope !
+
+The following values are applicable:
+
+1. This setting can be set to `null`, which is the default behavior and uses the `default_standard` when set in the `phpcs` configuration or fallback to the `Pear` coding standard.
+
+    ```json
+    {
+        "phpsab.standard": null
+    }
+    ```
+
+    You may set the `default_standard` used by phpcbf using the following command:
+
+    ```bash
+    phpcs --config-set default_standard <value>
+    ```
+
+    or when using composer dependency manager from the root of your project issue the following command:
+
+    ```bash
+    ./vendor/bin/phpcs --config-set default_standard <value>
+    ```
+
+2. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
+
+    ```json
+    {
+        "phpsab.standard": "PSR2"
+    }
+    ```
+
+3. The setting can be set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcbf`.
+
+    ```json
+    {
+        "phpsab.standard": "WordPress"
+    }
+    ```
+
+    After you install the custom coding standard, you can make it available to phpcbf by issuing the following command:
+
+    ```bash
+    phpcs --config-set installed_paths <path/to/custom/coding/standard>
+    ```
+
+    or when using composer dependency manager from the root of your project issue the following command:
+
+    ```bash
+    ./vendor/bin/phpcs --config-set installed_paths <path/to/custom/coding/standard>
+    ```
+
+4. The setting can be set to the absolute path to a custom coding standard:
+
+    ```json
+    {
+        "phpsab.standard": "/path/to/coding/standard"
+    }
+    ```
+
+    or you can use the path to a custom ruleset:
+
+    ```json
+    {
+        "phpsab.standard": "/path/to/project/phpcs.xml"
+    }
+    ```
+
+5. The setting can be set to your workspace relative path to a custom coding standard:
+
+    ```json
+    {
+        "phpsab.standard": "./vendor/path/to/coding/standard"
+    }
+    ```
+
+    or you can use the path to your project's custom ruleset:
+
+    ```json
+    {
+        "phpsab.standard": "./phpcs.xml"
+    }
+    ```
+
+### **phpsab.autoRulesetSearch**
+
+[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
+
+Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides `phpsab.standard` configuration when a ruleset is found. If `phpcs` finds a configuration file through auto search this extension should similarly find that configuration file and apply fixes based on the same configuration.
+
+> **NOTE:** This option does not apply for unsaved documents (in-memory). Also, the name of files that are searched for is configurable in this extension.
+
+### **phpsab.allowedAutoRulesets**
+
+[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [] ]
+
+An array of filenames that could contain a valid phpcs ruleset.
+
+```json
+{
+    "phpsab.allowedAutoRulesets": ["phpcs.xml", "special.xml"]
+}
+```
 
 ### **phpsab.snifferEnable**
 
@@ -140,7 +264,7 @@ Enum dropdown options to set Sniffer Mode to `onSave` or `onType`.
 
 1. `onSave`: The Sniffer will only update diagnostics when the document is saved.
 
-1. `onType`: The Sniffer will update diagnostics as you type in a document.
+2. `onType`: The Sniffer will update diagnostics as you type in a document.
 
 ### **phpsab.snifferTypeDelay**
 
@@ -193,131 +317,15 @@ This setting controls the executable path for `phpcbf`. Leave this as default to
 
 > All paths should be provided in unix style, for windows users the path will get translated by the extension, to specify the drive in windows use `/C/`.
 
-### **phpsab.standard**
-
-[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
-
-This setting controls the coding standard used by `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
-
-> **NOTE:** While using composer dependency manager over global installation make sure you use the phpcbf commands under your project scope !
-
-The following values are applicable:
-
-1. This setting can be set to `null`, which is the default behavior and uses the `default_standard` when set in the `phpcs` configuration or fallback to the `Pear` coding standard.
-
-    ```json
-    {
-        "phpsab.standard": null
-    }
-    ```
-
-    You may set the `default_standard` used by phpcbf using the following command:
-
-    ```bash
-    phpcs --config-set default_standard <value>
-    ```
-
-    or when using composer dependency manager from the root of your project issue the following command:
-
-    ```bash
-    ./vendor/bin/phpcs --config-set default_standard <value>
-    ```
-
-1. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
-
-    ```json
-    {
-        "phpsab.standard": "PSR2"
-    }
-    ```
-
-1. The setting can be set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcbf`.
-
-    ```json
-    {
-        "phpsab.standard": "WordPress"
-    }
-    ```
-
-    After you install the custom coding standard, you can make it available to phpcbf by issuing the following command:
-
-    ```bash
-    phpcs --config-set installed_paths <path/to/custom/coding/standard>
-    ```
-
-    or when using composer dependency manager from the root of your project issue the following command:
-
-    ```bash
-    ./vendor/bin/phpcs --config-set installed_paths <path/to/custom/coding/standard>
-    ```
-
-1. The setting can be set to the absolute path to a custom coding standard:
-
-    ```json
-    {
-        "phpsab.standard": "/path/to/coding/standard"
-    }
-    ```
-
-    or you can use the path to a custom ruleset:
-
-    ```json
-    {
-        "phpsab.standard": "/path/to/project/phpcs.xml"
-    }
-    ```
-
-1. The setting can be set to your workspace relative path to a custom coding standard:
-
-    ```json
-    {
-        "phpsab.standard": "./vendor/path/to/coding/standard"
-    }
-    ```
-
-    or you can use the path to your project's custom ruleset:
-
-    ```json
-    {
-        "phpsab.standard": "./phpcs.xml"
-    }
-    ```
-
-### **phpsab.autoRulesetSearch**
-
-[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
-
-Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides `phpsab.standard` configuration when a ruleset is found. If `phpcs` finds a configuration file through auto search this extension should similarly find that configuration file and apply fixes based on the same configuration.
-
-> **NOTE:** This option does not apply for unsaved documents (in-memory). Also, the name of files that are searched for is configurable in this extension.
-
-### **phpsab.allowedAutoRulesets**
-
-[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [] ]
-
-An array of filenames that could contain a valid phpcs ruleset.
-
-```json
-{
-    "phpsab.allowedAutoRulesets": ["phpcs.xml", "special.xml"]
-}
-```
-
-## Advanced Configuration
-
-### **phpsab.composerJsonPath**
-
-[ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
-
-This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
-
 ## Diagnosing common errors
 
 ### **phpsab.debug**
 
 [ *Scope:* All | Optional | *Type:* boolean | Default: false ]
 
-Write debug information to the PHP Sniffer & Beautifier output channel and enable the display extra notices.
+Choose if debug information should be sent to PHP Sniffer & Beautifier output channel and enable the displaying information notices.
+
+> **Note:** Errors are always sent to the output channel
 
 ### The phpcs report contains invalid json
 
@@ -341,7 +349,13 @@ This setting has moved to **phpsab.fixerExecutablePath**. This setting will be f
 
 ## Acknowledgements
 
-This extension is based off of the `phpcs` extension created by [Ioannis Kappas](https://github.com/ikappas/vscode-phpcs/), the `PHP Sniffer` extension create by [wongjn](https://github.com/wongjn/vscode-php-sniffer) and the existing `phpcbf` extension by [Per Søderlind](https://github.com/soderlind/vscode-phpcbf). It uses some portions of these extensions to provide the `phpcs & phpcbf` functionality with auto config search.
+This extension draws inspiration from and utilizes certain portions of code from the following extensions:
+
+-   [vscode-phpcs](https://github.com/ikappas/vscode-phpcs/) by Ioannis Kappas
+-   [vscode-phpcbf](https://github.com/soderlind/vscode-phpcbf) by Per Søderlind
+-   [vscode-php-sniffer](https://github.com/wongjn/vscode-php-sniffer) by wongjn
+
+These extensions provided valuable functionality and insights that contributed to the development of this project.
 
 ## Contributing and Licensing
 

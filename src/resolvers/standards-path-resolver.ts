@@ -1,24 +1,20 @@
 import { PathResolver } from '@phpsab/interfaces/path-resolver';
 import { ResourceSettings } from '@phpsab/interfaces/settings';
-import {
-  getPlatformExtension,
-  getPlatformPathSeparator,
-} from '@phpsab/resolvers/path-resolver-utils';
 import { logger } from '@phpsab/services/logger';
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { TextDocument, workspace } from 'vscode';
 
 export const createStandardsPathResolver = (
   document: TextDocument,
   config: ResourceSettings,
 ): PathResolver => {
-  const extension = getPlatformExtension();
-  const pathSeparator = getPlatformPathSeparator();
   return {
-    extension,
-    pathSeparator,
     resolve: async () => {
       let configured = config.standard ?? '';
+      const pathSeparator = path.sep;
+
+      // Auto search is disable job done.
       if (config.autoRulesetSearch === false) {
         return configured;
       }
@@ -30,31 +26,30 @@ export const createStandardsPathResolver = (
         return '';
       }
 
-      let workspaceRoot = folder.uri.fsPath + pathSeparator;
+      let workspaceRoot = folder.uri.fsPath;
       let localPath = resource.fsPath.replace(workspaceRoot, '');
-      let paths = localPath
+
+      // Split up the path of the PHP file for tree traversal
+      const paths = localPath
         .split(pathSeparator)
-        .filter((path) => path.includes('.php') !== true);
+        .filter((path) => path && !path.includes('.php'));
 
-      let searchPaths = [];
+      const searchPaths: string[] = [];
 
-      // create search paths based on file location
-      for (let i = 0, len = paths.length; i < len; i++) {
-        searchPaths.push(
-          workspaceRoot + paths.join(pathSeparator) + pathSeparator,
-        );
-        paths.pop();
+      // Create search paths based on file location
+      for (let i = paths.length; i > 0; i--) {
+        const subPath = paths.slice(0, i).join(pathSeparator);
+        searchPaths.push(path.join(workspaceRoot, subPath));
       }
       searchPaths.push(workspaceRoot);
 
-      // check each search path for an allowed ruleset
-      let allowed = config.allowedAutoRulesets;
+      // Check each search path for an allowed ruleset
+      const allowed = config.allowedAutoRulesets;
+      const files: string[] = [];
 
-      let files: string[] = [];
-
-      searchPaths.map((path) => {
+      searchPaths.forEach((path) => {
         allowed.forEach((file) => {
-          files.push(path + file);
+          files.push(path + pathSeparator + file);
         });
       });
       logger.debug('Standards Search paths: ', searchPaths);

@@ -83,7 +83,7 @@ const validate = async (document: TextDocument) => {
     return;
   }
   const settings = await getSettings();
-  const resourceConf = settings.resources[workspaceFolder.index];
+  const resourceConf = settings.workspaces[workspaceFolder.index];
   if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
     return;
   }
@@ -285,7 +285,7 @@ export const activateSniffer = async (
 ) => {
   settingsCache = settings;
   if (
-    settings.resources.filter((folder) => folder.snifferEnable === true)
+    settings.workspaces.filter((folder) => folder.snifferEnable === true)
       .length === 0
   ) {
     return;

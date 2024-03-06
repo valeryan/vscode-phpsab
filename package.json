@@ -51,6 +51,13 @@
           "description": "Write debug info to the console",
           "order": 1
         },
+        "phpsab.composerJsonPath": {
+          "scope": "resource",
+          "type": "string",
+          "default": "composer.json",
+          "description": "The path to composer.json",
+          "order": 2
+        },
         "phpsab.standard": {
           "scope": "resource",
           "type": [
@@ -59,14 +66,14 @@
           ],
           "default": null,
           "description": "(Optional) The name of a coding standard or the file path to a ruleset file. Can be overridden if auto ruleset search is enabled.",
-          "order": 2
+          "order": 3
         },
         "phpsab.autoRulesetSearch": {
           "scope": "resource",
           "type": "boolean",
           "default": true,
           "description": "Automatically search for a ruleset file to use as configuration. Overrides the default standard defined above if enabled.",
-          "order": 3
+          "order": 4
         },
         "phpsab.allowedAutoRulesets": {
           "scope": "resource",
@@ -80,13 +87,6 @@
             "ruleset.xml"
           ],
           "description": "Filenames to search for that contain the ruleset for fixers.",
-          "order": 4
-        },
-        "phpsab.composerJsonPath": {
-          "scope": "resource",
-          "type": "string",
-          "default": "composer.json",
-          "description": "The path to composer.json",
           "order": 5
         },
         "phpsab.snifferEnable": {
@@ -111,6 +111,7 @@
           "order": 8
         },
         "phpsab.snifferMode": {
+          "scope": "resource",
           "type": "string",
           "default": "onSave",
           "enum": [
@@ -121,6 +122,7 @@
           "order": 9
         },
         "phpsab.snifferTypeDelay": {
+          "scope": "resource",
           "type": "number",
           "default": 250,
           "minimum": 0,
@@ -128,6 +130,7 @@
           "order": 10
         },
         "phpsab.snifferShowSources": {
+          "scope": "resource",
           "type": "boolean",
           "default": false,
           "description": "Control if phpcs report should include sniff sources.",
