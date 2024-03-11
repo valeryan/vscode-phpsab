@@ -110,30 +110,28 @@
           "description": "Additional arguments passed to phpcs",
           "order": 8
         },
-        "phpsab.snifferMode": {
+        "phpsab.snifferShowSources": {
           "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "description": "Control if phpcs report should include sniff sources.",
+          "order": 9
+        },
+        "phpsab.snifferMode": {
           "type": "string",
           "default": "onSave",
           "enum": [
             "onSave",
             "onType"
           ],
-          "markdownDescription": "When to run `phpcs`.",
-          "order": 9
+          "markdownDescription": "When to run `phpcs`, on save or on typing. This is a global setting and will apply to all workspaces.",
+          "order": 10
         },
         "phpsab.snifferTypeDelay": {
-          "scope": "resource",
           "type": "number",
           "default": 250,
           "minimum": 0,
-          "markdownDescription": "When `phpsab.snifferMode` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run.",
-          "order": 10
-        },
-        "phpsab.snifferShowSources": {
-          "scope": "resource",
-          "type": "boolean",
-          "default": false,
-          "description": "Control if phpcs report should include sniff sources.",
+          "markdownDescription": "When `phpsab.snifferMode` is `onType`, this sets the amount of milliseconds the validator will wait after typing has stopped before it will run. This is a global setting and will apply to all workspaces.",
           "order": 11
         },
         "phpsab.fixerEnable": {

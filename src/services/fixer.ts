@@ -75,19 +75,10 @@ const documentFullRange = (document: TextDocument) =>
   );
 
 /**
- *
- * @param range Range
- * @param document TextDocument
- * @returns boolean
- */
-const isFullDocumentRange = (range: Range, document: TextDocument) =>
-  range.isEqual(documentFullRange(document));
-
-/**
  * run the fixer process
  * @param document
  */
-const format = async (document: TextDocument, fullDocument: boolean) => {
+const format = async (document: TextDocument) => {
   const settings = await getSettings();
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
   if (!workspaceFolder) {
@@ -99,9 +90,12 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   }
 
   if (resourceConf.fixerEnable === false) {
-    window.showInformationMessage(
-      'Fixer is disable for this workspace or PHPCBF was not found for this workspace.',
-    );
+    const message =
+      'Fixer is disable for this workspace or PHPCBF was not found.';
+    logger.info(message);
+    if (settings.debug) {
+      window.showInformationMessage(message);
+    }
     return '';
   }
   logger.startTimer('Fixer');
@@ -156,7 +150,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     255: 'FIXER: A Fatal execution error occurred.',
   };
 
-  let error: string = '';
+  let error: string | null = null;
   let result: string = '';
   let message: string = 'No fixable errors were found.';
 
@@ -186,6 +180,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       break;
     }
     case 0: {
+      logger.info(message);
       if (settings.debug) {
         window.showInformationMessage(message);
       }
@@ -197,6 +192,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         message = 'All fixable errors were fixed correctly.';
       }
 
+      logger.info(message);
       if (settings.debug) {
         window.showInformationMessage(message);
       }
@@ -209,6 +205,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         message = 'FIXER failed to fix some of the fixable errors.';
       }
 
+      logger.info(message);
       if (settings.debug) {
         window.showInformationMessage(message);
       }
@@ -224,7 +221,8 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   logger.endTimer('Fixer');
 
-  if (error !== '') {
+  if (error) {
+    logger.error(error);
     return Promise.reject(error);
   }
 
@@ -250,13 +248,11 @@ export const activateFixer = (
  */
 export const registerFixerAsDocumentProvider = (
   document: TextDocument,
-  range: Range,
 ): ProviderResult<TextEdit[]> => {
   return new Promise((resolve, reject) => {
     const fullRange = documentFullRange(document);
-    const isFullDocument = isFullDocumentRange(range, document);
 
-    format(document, isFullDocument)
+    format(document)
       .then((text) => {
         if (text.length > 0) {
           resolve([new TextEdit(fullRange, text)]);

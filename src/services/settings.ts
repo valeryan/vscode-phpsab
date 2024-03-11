@@ -224,9 +224,7 @@ export const loadSettings = async () => {
       snifferEnable: config.get('snifferEnable', true),
       snifferExecutablePath: config.get('snifferExecutablePath', ''),
       snifferArguments: config.get('snifferArguments', []),
-      snifferMode: config.get('snifferMode', 'onSave'),
       snifferShowSources: config.get('snifferShowSources', false),
-      snifferTypeDelay: config.get('snifferTypeDelay', 250),
       fixerEnable: config.get('fixerEnable', true),
       fixerExecutablePath: config.get('fixerExecutablePath', ''),
       fixerArguments: config.get('fixerArguments', []),
@@ -243,6 +241,8 @@ export const loadSettings = async () => {
   let settings: Settings = {
     workspaces: resourcesSettings,
     debug: config.get('debug', false),
+    snifferMode: config.get('snifferMode', 'onSave'),
+    snifferTypeDelay: config.get('snifferTypeDelay', 250),
   };
 
   logger.setDebugMode(settings.debug);

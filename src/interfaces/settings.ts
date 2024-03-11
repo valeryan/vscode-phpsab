@@ -10,12 +10,12 @@ export interface ResourceSettings {
   snifferEnable: boolean;
   snifferExecutablePath: string;
   snifferArguments: string[];
-  snifferMode: string;
-  snifferTypeDelay: number;
   snifferShowSources: boolean;
 }
 
 export interface Settings {
   workspaces: ResourceSettings[];
   debug: boolean;
+  snifferMode: string;
+  snifferTypeDelay: number;
 }

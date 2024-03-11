@@ -171,7 +171,7 @@ const validate = async (document: TextDocument) => {
                   ? DiagnosticSeverity.Error
                   : DiagnosticSeverity.Warning;
               let output = message;
-              if (settings.snifferShowSources) {
+              if (resourceConf.snifferShowSources) {
                 output += `\n(${source})`;
               }
               const diagnostic = new Diagnostic(range, output, severity);

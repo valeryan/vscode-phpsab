@@ -93,7 +93,9 @@ If you would like to run phpcs in your docker containers using this extension, a
 
 There are various options that can be configured to control how the plugin operates which can be set in your user, workspace or folder preferences.
 
-### **phpsab.composerJsonPath**
+### Ruleset Configuration
+
+#### **phpsab.composerJsonPath**
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
 
@@ -107,7 +109,7 @@ Specify the path to your `composer.json` file if it's not located at the workspa
 
 > **Note:** The extension does not apply any automatic search logic to the composer.json path.
 
-### **phpsab.standard**
+#### **phpsab.standard**
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
@@ -197,7 +199,7 @@ The following values are applicable:
     }
     ```
 
-### **phpsab.autoRulesetSearch**
+#### **phpsab.autoRulesetSearch**
 
 [ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
@@ -205,7 +207,7 @@ Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpc
 
 > **NOTE:** This option does not apply for unsaved documents (in-memory). Also, the name of files that are searched for is configurable in this extension.
 
-### **phpsab.allowedAutoRulesets**
+#### **phpsab.allowedAutoRulesets**
 
 [ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [] ]
 
@@ -217,13 +219,15 @@ An array of filenames that could contain a valid phpcs ruleset.
 }
 ```
 
-### **phpsab.snifferEnable**
+### Sniffer Configuration
+
+#### **phpsab.snifferEnable**
 
 [ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
 This setting controls whether `phpcs` sniffer is enabled.
 
-### **phpsab.snifferArguments**
+#### **phpsab.snifferArguments**
 
 [ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
 
@@ -240,7 +244,7 @@ _Example_
 phpcs -n --ignore=tests/* <file>
 ```
 
-### **phpsab.snifferExecutablePath**
+#### **phpsab.snifferExecutablePath**
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
@@ -256,9 +260,17 @@ This setting controls the executable path for `phpcs`. Leave this as default to 
 
 > All paths should be provided in unix style, for windows users the path will get translated by the extension, to specify the drive in windows use `/C/`.
 
-### **phpsab.snifferMode**
+#### **phpsab.snifferShowSources**
+
+[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* false ]
+
+Determines if the Sniffer includes the source of the diagnostic data with error messages.
+
+#### **phpsab.snifferMode**
 
 [ *Scope:* All | Optional | *Type:* string | *Default:* onSave ]
+
+>**Note:** This setting is global and will change the mode in all workspaces.
 
 Enum dropdown options to set Sniffer Mode to `onSave` or `onType`.
 
@@ -266,25 +278,23 @@ Enum dropdown options to set Sniffer Mode to `onSave` or `onType`.
 
 2. `onType`: The Sniffer will update diagnostics as you type in a document.
 
-### **phpsab.snifferTypeDelay**
+#### **phpsab.snifferTypeDelay**
 
 [ *Scope:* All | Optional | *Type:* number | *Default:* 250 ]
 
+>**Note:** This setting is global and will change the delay in all workspaces.
+
 When `snifferMode` is `onType` this setting controls how long to wait after typing stops to update. The number represents milliseconds.
 
-### **phpsab.snifferShowSources**
+### Fixer Configuration
 
-[ *Scope:* All | Optional | *Type:* boolean | *Default:* false ]
-
-Determines if the Sniffer includes the source of the diagnostic data with error messages.
-
-### **phpsab.fixerEnable**
+#### **phpsab.fixerEnable**
 
 [ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
 This setting controls whether `phpcbf` fixer is enabled.
 
-### **phpsab.fixerArguments**
+#### **phpsab.fixerArguments**
 
 [ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
 
@@ -301,7 +311,7 @@ _Example_
 phpcbf -n --ignore=tests/* <file>
 ```
 
-### **phpsab.fixerExecutablePath**
+#### **phpsab.fixerExecutablePath**
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
