@@ -1,4 +1,4 @@
-import { PathResolver } from '@phpsab/interfaces/path-resolver';
+import { PathResolver } from '@phpsab/interfaces/pathResolver';
 import { logger } from '@phpsab/services/logger';
 import { access, constants, readFile, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative } from 'node:path';

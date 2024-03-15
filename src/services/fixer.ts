@@ -1,6 +1,6 @@
-import { ConsoleError } from '@phpsab/interfaces/console-error';
+import { ConsoleError } from '@phpsab/interfaces/consoleError';
 import { Settings } from '@phpsab/interfaces/settings';
-import { createStandardsPathResolver } from '@phpsab/resolvers/standards-path-resolver';
+import { createStandardsPathResolver } from '@phpsab/resolvers/standardsPathResolver';
 import { logger } from '@phpsab/services/logger';
 import { loadSettings } from '@phpsab/services/settings';
 import spawn from 'cross-spawn';

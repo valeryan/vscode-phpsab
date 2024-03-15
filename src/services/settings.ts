@@ -1,10 +1,10 @@
 import { ResourceSettings, Settings } from '@phpsab/interfaces/settings';
-import { resolveExecutablePath } from '@phpsab/resolvers/executable-path-resolver';
+import { resolveExecutablePath } from '@phpsab/resolvers/executablePathResolver';
 import {
   crossPath,
   executableExist,
   getPlatformExtension,
-} from '@phpsab/resolvers/path-resolver-utils';
+} from '@phpsab/resolvers/pathResolverUtils';
 import { logger } from '@phpsab/services/logger';
 import { Uri, commands, window, workspace } from 'vscode';
 

@@ -1,5 +1,5 @@
-import { PathResolverOptions } from '@phpsab/interfaces/path-resolver';
-import { createResolveExecutablePath } from '@phpsab/resolvers/executable-path-resolver';
+import { PathResolverOptions } from '@phpsab/interfaces/pathResolver';
+import { createResolveExecutablePath } from '@phpsab/resolvers/executablePathResolver';
 import assert from 'assert';
 import sinon from 'sinon';
 

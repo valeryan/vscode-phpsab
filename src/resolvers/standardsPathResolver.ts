@@ -1,4 +1,4 @@
-import { PathResolver } from '@phpsab/interfaces/path-resolver';
+import { PathResolver } from '@phpsab/interfaces/pathResolver';
 import { ResourceSettings } from '@phpsab/interfaces/settings';
 import { logger } from '@phpsab/services/logger';
 import fs from 'node:fs/promises';

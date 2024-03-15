@@ -1,4 +1,4 @@
-import { createComposerExecutablePathResolver } from '@phpsab/resolvers/executable-composer-resolver';
+import { createComposerExecutablePathResolver } from '@phpsab/resolvers/executableComposerResolver';
 import assert from 'assert';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -1,7 +1,7 @@
-import { PathResolver } from '@phpsab/interfaces/path-resolver';
+import { PathResolver } from '@phpsab/interfaces/pathResolver';
 import { access, constants } from 'node:fs/promises';
 import { join } from 'node:path';
-import { getEnvPathSeparator } from './path-resolver-utils';
+import { getEnvPathSeparator } from './pathResolverUtils';
 
 export const createGlobalExecutablePathResolver = (
   executable: string,

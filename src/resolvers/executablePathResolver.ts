@@ -1,9 +1,9 @@
 import {
   PathResolver,
   PathResolverOptions,
-} from '@phpsab/interfaces/path-resolver';
-import { createComposerExecutablePathResolver } from '@phpsab/resolvers/executable-composer-resolver';
-import { createGlobalExecutablePathResolver } from '@phpsab/resolvers/executable-global-resolver';
+} from '@phpsab/interfaces/pathResolver';
+import { createComposerExecutablePathResolver } from '@phpsab/resolvers/executableComposerResolver';
+import { createGlobalExecutablePathResolver } from '@phpsab/resolvers/executableGlobalResolver';
 
 /**
  * Runs the given resolvers in order until a path is resolved.
