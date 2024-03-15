@@ -1,7 +1,7 @@
+import { logger } from '@phpsab/services/logger';
 import assert from 'assert';
 import sinon from 'sinon';
 import { window } from 'vscode';
-import { logger } from '../../logger';
 
 const setupTestSuite = (debugMode: boolean): [sinon.SinonSpy] => {
   const mockOutputChannel = window.createOutputChannel('PHP SAB UNIT TEST');

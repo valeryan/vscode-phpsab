@@ -2,11 +2,14 @@
  * Copyright (c) 2019 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { commands, ExtensionContext, extensions, languages } from 'vscode';
-import { activateFixer, registerFixerAsDocumentProvider } from './fixer';
-import { disposeLogger, logger } from './logger';
-import { loadSettings } from './settings';
-import { activateSniffer, disposeSniffer } from './sniffer';
+import {
+  activateFixer,
+  registerFixerAsDocumentProvider,
+} from '@phpsab/services/fixer';
+import { disposeLogger, logger } from '@phpsab/services/logger';
+import { loadSettings } from '@phpsab/services/settings';
+import { activateSniffer, disposeSniffer } from '@phpsab/services/sniffer';
+import { ExtensionContext, commands, extensions, languages } from 'vscode';
 
 /**
  * Activate Extension
@@ -19,12 +22,12 @@ export const activate = async (context: ExtensionContext) => {
     extensions.getExtension(extensionId)?.packageJSON.version;
 
   // Always output extension information to channel on activate
-  logger.log(`Extension ID: ${extensionId}.`);
-  logger.log(`Extension Version: ${extensionVersion}.`);
+  logger.log(`Extension ID: ${extensionId}`);
+  logger.log(`Extension Version: ${extensionVersion}`);
 
   const settings = await loadSettings();
-  activateFixer(context.subscriptions, settings);
   activateSniffer(context.subscriptions, settings);
+  activateFixer(context.subscriptions, settings);
   // register format from command palette
   context.subscriptions.push(
     commands.registerTextEditorCommand('fixer.fix', (textEditor) => {
@@ -39,8 +42,8 @@ export const activate = async (context: ExtensionContext) => {
     languages.registerDocumentRangeFormattingEditProvider(
       { scheme: 'file', language: 'php' },
       {
-        provideDocumentRangeFormattingEdits: (document, range) => {
-          return registerFixerAsDocumentProvider(document, range);
+        provideDocumentRangeFormattingEdits: (document) => {
+          return registerFixerAsDocumentProvider(document);
         },
       },
     ),
