@@ -2,133 +2,14 @@ import {
   PathResolver,
   PathResolverOptions,
 } from '@phpsab/interfaces/path-resolver';
-import { logger } from '@phpsab/services/logger';
-import fs from 'node:fs/promises';
-import { dirname, isAbsolute, join, relative } from 'node:path';
-import { getEnvPathSeparator } from './path-resolver-utils';
+import { createComposerExecutablePathResolver } from '@phpsab/resolvers/executable-composer-resolver';
+import { createGlobalExecutablePathResolver } from '@phpsab/resolvers/executable-global-resolver';
 
 /**
- * Search for the executable in the vendor folder
- * @param composerJsonPath path to composer.json
- * @param executableFile name of the executable to resolve from vendor
- * @returns string
+ * Runs the given resolvers in order until a path is resolved.
+ * @param resolvers - The resolvers to run.
+ * @returns The resolved path, or an empty string if no path was resolved.
  */
-const getVendorExecutablePath = async (
-  composerJsonPath: string,
-  executableFile: string,
-): Promise<string> => {
-  let basePath = dirname(composerJsonPath);
-  let vendorPath = join(basePath, 'vendor', 'bin', executableFile);
-
-  let config = null;
-  try {
-    const composerFile = await fs.readFile(composerJsonPath, 'utf8');
-    config = JSON.parse(composerFile);
-  } catch (error) {
-    config = {};
-  }
-
-  if (config['config'] && config['config']['vendor-dir']) {
-    vendorPath = join(
-      basePath,
-      config['config']['vendor-dir'],
-      'bin',
-      executableFile,
-    );
-  }
-
-  if (config['config'] && config['config']['bin-dir']) {
-    vendorPath = join(basePath, config['config']['bin-dir'], executableFile);
-  }
-
-  return vendorPath;
-};
-
-/**
- * Create the path resolver for composer executable
- * @param executableFile name of executable to be search for
- * @param workspaceRoot the path of the workspace
- * @param composerJsonPath The path to a composer.json file
- * @returns callable function resolve
- */
-export const createComposerPathResolver = (
-  executableFile: string,
-  workspaceRoot: string,
-  composerJsonPath: string = '',
-): PathResolver => {
-  return {
-    resolve: async () => {
-      let resolvedPath: string = '';
-      const fullWorkingPath = isAbsolute(composerJsonPath)
-        ? composerJsonPath
-        : join(workspaceRoot, composerJsonPath).replace(/composer.json$/, '');
-
-      let fullComposerJsonPath = '';
-      try {
-        fullComposerJsonPath = await fs.realpath(
-          join(fullWorkingPath, 'composer.json'),
-        );
-      } catch (error) {
-        logger.debug('Unable to locate the composer.json file.', {
-          workspaceRoot,
-          composerJsonPath,
-          executableFile,
-        });
-        return '';
-      }
-
-      const executableFromVendor = await getVendorExecutablePath(
-        fullComposerJsonPath,
-        executableFile,
-      );
-
-      if (executableFromVendor) {
-        try {
-          fs.access(
-            executableFromVendor,
-            fs.constants.R_OK || fs.constants.W_OK,
-          );
-          resolvedPath = executableFromVendor;
-        } catch (error) {
-          const relativeVendorPath = relative(
-            workspaceRoot,
-            executableFromVendor,
-          );
-          logger.debug(
-            `${executableFile} was not found in ${relativeVendorPath}. You may need to run "composer install".`,
-            error,
-          );
-          return '';
-        }
-      }
-
-      return resolvedPath;
-    },
-  };
-};
-
-export const createGlobalPathResolver = (executable: string): PathResolver => {
-  return {
-    resolve: async () => {
-      let envSeparator = getEnvPathSeparator();
-      let resolvedPath: string = '';
-      const envPath = process.env.PATH || '';
-      let globalPaths: string[] = envPath.split(envSeparator);
-      for (const globalPath of globalPaths) {
-        let testPath = join(globalPath, executable);
-        try {
-          await fs.access(testPath, fs.constants.X_OK);
-          resolvedPath = testPath;
-          break; // Stop loop if path is found
-        } catch (error) {
-          // Continue loop if path is not found
-        }
-      }
-      return resolvedPath;
-    },
-  };
-};
-
 const runResolvers = async (resolvers: PathResolver[]): Promise<string> => {
   let resolvedPath: string = '';
   for (const resolver of resolvers) {
@@ -141,23 +22,54 @@ const runResolvers = async (resolvers: PathResolver[]): Promise<string> => {
   return resolvedPath;
 };
 
-export const resolveExecutablePath = async (
+/**
+ * Creates a function to resolve an executable path.
+ * This is a higher-order function that takes two functions to create resolvers,
+ * and returns a function that uses these resolvers to resolve an executable path.
+ * This is to make unit testing easier.
+ * @param createComposerResolver - A function to create a composer resolver.
+ * @param createGlobalResolver - A function to create a global resolver.
+ * @returns A function resolves to the executable path.
+ */
+export const createResolveExecutablePath = (
+  createComposerResolver: (
+    workspaceRoot: string,
+    composerJsonPath: string,
+    executableFile: string,
+  ) => PathResolver,
+  createGlobalResolver: (executableFile: string) => PathResolver,
+) => {
+  return async (
+    options: PathResolverOptions,
+    executable: string,
+  ): Promise<string> => {
+    const executableFile = executable;
+    const resolvers: PathResolver[] = [];
+    if (options.workspaceRoot) {
+      resolvers.push(
+        createComposerResolver(
+          options.workspaceRoot,
+          options.composerJsonPath,
+          executableFile,
+        ),
+      );
+    }
+    resolvers.push(createGlobalResolver(executableFile));
+    return await runResolvers(resolvers);
+  };
+};
+
+/**
+ * Resolves an executable path using a composer resolver and a global resolver.
+ * This is created by calling `createResolveExecutablePath` with `createComposerExecutablePathResolver`
+ * and `createGlobalExecutablePathResolver`.
+ * @param options - The resolver options.
+ * @param executable - The executable to resolve.
+ */
+export const resolveExecutablePath: (
   options: PathResolverOptions,
   executable: string,
-): Promise<string> => {
-  const executableFile = executable;
-  const resolvers: PathResolver[] = [];
-  // Add resolvers to find the executable using composer.
-  if (options.workspaceRoot) {
-    resolvers.push(
-      createComposerPathResolver(
-        executableFile,
-        options.workspaceRoot,
-        options.composerJsonPath,
-      ),
-    );
-  }
-  // Add a resolver to search through your systems env path
-  resolvers.push(createGlobalPathResolver(executableFile));
-  return await runResolvers(resolvers);
-};
+) => Promise<string> = createResolveExecutablePath(
+  createComposerExecutablePathResolver,
+  createGlobalExecutablePathResolver,
+);

@@ -9,62 +9,75 @@ export const createStandardsPathResolver = (
   document: TextDocument,
   config: ResourceSettings,
 ): PathResolver => {
-  return {
-    resolve: async () => {
-      let configured = config.standard ?? '';
-      const pathSeparator = path.sep;
+  const pathSeparator = path.sep;
+  const resource = document.uri;
+  const folder = workspace.getWorkspaceFolder(resource);
+  let workspaceRoot = folder ? folder.uri.fsPath : '';
+  let localPath = resource.fsPath.replace(workspaceRoot, '');
 
-      // Auto search is disable job done.
-      if (config.autoRulesetSearch === false) {
-        return configured;
-      }
+  const createSearchPaths = () => {
+    const paths = localPath
+      .split(pathSeparator)
+      .filter((p) => p && !p.includes('.php'));
 
-      let resolvedPath: string | null = null;
-      const resource = document.uri;
-      const folder = workspace.getWorkspaceFolder(resource);
-      if (!folder) {
-        return '';
-      }
+    const searchPaths: string[] = [];
 
-      let workspaceRoot = folder.uri.fsPath;
-      let localPath = resource.fsPath.replace(workspaceRoot, '');
+    for (let i = paths.length; i > 0; i--) {
+      const subPath = paths.slice(0, i).join(pathSeparator);
+      searchPaths.push(path.join(workspaceRoot, subPath));
+    }
+    searchPaths.push(workspaceRoot);
 
-      // Split up the path of the PHP file for tree traversal
-      const paths = localPath
-        .split(pathSeparator)
-        .filter((path) => path && !path.includes('.php'));
+    return searchPaths;
+  };
 
-      const searchPaths: string[] = [];
+  const createFilesToCheck = (
+    searchPaths: string[],
+    allowedFiles: string[],
+  ) => {
+    const files: string[] = [];
 
-      // Create search paths based on file location
-      for (let i = paths.length; i > 0; i--) {
-        const subPath = paths.slice(0, i).join(pathSeparator);
-        searchPaths.push(path.join(workspaceRoot, subPath));
-      }
-      searchPaths.push(workspaceRoot);
-
-      // Check each search path for an allowed ruleset
-      const allowed = config.allowedAutoRulesets;
-      const files: string[] = [];
-
-      searchPaths.forEach((path) => {
-        allowed.forEach((file) => {
-          files.push(path + pathSeparator + file);
-        });
+    searchPaths.forEach((p) => {
+      allowedFiles.forEach((f) => {
+        files.push(p + pathSeparator + f);
       });
-      logger.debug('Standards Search paths: ', searchPaths);
+    });
 
-      for (let i = 0, len = files.length; i < len; i++) {
-        let c = files[i];
-        try {
-          await fs.access(c, fs.constants.R_OK | fs.constants.W_OK);
-          return (resolvedPath = c);
-        } catch (error) {
-          continue;
-        }
+    return files;
+  };
+
+  const resolve = async () => {
+    let configured = config.standard ?? '';
+
+    if (config.autoRulesetSearch === false) {
+      return configured;
+    }
+
+    if (!folder) {
+      return '';
+    }
+
+    const searchPaths = createSearchPaths();
+    const filesToCheck = createFilesToCheck(
+      searchPaths,
+      config.allowedAutoRulesets,
+    );
+
+    logger.debug('Standards Search paths: ', searchPaths);
+
+    for (let i = 0, len = filesToCheck.length; i < len; i++) {
+      let c = filesToCheck[i];
+      try {
+        await fs.access(c, fs.constants.R_OK | fs.constants.W_OK);
+        return c;
+      } catch (error) {
+        continue;
       }
+    }
 
-      return resolvedPath ?? configured;
-    },
+    return configured;
+  };
+  return {
+    resolve,
   };
 };
