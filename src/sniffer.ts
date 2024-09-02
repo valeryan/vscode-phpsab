@@ -129,6 +129,7 @@ const validate = async (document: TextDocument) => {
     env: process.env,
     encoding: 'utf8',
     tty: true,
+    shell: true,
   };
   logger.info(
     `SNIFFER COMMAND: ${resourceConf.executablePathCS} ${lintArgs.join(' ')}`,
