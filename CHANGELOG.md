@@ -1,4 +1,11 @@
 # Changelog
+## <small>0.0.19 (2024-09-02)</small>
+
+* fix: Error: spawn EINVAL (#129) ([f9f1352](https://github.com/valeryan/vscode-phpsab/commit/f9f1352)), closes [#129](https://github.com/valeryan/vscode-phpsab/issues/129) [#128](https://github.com/valeryan/vscode-phpsab/issues/128)
+* chore(development): add commitizen, update docs (#116) ([d0117bc](https://github.com/valeryan/vscode-phpsab/commit/d0117bc)), closes [#116](https://github.com/valeryan/vscode-phpsab/issues/116)
+* chore(release): bump version to v0.0.18 (#117) ([c528257](https://github.com/valeryan/vscode-phpsab/commit/c528257)), closes [#117](https://github.com/valeryan/vscode-phpsab/issues/117) [#108](https://github.com/valeryan/vscode-phpsab/issues/108)
+* fix bad github name (#112) ([2270cef](https://github.com/valeryan/vscode-phpsab/commit/2270cef)), closes [#112](https://github.com/valeryan/vscode-phpsab/issues/112)
+
 
 ## <small>0.0.18 (2024-02-29)</small>
 
