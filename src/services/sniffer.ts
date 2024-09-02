@@ -1,3 +1,8 @@
+import { PHPCSMessageType, PHPCSReport } from '@phpsab/interfaces/phpcsReport';
+import { Settings } from '@phpsab/interfaces/settings';
+import { createStandardsPathResolver } from '@phpsab/resolvers/standardsPathResolver';
+import { logger } from '@phpsab/services/logger';
+import { loadSettings } from '@phpsab/services/settings';
 import { debounce } from 'lodash';
 import { spawn, SpawnOptions } from 'node:child_process';
 import {
@@ -15,19 +20,11 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { ConsoleError } from './interfaces/console-error';
-import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
-import { Settings } from './interfaces/settings';
-import { logger } from './logger';
-import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
-import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
-import { loadSettings } from './settings';
-import {
-  determineNodeError,
-  getPhpNotFoundRegex,
-} from './utils/error-handling/error-helpers';
-import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { constructCommandString, getArgs, parseArgs } from './utils/helpers';
+import { ConsoleError } from '../interfaces/consoleError';
+import { addPhpToEnvPath } from '../resolvers/pathResolverUtils';
+import { determineNodeError, getPhpNotFoundRegex } from '../utils/error-handling/error-helpers';
+import { addWindowsEnoentError } from '../utils/error-handling/windows-enoent-error';
+import { constructCommandString, getArgs, parseArgs } from '../utils/helpers';
 
 const enum runConfig {
   save = 'onSave',
@@ -64,7 +61,7 @@ const validate = async (document: TextDocument) => {
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
   const settings = await getSettings();
-  const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
+  const resourceConf = settings.workspaces[workspaceFolder?.index ?? 0];
   if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
     return;
   }
@@ -119,7 +116,7 @@ const validate = async (document: TextDocument) => {
     shell: true,
   };
 
-  const CSExecutable = resourceConf.executablePathCS;
+  const CSExecutable = resourceConf.snifferExecutablePath;
   const parsedArgs = parseArgs(lintArgs);
 
   const command = constructCommandString(CSExecutable, parsedArgs);
@@ -224,7 +221,7 @@ const validate = async (document: TextDocument) => {
                   ? DiagnosticSeverity.Error
                   : DiagnosticSeverity.Warning;
               let output = message;
-              if (settings.snifferShowSources) {
+              if (resourceConf.snifferShowSources) {
                 output += `\n(${source})`;
               }
               if (settings.snifferShowFixabilityIcons) {
@@ -340,7 +337,12 @@ export const activateSniffer = async (
   settings: Settings,
 ) => {
   settingsCache = settings;
-
+  if (
+    settings.workspaces.filter((folder) => folder.snifferEnable === true)
+      .length === 0
+  ) {
+    return;
+  }
   workspace.onDidChangeConfiguration(onConfigChange, null, subscriptions);
   workspace.onDidOpenTextDocument(validate, null, subscriptions);
   workspace.onDidCloseTextDocument(

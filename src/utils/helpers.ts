@@ -10,8 +10,8 @@ import {
   validInternalArguments,
 } from '../interfaces/arguments';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
-import { logger } from '../logger';
-import { isWin } from '../resolvers/path-resolver-utils';
+import { isWin } from '../resolvers/pathResolverUtils';
+import { logger } from '../services/logger';
 
 const extensionInfo: ExtensionInfo = {} as ExtensionInfo;
 

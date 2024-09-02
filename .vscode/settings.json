@@ -6,5 +6,6 @@
     "out": true
   },
   "typescript.tsc.autoDetect": "off",
-  "typescript.preferences.importModuleSpecifier": "relative"
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "cSpell.words": ["outdir", "outfile", "phpcbf", "phpcs", "phpsab"]
 }
