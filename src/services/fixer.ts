@@ -75,10 +75,19 @@ const documentFullRange = (document: TextDocument) =>
   );
 
 /**
+ *
+ * @param range Range
+ * @param document TextDocument
+ * @returns boolean
+ */
+const isFullDocumentRange = (range: Range, document: TextDocument) =>
+  range.isEqual(documentFullRange(document));
+
+/**
  * run the fixer process
  * @param document
  */
-const format = async (document: TextDocument) => {
+const format = async (document: TextDocument, fullDocument: boolean) => {
   const settings = await getSettings();
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
   if (!workspaceFolder) {
@@ -118,6 +127,11 @@ const format = async (document: TextDocument) => {
     document,
     resourceConf,
   ).resolve();
+
+  // Add git modified filter if vscode is trying to use a range of document
+  if (!fullDocument) {
+    additionalArguments.push('--filter=GitModified');
+  }
 
   const lintArgs = getArgs(document, standard, additionalArguments);
 
@@ -248,11 +262,13 @@ export const activateFixer = (
  */
 export const registerFixerAsDocumentProvider = (
   document: TextDocument,
+  range: Range,
 ): ProviderResult<TextEdit[]> => {
   return new Promise((resolve, reject) => {
     const fullRange = documentFullRange(document);
+    const isFullDocument = isFullDocumentRange(range, document);
 
-    format(document)
+    format(document, isFullDocument)
       .then((text) => {
         if (text.length > 0) {
           resolve([new TextEdit(fullRange, text)]);

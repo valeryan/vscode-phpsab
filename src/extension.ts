@@ -42,8 +42,8 @@ export const activate = async (context: ExtensionContext) => {
     languages.registerDocumentRangeFormattingEditProvider(
       { scheme: 'file', language: 'php' },
       {
-        provideDocumentRangeFormattingEdits: (document) => {
-          return registerFixerAsDocumentProvider(document);
+        provideDocumentRangeFormattingEdits: (document, range) => {
+          return registerFixerAsDocumentProvider(document, range);
         },
       },
     ),
