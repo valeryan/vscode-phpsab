@@ -70,7 +70,7 @@ export const log = (message: string): void => {
  * @param message string to be logged
  * @param error Error an Error object
  */
-export const error = (message: string, error?: Error): void => {
+export const error = (message: string, error?: Error | unknown): void => {
   logMessage('ERROR', message, error);
 };
 

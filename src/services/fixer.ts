@@ -1,3 +1,8 @@
+import { ConsoleError } from '@phpsab/interfaces/consoleError';
+import { Settings } from '@phpsab/interfaces/settings';
+import { createStandardsPathResolver } from '@phpsab/resolvers/standardsPathResolver';
+import { logger } from '@phpsab/services/logger';
+import { loadSettings } from '@phpsab/services/settings';
 import spawn from 'cross-spawn';
 import { SpawnSyncOptions } from 'node:child_process';
 import {
@@ -11,11 +16,6 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { ConsoleError } from './interfaces/console-error';
-import { Settings } from './interfaces/settings';
-import { logger } from './logger';
-import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
-import { loadSettings } from './settings';
 
 let settingsCache: Settings;
 
@@ -75,33 +75,27 @@ const documentFullRange = (document: TextDocument) =>
   );
 
 /**
- *
- * @param range Range
- * @param document TextDocument
- * @returns boolean
- */
-const isFullDocumentRange = (range: Range, document: TextDocument) =>
-  range.isEqual(documentFullRange(document));
-
-/**
  * run the fixer process
  * @param document
  */
-const format = async (document: TextDocument, fullDocument: boolean) => {
+const format = async (document: TextDocument) => {
   const settings = await getSettings();
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
   if (!workspaceFolder) {
     return '';
   }
-  const resourceConf = settings.resources[workspaceFolder.index];
+  const resourceConf = settings.workspaces[workspaceFolder.index];
   if (document.languageId !== 'php') {
     return '';
   }
 
   if (resourceConf.fixerEnable === false) {
-    window.showInformationMessage(
-      'Fixer is disable for this workspace or PHPCBF was not found for this workspace.',
-    );
+    const message =
+      'Fixer is disable for this workspace or PHPCBF was not found.';
+    logger.info(message);
+    if (settings.debug) {
+      window.showInformationMessage(message);
+    }
     return '';
   }
   logger.startTimer('Fixer');
@@ -140,10 +134,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   };
 
   logger.info(
-    `FIXER COMMAND: ${resourceConf.executablePathCBF} ${lintArgs.join(' ')}`,
+    `FIXER COMMAND: ${resourceConf.fixerExecutablePath} ${lintArgs.join(' ')}`,
   );
 
-  const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
+  const fixer = spawn.sync(resourceConf.fixerExecutablePath, lintArgs, options);
   const stdout = fixer.stdout.toString().trim();
 
   let fixed = stdout + '\n';
@@ -156,7 +150,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     255: 'FIXER: A Fatal execution error occurred.',
   };
 
-  let error: string = '';
+  let error: string | null = null;
   let result: string = '';
   let message: string = 'No fixable errors were found.';
 
@@ -186,6 +180,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       break;
     }
     case 0: {
+      logger.info(message);
       if (settings.debug) {
         window.showInformationMessage(message);
       }
@@ -197,6 +192,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         message = 'All fixable errors were fixed correctly.';
       }
 
+      logger.info(message);
       if (settings.debug) {
         window.showInformationMessage(message);
       }
@@ -209,6 +205,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         message = 'FIXER failed to fix some of the fixable errors.';
       }
 
+      logger.info(message);
       if (settings.debug) {
         window.showInformationMessage(message);
       }
@@ -224,7 +221,8 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   logger.endTimer('Fixer');
 
-  if (error !== '') {
+  if (error) {
+    logger.error(error);
     return Promise.reject(error);
   }
 
@@ -250,13 +248,11 @@ export const activateFixer = (
  */
 export const registerFixerAsDocumentProvider = (
   document: TextDocument,
-  range: Range,
 ): ProviderResult<TextEdit[]> => {
   return new Promise((resolve, reject) => {
     const fullRange = documentFullRange(document);
-    const isFullDocument = isFullDocumentRange(range, document);
 
-    format(document, isFullDocument)
+    format(document)
       .then((text) => {
         if (text.length > 0) {
           resolve([new TextEdit(fullRange, text)]);
