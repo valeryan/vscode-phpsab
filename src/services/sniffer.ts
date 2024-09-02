@@ -1,3 +1,8 @@
+import { PHPCSMessageType, PHPCSReport } from '@phpsab/interfaces/phpcsReport';
+import { Settings } from '@phpsab/interfaces/settings';
+import { createStandardsPathResolver } from '@phpsab/resolvers/standardsPathResolver';
+import { logger } from '@phpsab/services/logger';
+import { loadSettings } from '@phpsab/services/settings';
 import { debounce } from 'lodash';
 import { spawn } from 'node:child_process';
 import {
@@ -15,11 +20,6 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
-import { Settings } from './interfaces/settings';
-import { logger } from './logger';
-import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
-import { loadSettings } from './settings';
 
 const enum runConfig {
   save = 'onSave',
@@ -83,7 +83,7 @@ const validate = async (document: TextDocument) => {
     return;
   }
   const settings = await getSettings();
-  const resourceConf = settings.resources[workspaceFolder.index];
+  const resourceConf = settings.workspaces[workspaceFolder.index];
   if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
     return;
   }
@@ -131,10 +131,10 @@ const validate = async (document: TextDocument) => {
     tty: true,
   };
   logger.info(
-    `SNIFFER COMMAND: ${resourceConf.executablePathCS} ${lintArgs.join(' ')}`,
+    `SNIFFER COMMAND: ${resourceConf.snifferExecutablePath} ${lintArgs.join(' ')}`,
   );
 
-  const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
+  const sniffer = spawn(resourceConf.snifferExecutablePath, lintArgs, options);
 
   sniffer.stdin.write(fileText);
   sniffer.stdin.end();
@@ -171,7 +171,7 @@ const validate = async (document: TextDocument) => {
                   ? DiagnosticSeverity.Error
                   : DiagnosticSeverity.Warning;
               let output = message;
-              if (settings.snifferShowSources) {
+              if (resourceConf.snifferShowSources) {
                 output += `\n(${source})`;
               }
               const diagnostic = new Diagnostic(range, output, severity);
@@ -285,7 +285,7 @@ export const activateSniffer = async (
 ) => {
   settingsCache = settings;
   if (
-    settings.resources.filter((folder) => folder.snifferEnable === true)
+    settings.workspaces.filter((folder) => folder.snifferEnable === true)
       .length === 0
   ) {
     return;
