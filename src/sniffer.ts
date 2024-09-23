@@ -66,7 +66,7 @@ const getArgs = (
   if (standard !== '') {
     args.push('--standard=' + standard);
   }
-  args.push(`--stdin-path=${filePath}`);
+  args.push(`--stdin-path="${filePath}"`);
   args.push('-');
   args = args.concat(additionalArguments);
   return args;
