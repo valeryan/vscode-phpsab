@@ -146,7 +146,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
   const stdout = fixer.stdout.toString().trim();
 
-  let fixed = stdout + '\n';
+  let fixed = stdout;
 
   let errors: { [key: number]: string } = {
     3: 'FIXER: A general script execution error occurred.',
@@ -217,7 +217,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     default:
       error = errors[fixer.status];
       if (fixed.length > 0) {
-        error += '\n' + fixed;
+        error += '\n' + fixed + '\n';
       }
       logger.error(fixed);
   }
