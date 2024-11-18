@@ -154,7 +154,7 @@
     "test": "vscode-test"
   },
   "dependencies": {
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.6",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
