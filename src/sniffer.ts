@@ -59,8 +59,6 @@ const getArgs = (
 ) => {
   // Process linting paths.
   let filePath = document.fileName;
-  filePath = escapePath(filePath);
-  standard = escapePath(standard);
 
   let args = [];
   args.push('--report=json');
@@ -72,16 +70,6 @@ const getArgs = (
   args.push('-');
   args = args.concat(additionalArguments);
   return args;
-};
-
-/**
- * Escape spaces in the path string
- *
- * @param stringPath - The string to escape
- * @returns string
- */
-const escapePath = (stringPath: string) => {
-  return stringPath.replace(/ /g, '\\ ');
 };
 
 /**
