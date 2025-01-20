@@ -64,7 +64,7 @@ const getArgs = (
   args.push('--report=json');
   args.push('-q');
   if (standard !== '') {
-    args.push('--standard=' + standard);
+    args.push(`--standard="${standard}"`);
   }
   args.push(`--stdin-path="${filePath}"`);
   args.push('-');

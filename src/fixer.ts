@@ -55,9 +55,9 @@ const getArgs = (
   let args = [];
   args.push('-q');
   if (standard !== '') {
-    args.push('--standard=' + standard);
+    args.push(`--standard="${standard}"`);
   }
-  args.push(`--stdin-path=${filePath}`);
+  args.push(`--stdin-path="${filePath}"`);
   args = args.concat(additionalArguments);
   args.push('-');
   return args;
