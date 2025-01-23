@@ -6,4 +6,5 @@ export interface Settings {
   snifferMode: string;
   snifferTypeDelay: number;
   snifferShowSources: boolean;
+  phpExecutablePath: string;
 }

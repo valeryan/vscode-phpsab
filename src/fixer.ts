@@ -14,6 +14,7 @@ import {
 import { ConsoleError } from './interfaces/console-error';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
+import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 
@@ -129,6 +130,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   let fileText = document.getText();
 
+  if (settings.phpExecutablePath != '') {
+    addPhpToEnvPath(settings.phpExecutablePath);
+  }
+
   const options: SpawnSyncOptions = {
     cwd:
       resourceConf.workspaceRoot !== null
@@ -159,6 +164,15 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   let error: string = '';
   let result: string = '';
   let message: string = 'No fixable errors were found.';
+
+  // If fixer returns with stderr as the error "php is not recognized", then show an error
+  // message to the user because PHP is not on the system's environment path.
+  if (fixer.stderr.includes("'php' is not recognized")) {
+    error = `Please add PHP to your system's environment path, or use the extension setting "phpExecutablePath". - PHPCBF error: ${fixer.stderr}`;
+
+    window.showErrorMessage(error);
+    return '';
+  }
 
   /**
    * fixer exit codes:

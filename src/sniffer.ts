@@ -18,6 +18,7 @@ import {
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
+import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 
@@ -120,6 +121,10 @@ const validate = async (document: TextDocument) => {
   const lintArgs = getArgs(document, standard, additionalArguments);
 
   let fileText = document.getText();
+
+  if (settings.phpExecutablePath != '') {
+    addPhpToEnvPath(settings.phpExecutablePath);
+  }
 
   const options = {
     cwd:

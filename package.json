@@ -139,6 +139,12 @@
           "type": "boolean",
           "default": false,
           "description": "Write debug info to the console"
+        },
+        "phpsab.phpExecutablePath": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "description": "(Optional) The path to the PHP executable."
         }
       }
     }
