@@ -259,13 +259,14 @@ export const registerFixerAsDocumentProvider = (
     format(document, isFullDocument)
       .then((text) => {
         if (text.length > 0) {
-          resolve([new TextEdit(fullRange, text)]);
+          return resolve([new TextEdit(fullRange, text)]);
+        } else {
+          throw new Error('PHPCBF returned an empty document');
         }
-        throw new Error('PHPCBF returned an empty document');
       })
       .catch((err) => {
         window.showErrorMessage(err);
-        reject();
+        return reject(err);
       });
   });
 };

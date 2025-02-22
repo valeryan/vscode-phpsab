@@ -40,7 +40,14 @@ export const activate = async (context: ExtensionContext) => {
       { scheme: 'file', language: 'php' },
       {
         provideDocumentRangeFormattingEdits: (document, range) => {
-          return registerFixerAsDocumentProvider(document, range);
+          logger.info(`DEBUG: Starting format with document: ${document.fileName}`);
+          logger.info(`DEBUG: Range: ${JSON.stringify(range)}`);
+          try {
+            return registerFixerAsDocumentProvider(document, range);
+          } catch (error) {
+            logger.error(`DEBUG: Error in provider: ${error}`);
+            throw error;
+          }
         },
       },
     ),
