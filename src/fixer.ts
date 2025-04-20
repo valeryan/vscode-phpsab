@@ -55,6 +55,25 @@ const getArgs = (
 
   let args = [];
   args.push('-q');
+
+  /**
+   * Important Note as explained in PR #155:
+   *
+   * For the fixer to work properly, we don't add `shell: true` to spawn.sync's options,
+   * so spawn runs with the default of `shell: false`. This is important because when spawn runs on
+   * Windows with the default it automatically escapes the command and values, including
+   * surrounding them in double quotes (" ").
+   *
+   * So we don't need to add double quotes around the values for the `--standard` and `--stdin-path`
+   * options, otherwise the values will get double the amount of quotes and errors will occur.
+   *
+   * e.g. ["ERROR" - 10:33:56 PM] ERROR: the ""d:\Name\projects\my project\phpcs.xml"" coding
+   * standard is not installed. The installed coding standards are MySource, PEAR, PSR1, PSR2,
+   * PSR12, Squiz, Zend and JPSR12.
+   *
+   * The sniffer is different, it needs to be surrounded by double quotes.
+   */
+
   if (standard !== '') {
     args.push(`--standard=${standard}`);
   }
