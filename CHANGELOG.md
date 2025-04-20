@@ -1,4 +1,14 @@
 # Changelog
+## <small>0.0.20 (2024-11-14)</small>
+* Wrap the --stdin-path argument in double quotes by @jonathanbossenger in https://github.com/valeryan/vscode-phpsab/pull/139
+* PHPCS urls and supported version by @jonathanbossenger in https://github.com/valeryan/vscode-phpsab/pull/140
+* Escape filePath and args passed to the phpcs command by @aslamdoctor in https://github.com/valeryan/vscode-phpsab/pull/145
+
+## New Contributors
+* @aslamdoctor made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/145
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v.0.0.19...v.0.0.20
+
 ## <small>0.0.19 (2024-09-02)</small>
 
 * fix: Error: spawn EINVAL (#129) ([f9f1352](https://github.com/valeryan/vscode-phpsab/commit/f9f1352)), closes [#129](https://github.com/valeryan/vscode-phpsab/issues/129) [#128](https://github.com/valeryan/vscode-phpsab/issues/128)

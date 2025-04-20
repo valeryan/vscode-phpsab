@@ -63,10 +63,25 @@ const getArgs = (
   let args = [];
   args.push('--report=json');
   args.push('-q');
+
+  /**
+   * Important Note as explained in PR #155:
+   *
+   * For the sniffer to work properly, we add `shell: true` to spawn's options.
+   * This is important because when spawn runs on Windows with `shell: true`, it won't automatically
+   * escape the command and values, instead it just passes it straight to the shell as is.
+   *
+   * So we need to add double quotes around the values for the `--standard` and `--stdin-path`
+   * options, otherwise when there's spaces in the values it will break the command and errors will
+   * occur (as documented in issues #136 and #144).
+   *
+   * The fixer is different, it doesn't need to be surrounded by double quotes.
+   */
+
   if (standard !== '') {
-    args.push('--standard=' + standard);
+    args.push(`--standard="${standard}"`);
   }
-  args.push(`--stdin-path=${filePath}`);
+  args.push(`--stdin-path="${filePath}"`);
   args.push('-');
   args = args.concat(additionalArguments);
   return args;
