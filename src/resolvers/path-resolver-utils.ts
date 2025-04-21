@@ -15,9 +15,9 @@ export const getEnvPathSeparator = (): string =>
  * @param phpExecutablePath The PHP executable path from extension settings.
  */
 export const addPhpToEnvPath = (phpExecutablePath: string) => {
-  // If the path ends with /php.exe, remove it because we only need the directory path.
-  if (phpExecutablePath.endsWith('/php.exe')) {
-    phpExecutablePath = phpExecutablePath.replace('/php.exe', '');
+  // If the path ends with php.exe, remove it because we only need the directory path.
+  if (phpExecutablePath.endsWith('php.exe')) {
+    phpExecutablePath = phpExecutablePath.replace('php.exe', '');
   }
 
   if (!process.env.PATH.includes(phpExecutablePath)) {
