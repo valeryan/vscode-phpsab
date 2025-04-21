@@ -20,7 +20,7 @@ export const addPhpToEnvPath = (phpExecutablePath: string) => {
     phpExecutablePath = phpExecutablePath.replace('php.exe', '');
   }
 
-  if (!process.env.PATH.includes(phpExecutablePath)) {
+  if (!process.env?.PATH?.includes(phpExecutablePath)) {
     process.env.PATH =
       process.env.PATH + getEnvPathSeparator() + phpExecutablePath;
   }
