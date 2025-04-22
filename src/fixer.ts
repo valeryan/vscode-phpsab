@@ -104,6 +104,65 @@ const isFullDocumentRange = (range: Range, document: TextDocument) =>
   range.isEqual(documentFullRange(document));
 
 /**
+ * Get the regex to match the error message when the `php` command is not found.
+ *
+ * ---
+ *
+ * Note:
+ *
+ * The regex is designed to match the various different OS and shell error messages
+ * that indicate the `php` command is not found.
+ * The regex is flexible to accommodate some of the most common formats
+ * "command not found" errors. But there may be some edge cases where some OS and shells may
+ * have different formats than those described here. Those edge cases should be added to the
+ * regex as and when they occur.
+ *
+ * The final regex will match an error message in part or in whole, and
+ * with or without single or double quotes around `php`, and with or without a colon.
+ *
+ * The command error formats (without quotes) are as follows:
+ *
+ * 1. php is not recognized
+ * 2. php: command not found
+ * 3. php cannot be found
+ * 4. command not found: php
+ * 5. Unknown command php
+ *
+ * The final regex can be seen in action here: https://regex101.com/r/Ob1YKB/1
+ */
+const getPhpNotFoundRegex = (): RegExp => {
+  // This regex will match `php`, with or without single or double quotes.
+  const phpRegex = `(["']?php["']?)`;
+  // This regex will match a single character either a colon OR a whitespace.
+  const colonSingleRegex = `([:\s]+)?`;
+  // This regex will match both a colon AND a whitespace.
+  const colonGroupRegex = `((:\s)+)?`;
+
+  // Combine the php and the colon regexes to match the php command with or without
+  // a colon after it (e.g. "php: ").
+  const colonAfterPhpRegex = new RegExp(`(${phpRegex}${colonSingleRegex})?`);
+
+  // Combine the colon regex with the php regex to match php command with or without
+  // a colon before it (e.g. ": php").
+  const colonBeforePhpRegex = new RegExp(`${colonGroupRegex}${phpRegex}`);
+
+  // The error regexes will match various error messages that indicate the
+  // php command is not recognized.
+  const errorRegexArray = [
+    `is\\s+not\\s+recognized`,
+    `command\\s+not\\s+found${colonBeforePhpRegex.source}?`,
+    `cannot\\s+be\\s+found`,
+    `unknown\\s+command\\s?${colonBeforePhpRegex.source}`,
+  ];
+
+  // Join the error regexes with OR operator.
+  const errorRegex = new RegExp(errorRegexArray.join('|'));
+
+  // Construct the final regex to match the php command error message.
+  return new RegExp(`${colonAfterPhpRegex.source}(${errorRegex.source})`, 'i');
+};
+
+/**
  * run the fixer process
  * @param document
  */
@@ -169,6 +228,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
   const stdout = fixer.stdout.toString().trim();
+  const stderr = fixer.stderr.toString().trim();
 
   let fixed = stdout;
 
@@ -184,10 +244,12 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   let result: string = '';
   let message: string = 'No fixable errors were found.';
 
-  // If fixer returns with stderr as the error "php is not recognized", then show an error
-  // message to the user because PHP is not on the system's environment path.
-  if (fixer.stderr.includes("'php' is not recognized")) {
-    error = `Please add PHP to your system's environment path, or use the extension setting "phpExecutablePath". - PHPCBF error: ${fixer.stderr}`;
+  // Test the regex against the stderr output.
+  //
+  // If fixer returns with stderr as the error "php is not recognized" or equivalent,
+  // then show an error message to the user because PHP is not on the system's environment path.
+  if (getPhpNotFoundRegex().test(stderr)) {
+    error = `Please add PHP to your system's environment path, or use the extension setting "phpExecutablePath". - PHPCBF error: ${stderr}`;
 
     window.showErrorMessage(error);
     return '';
