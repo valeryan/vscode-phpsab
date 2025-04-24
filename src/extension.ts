@@ -43,7 +43,7 @@ export const activate = async (context: ExtensionContext) => {
           logger.info(`DEBUG: Starting format with document: ${document.fileName}`);
           logger.info(`DEBUG: Range: ${JSON.stringify(range)}`);
           try {
-            return registerFixerAsDocumentProvider(document, range);
+            return await registerFixerAsDocumentProvider(document, range);
           } catch (error) {
             logger.error(`DEBUG: Error in provider: ${error}`);
             throw error;
