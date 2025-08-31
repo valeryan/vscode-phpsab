@@ -169,7 +169,7 @@ const validate = async (document: TextDocument) => {
         const { files }: PHPCSReport = JSON.parse(stdout);
         for (const file in files) {
           files[file].messages.forEach(
-            ({ message, line, column, type, source }) => {
+            ({ message, line, column, type, source, fixable }) => {
               const zeroLine = line - 1;
               const ZeroColumn = column - 1;
 
@@ -187,6 +187,7 @@ const validate = async (document: TextDocument) => {
               if (settings.snifferShowSources) {
                 output += `\n(${source})`;
               }
+              output += `\nAuto-fixable: ${fixable ? '✔️' : '❌'}`;
               const diagnostic = new Diagnostic(range, output, severity);
               diagnostic.source = 'phpcs';
               diagnostics.push(diagnostic);
