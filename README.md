@@ -16,10 +16,11 @@ This extension supports the [latest stable version of PHPCS](https://github.com/
 My focus has shifted away from PHP to .NET development, I'm currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with me.
 
 ### Active Maintainers
+In Sept of 2025 [yCodeTech](https://github.com/yCodeTech) was added as a maintainer. 
 
 In June 2023 [jonathanbossenger](https://github.com/jonathanbossenger) reached out to me and offered to help with maintaining the extension. I have added him as a contributor and he will be monitoring new issues and helping me review PRs. I will still be around to help out if needed.
 
-In January 2024 [seebeen](https://github.com/seebeen) signed on to be a maintainer for this project and has been granted contributor status.
+In January 2024 [seebeen](https://github.com/seebeen) signed on to be a maintainer for this project and has been granted contributor status. (Currently Inactive)
 
 ## Installation
 
