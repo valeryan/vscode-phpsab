@@ -141,6 +141,7 @@ export const loadSettings = async () => {
     snifferShowSources: config.get('snifferShowSources', false),
     snifferTypeDelay: config.get('snifferTypeDelay', 250),
     debug: config.get('debug', false),
+    phpExecutablePath: config.get('phpExecutablePath', ''),
   };
 
   logger.setDebugMode(settings.debug);
