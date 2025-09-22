@@ -96,9 +96,6 @@ const validate = async (
 };
 
 export const loadSettings = async () => {
-  if (!workspace.workspaceFolders) {
-    throw new Error('Unable to load configuration.');
-  }
   const resourcesSettings: Array<ResourceSettings> = [];
 
   // Handle per Workspace settings

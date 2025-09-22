@@ -2,7 +2,13 @@
  * Copyright (c) 2019 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { commands, ExtensionContext, extensions, languages } from 'vscode';
+import {
+  commands,
+  ExtensionContext,
+  extensions,
+  languages,
+  workspace,
+} from 'vscode';
 import { activateFixer, registerFixerAsDocumentProvider } from './fixer';
 import { disposeLogger, logger } from './logger';
 import { loadSettings } from './settings';
@@ -21,6 +27,13 @@ export const activate = async (context: ExtensionContext) => {
   // Always output extension information to channel on activate
   logger.log(`Extension ID: ${extensionId}.`);
   logger.log(`Extension Version: ${extensionVersion}.`);
+
+  if (!workspace.workspaceFolders) {
+    const errorMsg =
+      'Workspace folder not found. Please open a folder or workspace to use PHP Sniffer & Beautifier';
+    logger.error(errorMsg);
+    throw new Error(errorMsg);
+  }
 
   const settings = await loadSettings();
   activateFixer(context.subscriptions, settings);
