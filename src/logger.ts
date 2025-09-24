@@ -66,6 +66,14 @@ export const log = (message: string): void => {
 };
 
 /**
+ * Send a basic warning log to output channel
+ * @param message string to be logged
+ */
+export const warn = (message: string): void => {
+  logMessage('WARNING', message);
+};
+
+/**
  * Send a error message and a stack trace if available
  * @param message string to be logged
  * @param error Error an Error object
@@ -150,6 +158,7 @@ export const logger = {
   log,
   info,
   debug,
+  warn,
   error,
   startTimer,
   endTimer,
