@@ -1,10 +1,18 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Uri, WorkspaceConfiguration, workspace } from 'vscode';
+import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
+
+/**
+ * Check if the editor is in single file mode.
+ * @returns {boolean} `true` if no workspace folders are open
+ */
+export const isSingleFileMode = (): boolean => {
+  return !workspace.workspaceFolders;
+};
 
 /**
  * Attempt to find the root path for a workspace or resource
@@ -96,31 +104,50 @@ const validate = async (
 };
 
 export const loadSettings = async () => {
-  if (!workspace.workspaceFolders) {
-    throw new Error('Unable to load configuration.');
-  }
   const resourcesSettings: Array<ResourceSettings> = [];
 
-  // Handle per Workspace settings
-  for (let index = 0; index < workspace.workspaceFolders.length; index++) {
-    const resource = workspace.workspaceFolders[index].uri;
-    const config = workspace.getConfiguration('phpsab', resource);
-    const rootPath = resolveRootPath(resource);
+  const globalConfig = workspace.getConfiguration('phpsab', null);
 
-    let settings = await getSettings(config, rootPath);
-    settings = await validate(settings, workspace.workspaceFolders[index].name);
+  // Handle case where no workspace folders exist (single file mode).
+  if (isSingleFileMode()) {
+    const warningMsg =
+      'No workspace folder open. PHP Sniffer & Beautifier requires a workspace to function properly. Activating single file mode.';
 
-    resourcesSettings.splice(index, 0, settings);
+    logger.warn(warningMsg);
+    window.showWarningMessage(warningMsg);
+
+    let settings = await getSettings(globalConfig);
+    settings = await validate(settings, 'Single File Mode');
+
+    resourcesSettings.splice(0, 0, settings);
+  } else {
+    // Handle per Workspace settings
+
+    // We know workspaceFolders is not null from the isSingleFileMode check above,
+    // so we can assert it with the non-null assertion operator `!`.
+    // https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#non-null-assertion-operator-postfix-
+    const workspaceFolders = workspace.workspaceFolders!;
+
+    for (let index = 0; index < workspaceFolders.length; index++) {
+      const resource = workspaceFolders[index].uri;
+      const config = workspace.getConfiguration('phpsab', resource);
+      const rootPath = resolveRootPath(resource);
+
+      let settings = await getSettings(config, rootPath);
+
+      settings = await validate(settings, workspaceFolders[index].name);
+
+      resourcesSettings.splice(index, 0, settings);
+    }
   }
 
   // update settings from config
-  const config = workspace.getConfiguration('phpsab');
   let settings: Settings = {
     resources: resourcesSettings,
-    snifferMode: config.get('snifferMode', 'onSave'),
-    snifferShowSources: config.get('snifferShowSources', false),
-    snifferTypeDelay: config.get('snifferTypeDelay', 250),
-    debug: config.get('debug', false),
+    snifferMode: globalConfig.get('snifferMode', 'onSave'),
+    snifferShowSources: globalConfig.get('snifferShowSources', false),
+    snifferTypeDelay: globalConfig.get('snifferTypeDelay', 250),
+    debug: globalConfig.get('debug', false),
   };
 
   logger.setDebugMode(settings.debug);

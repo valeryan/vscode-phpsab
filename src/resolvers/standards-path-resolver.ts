@@ -3,6 +3,7 @@ import { TextDocument, workspace } from 'vscode';
 import { PathResolver } from '../interfaces/path-resolver';
 import { ResourceSettings } from '../interfaces/resource-settings';
 import { logger } from '../logger';
+import { isSingleFileMode } from '../settings';
 import {
   getPlatformExtension,
   getPlatformPathSeparator,
@@ -19,7 +20,7 @@ export const createStandardsPathResolver = (
     pathSeparator,
     resolve: async () => {
       let configured = config.standard ?? '';
-      if (config.autoRulesetSearch === false) {
+      if (config.autoRulesetSearch === false || isSingleFileMode()) {
         return configured;
       }
 

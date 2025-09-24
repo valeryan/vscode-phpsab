@@ -109,10 +109,8 @@ const isFullDocumentRange = (range: Range, document: TextDocument) =>
 const format = async (document: TextDocument, fullDocument: boolean) => {
   const settings = await getSettings();
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-  if (!workspaceFolder) {
-    return '';
-  }
-  const resourceConf = settings.resources[workspaceFolder.index];
+
+  const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
   if (document.languageId !== 'php') {
     return '';
   }
