@@ -18,6 +18,7 @@ This extension supports the [latest stable version of PHPCS 3.x](https://github.
 My focus has shifted away from PHP to .NET development, I'm currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with me.
 
 ### Active Maintainers
+
 In Sept of 2025 [yCodeTech](https://github.com/yCodeTech) was added as a maintainer.
 
 In June 2023 [jonathanbossenger](https://github.com/jonathanbossenger) reached out to me and offered to help with maintaining the extension. I have added him as a contributor and he will be monitoring new issues and helping me review PRs. I will still be around to help out if needed.
@@ -43,6 +44,21 @@ You can also use this formatter with Format on Save enabled. Format on save has 
 ## Multi-Root Workspace Support
 
 This extension now fully supports Multi-Root Workspaces. The extension previously used the first root folder in your workspace to configure and run both phpcs and phpcbf. The new system allows each workspace to be configured and run independently with respect to the root folder of the open file being sniffed. This means you can have phpcs functionality in one folder and have it disabled in another within a workspace.
+
+## Single File Mode Support
+
+This extension now supports formatting single files without needing a workspace folder open (single file mode). Both phpcs and phpcbf will work in this mode.
+
+When in single file mode:
+
+-   The global user settings are used instead of workspace settings.
+-   The `autoRulesetSearch` setting is ignored, and will essentially act as if it was set to `false` (and just return the file path as set in `standard`).
+
+A global composer setup is required:
+
+-   The `executablePathCS` and `executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, _OR_ set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
+
+-   If the `phpsab.standard` setting is used for a ruleset file then it **must** be the full absolute path.
 
 ## Linter Installation
 
