@@ -119,7 +119,7 @@ export const loadSettings = async () => {
     let settings = await getSettings(globalConfig);
     settings = await validate(settings, 'Single File Mode');
 
-    resourcesSettings.splice(0, 0, settings);
+    resourcesSettings.unshift(settings);
   } else {
     // Handle per Workspace settings
 
@@ -137,7 +137,7 @@ export const loadSettings = async () => {
 
       settings = await validate(settings, workspaceFolders[index].name);
 
-      resourcesSettings.splice(index, 0, settings);
+      resourcesSettings.push(settings);
     }
   }
 
