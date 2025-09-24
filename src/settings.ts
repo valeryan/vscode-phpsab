@@ -111,7 +111,7 @@ export const loadSettings = async () => {
   // Handle case where no workspace folders exist (single file mode).
   if (isSingleFileMode()) {
     const warningMsg =
-      'No workspace folder open. PHP Sniffer & Beautifier requires a workspace to function properly. Activating single file mode.';
+      'No workspace folder open. PHP Sniffer & Beautifier will run with limited functionality. Please open a folder or workspace.';
 
     logger.warn(warningMsg);
     window.showWarningMessage(warningMsg);
