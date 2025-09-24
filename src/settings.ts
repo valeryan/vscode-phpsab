@@ -5,6 +5,7 @@ import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
+import { getExtensionInfo } from './utils';
 
 /**
  * Check if the editor is in single file mode.
@@ -110,11 +111,12 @@ export const loadSettings = async () => {
 
   // Handle case where no workspace folders exist (single file mode).
   if (isSingleFileMode()) {
-    const warningMsg =
-      'No workspace folder open. PHP Sniffer & Beautifier will run with limited functionality. Please open a folder or workspace.';
+    const { displayName } = getExtensionInfo();
+
+    const warningMsg = `No workspace folder open. ${displayName} will run with limited functionality. Please open a folder or workspace.`;
 
     logger.warn(warningMsg);
-    window.showWarningMessage(warningMsg);
+    window.showWarningMessage(warningMsg, 'OK');
 
     let settings = await getSettings(globalConfig);
     settings = await validate(settings, 'Single File Mode');

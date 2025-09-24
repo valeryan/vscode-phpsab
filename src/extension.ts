@@ -2,25 +2,25 @@
  * Copyright (c) 2019 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { commands, ExtensionContext, extensions, languages } from 'vscode';
+import { commands, ExtensionContext, languages } from 'vscode';
 import { activateFixer, registerFixerAsDocumentProvider } from './fixer';
 import { disposeLogger, logger } from './logger';
 import { loadSettings } from './settings';
 import { activateSniffer, disposeSniffer } from './sniffer';
+import { getExtensionInfo, setExtensionInfo } from './utils';
 
 /**
  * Activate Extension
  * @param context
  */
 export const activate = async (context: ExtensionContext) => {
-  // Get extension unique identifier from context
-  const extensionId = context.extension.id;
-  const extensionVersion =
-    extensions.getExtension(extensionId)?.packageJSON.version;
+  setExtensionInfo(context);
+  const { id, displayName, version } = getExtensionInfo();
 
   // Always output extension information to channel on activate
-  logger.log(`Extension ID: ${extensionId}.`);
-  logger.log(`Extension Version: ${extensionVersion}.`);
+  logger.log(`Extension ID: ${id}.`);
+  logger.log(`Extension Display Name: ${displayName}.`);
+  logger.log(`Extension Version: ${version}.`);
 
   const settings = await loadSettings();
   activateFixer(context.subscriptions, settings);

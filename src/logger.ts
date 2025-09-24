@@ -1,4 +1,5 @@
 import { OutputChannel, window } from 'vscode';
+import { getExtensionInfo } from './utils';
 
 let outputChannel: OutputChannel;
 
@@ -17,7 +18,9 @@ export const setupOutputChannel = (channelOverride?: OutputChannel): void => {
     outputChannel = channelOverride;
     return;
   }
-  outputChannel = window.createOutputChannel('PHP Sniffer & Beautifier');
+  const { displayName } = getExtensionInfo();
+
+  outputChannel = window.createOutputChannel(displayName);
 };
 
 /**
