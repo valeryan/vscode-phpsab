@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Uri, workspace } from 'vscode';
+import { Uri, WorkspaceConfiguration, workspace } from 'vscode';
 import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
@@ -106,28 +106,8 @@ export const loadSettings = async () => {
     const resource = workspace.workspaceFolders[index].uri;
     const config = workspace.getConfiguration('phpsab', resource);
     const rootPath = resolveRootPath(resource);
-    let settings: ResourceSettings = {
-      fixerEnable: config.get('fixerEnable', true),
-      fixerArguments: config.get('fixerArguments', []),
-      workspaceRoot: rootPath,
-      executablePathCBF: config.get('executablePathCBF', ''),
-      executablePathCS: config.get('executablePathCS', ''),
-      composerJsonPath: config.get('composerJsonPath', 'composer.json'),
-      standard: config.get('standard', ''),
-      autoRulesetSearch: config.get('autoRulesetSearch', true),
-      allowedAutoRulesets: config.get('allowedAutoRulesets', [
-        '.phpcs.xml',
-        'phpcs.xml',
-        'phpcs.dist.xml',
-        'ruleset.xml',
-      ]),
-      snifferEnable: config.get('snifferEnable', true),
-      snifferArguments: config.get('snifferArguments', []),
-    };
 
-    settings = await resolveCBFExecutablePath(settings);
-    settings = await resolveCSExecutablePath(settings);
-
+    let settings = await getSettings(config, rootPath);
     settings = await validate(settings, workspace.workspaceFolders[index].name);
 
     resourcesSettings.splice(index, 0, settings);
@@ -145,6 +125,41 @@ export const loadSettings = async () => {
 
   logger.setDebugMode(settings.debug);
   logger.debug('CONFIGURATION', settings);
+
+  return settings;
+};
+
+/**
+ * Get settings from the workspace configuration.
+ * @param {WorkspaceConfiguration} config The workspace configuration to retrieve settings from.
+ * @param {string | null} rootPath The root path of the workspace or `null` if in single file mode.
+ * @returns {Promise<ResourceSettings>} The resource settings for the workspace.
+ */
+const getSettings = async (
+  config: WorkspaceConfiguration,
+  rootPath: string | null = null,
+) => {
+  let settings: ResourceSettings = {
+    fixerEnable: config.get('fixerEnable', true),
+    fixerArguments: config.get('fixerArguments', []),
+    workspaceRoot: rootPath,
+    executablePathCBF: config.get('executablePathCBF', ''),
+    executablePathCS: config.get('executablePathCS', ''),
+    composerJsonPath: config.get('composerJsonPath', 'composer.json'),
+    standard: config.get('standard', ''),
+    autoRulesetSearch: config.get('autoRulesetSearch', true),
+    allowedAutoRulesets: config.get('allowedAutoRulesets', [
+      '.phpcs.xml',
+      'phpcs.xml',
+      'phpcs.dist.xml',
+      'ruleset.xml',
+    ]),
+    snifferEnable: config.get('snifferEnable', true),
+    snifferArguments: config.get('snifferArguments', []),
+  };
+
+  settings = await resolveCBFExecutablePath(settings);
+  settings = await resolveCSExecutablePath(settings);
 
   return settings;
 };
