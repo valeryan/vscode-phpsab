@@ -192,7 +192,7 @@ const validate = async (document: TextDocument) => {
               }
               output += `\nAuto-fixable: ${fixable ? '✔️' : '❌'}`;
               const diagnostic = new Diagnostic(range, output, severity);
-              diagnostic.source = 'phpcs';
+              diagnostic.source = '\nphpcs';
               diagnostics.push(diagnostic);
             },
           );
