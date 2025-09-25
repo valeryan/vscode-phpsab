@@ -54,8 +54,27 @@ const getArgs = (
 
   let args = [];
   args.push('-q');
+
+  /**
+   * Important Note as explained in PR #155:
+   *
+   * For the fixer to work properly, we don't add `shell: true` to spawn.sync's options,
+   * so spawn runs with the default of `shell: false`. This is important because when spawn runs on
+   * Windows with the default it automatically escapes the command and values, including
+   * surrounding them in double quotes (" ").
+   *
+   * So we don't need to add double quotes around the values for the `--standard` and `--stdin-path`
+   * options, otherwise the values will get double the amount of quotes and errors will occur.
+   *
+   * e.g. ["ERROR" - 10:33:56 PM] ERROR: the ""d:\Name\projects\my project\phpcs.xml"" coding
+   * standard is not installed. The installed coding standards are MySource, PEAR, PSR1, PSR2,
+   * PSR12, Squiz, Zend and JPSR12.
+   *
+   * The sniffer is different, it needs to be surrounded by double quotes.
+   */
+
   if (standard !== '') {
-    args.push('--standard=' + standard);
+    args.push(`--standard=${standard}`);
   }
   args.push(`--stdin-path=${filePath}`);
   args = args.concat(additionalArguments);
@@ -144,9 +163,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   );
 
   const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
-  const stdout = fixer.stdout.toString().trim();
+  const stdout = fixer.stdout.toString();
 
-  let fixed = stdout + '\n';
+  let fixed = stdout;
 
   let errors: { [key: number]: string } = {
     3: 'FIXER: A general script execution error occurred.',
@@ -217,7 +236,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     default:
       error = errors[fixer.status];
       if (fixed.length > 0) {
-        error += '\n' + fixed;
+        error += '\n' + fixed + '\n';
       }
       logger.error(fixed);
   }
@@ -259,13 +278,14 @@ export const registerFixerAsDocumentProvider = (
     format(document, isFullDocument)
       .then((text) => {
         if (text.length > 0) {
-          resolve([new TextEdit(fullRange, text)]);
+          return resolve([new TextEdit(fullRange, text)]);
+        } else {
+          throw new Error('PHPCBF returned an empty document');
         }
-        throw new Error('PHPCBF returned an empty document');
       })
       .catch((err) => {
         window.showErrorMessage(err);
-        reject();
+        return reject(err);
       });
   });
 };
