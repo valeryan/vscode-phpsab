@@ -1,5 +1,5 @@
 export interface ResourceSettings {
-  workspaceRoot: string;
+  workspaceRoot: string | null;
   fixerEnable: boolean;
   fixerArguments: string[];
   snifferEnable: boolean;

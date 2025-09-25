@@ -94,11 +94,9 @@ const getArgs = (
  */
 const validate = async (document: TextDocument) => {
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-  if (!workspaceFolder) {
-    return;
-  }
+
   const settings = await getSettings();
-  const resourceConf = settings.resources[workspaceFolder.index];
+  const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
   if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
     return;
   }

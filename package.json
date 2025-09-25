@@ -151,7 +151,8 @@
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint src --ext ts",
     "pretest": "npm run compile && npm run lint",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "ts-watch": "tsc -watch -p ./"
   },
   "dependencies": {
     "cross-spawn": "^7.0.3",
