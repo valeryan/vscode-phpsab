@@ -164,7 +164,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
   const stderr = fixer.stderr.toString();
-  const nodeError = fixer.error;
+  const nodeError = fixer.error?.toString();
 
   logger.info(`FIXER EXIT CODE: ${exitcode}`);
 
@@ -249,7 +249,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       break;
     }
     default:
-      error = errors[fixer.status];
+      error = errors[exitcode];
       if (fixed.length > 0) {
         error += '\n' + fixed + '\n';
       }
