@@ -155,12 +155,28 @@ const validate = async (document: TextDocument) => {
 
   let stdout = '';
   let stderr = '';
+  let nodeError = '';
 
   sniffer.stdout.on('data', (data) => (stdout += data));
   sniffer.stderr.on('data', (data) => (stderr += data));
+  sniffer.on('error', (error) => (nodeError += error));
 
   const done = new Promise<void>((resolve, reject) => {
-    sniffer.on('close', () => {
+    sniffer.on('close', (exitcode) => {
+      logger.info(`SNIFFER EXIT CODE: ${exitcode}`);
+
+      if (stdout) {
+        logger.info(`SNIFFER STDOUT: ${stdout.trim()}`);
+      }
+
+      if (stderr) {
+        logger.error(`SNIFFER STDERR: ${stderr.trim()}`);
+      }
+
+      if (nodeError) {
+        logger.error(`SNIFFER NODE ERROR: ${nodeError.trim()}`);
+      }
+
       if (token.isCancellationRequested || !stdout) {
         resolve();
         return;

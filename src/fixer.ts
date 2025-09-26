@@ -161,7 +161,24 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   );
 
   const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
+  const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
+  const stderr = fixer.stderr.toString();
+  const nodeError = fixer.error;
+
+  logger.info(`FIXER EXIT CODE: ${exitcode}`);
+
+  if (stdout) {
+    logger.info(`FIXER STDOUT: ${stdout}`);
+  }
+
+  if (stderr) {
+    logger.error(`FIXER STDERR: ${stderr.trim()}`);
+  }
+
+  if (nodeError) {
+    logger.error(`FIXER NODE ERROR: ${nodeError.trim()}`);
+  }
 
   let fixed = stdout;
 
@@ -184,7 +201,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
    * Exit code 2 is used to indicate that FIXER failed to fix some of the fixable errors it found
    * Exit code 3 is used for general script execution errors
    */
-  switch (fixer.status) {
+  switch (exitcode) {
     case null: {
       // deal with some special case errors
       error = 'A General Execution error occurred.';
