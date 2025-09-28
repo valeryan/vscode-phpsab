@@ -168,8 +168,13 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   logger.info(`FIXER EXIT CODE: ${exitcode}`);
 
-  if (stdout) {
-    logger.info(`FIXER STDOUT: ${stdout}`);
+  // We only log STDOUT if it starts with ERROR (3.x versions of phpcbf output "ERROR"
+  // messages to stdout), as otherwise it could be the whole file contents,
+  // which clutters the log when debugging.
+  //
+  // This will be removed once we require phpcbf 4.x, which outputs errors to STDERR.
+  if (stdout && stdout.startsWith('ERROR')) {
+    logger.info(`FIXER STDOUT: ${stdout.trim()}`);
   }
 
   if (stderr) {
