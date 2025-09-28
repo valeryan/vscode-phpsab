@@ -217,10 +217,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       const execError: ConsoleError = fixer.error;
       if (execError.code === 'ETIMEDOUT') {
         error = 'FIXER: Formatting the document timed out.';
-      }
-
-      if (execError.code === 'ENOENT') {
+      } else if (execError.code === 'ENOENT') {
         error = `FIXER: ${execError.message}. executablePath not found.`;
+      } else {
+        error = `FIXER: ${execError.message}`;
       }
       break;
     }
