@@ -245,7 +245,6 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       if (fixed.length > 0) {
         error += '\n' + fixed + '\n';
       }
-      logger.error(fixed);
   }
 
   logger.endTimer('Fixer');
@@ -253,7 +252,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   window.showInformationMessage(message);
 
   if (error !== '') {
+    logger.error(error);
     return Promise.reject(error);
+  } else {
+    logger.info(`FIXER MESSAGE: ${message}`);
   }
 
   return result;
