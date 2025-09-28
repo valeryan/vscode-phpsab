@@ -224,20 +224,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       }
       break;
     }
-    case 0: {
-      if (settings.debug) {
-        window.showInformationMessage(message);
-      }
-      break;
-    }
     case 1: {
       if (fixed.length > 0 && fixed !== fileText) {
         result = fixed;
         message = 'All fixable errors were fixed correctly.';
-      }
-
-      if (settings.debug) {
-        window.showInformationMessage(message);
       }
 
       break;
@@ -248,9 +238,6 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         message = 'FIXER failed to fix some of the fixable errors.';
       }
 
-      if (settings.debug) {
-        window.showInformationMessage(message);
-      }
       break;
     }
     default:
@@ -262,6 +249,8 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   }
 
   logger.endTimer('Fixer');
+
+  window.showInformationMessage(message);
 
   if (error !== '') {
     return Promise.reject(error);
