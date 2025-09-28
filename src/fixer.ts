@@ -289,9 +289,11 @@ export const registerFixerAsDocumentProvider = (
     format(document, isFullDocument)
       .then((text) => {
         if (text.length > 0) {
+          // Edit the document with the fixes.
           return resolve([new TextEdit(fullRange, text)]);
         } else {
-          throw new Error('PHPCBF returned an empty document');
+          // Nothing to fix.
+          return resolve([]);
         }
       })
       .catch((err) => {
