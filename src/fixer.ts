@@ -1,5 +1,6 @@
 import spawn from 'cross-spawn';
 import { SpawnSyncOptions } from 'node:child_process';
+import { getSystemErrorMap } from 'node:util';
 import {
   ConfigurationChangeEvent,
   Disposable,
@@ -161,7 +162,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
   const stderr = fixer.stderr.toString();
-  const nodeError = fixer.error?.toString();
+  const nodeError = fixer.error as ConsoleError;
 
   logger.info(`FIXER EXIT CODE: ${exitcode}`);
 
@@ -205,26 +206,23 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
    */
   switch (exitcode) {
     case null: {
-      // deal with some special case errors
-      error = 'A General Execution error occurred.';
+      if (!nodeError) {
+        return '';
+      }
 
-      if (fixer.error === undefined) {
-        break;
-      }
-      const execError: ConsoleError = fixer.error;
-      if (execError.code === 'ETIMEDOUT') {
-        error = 'FIXER: Formatting the document timed out.';
-      } else if (execError.code === 'ENOENT') {
-        error = `FIXER: ${execError.message}. executablePath not found.`;
-      } else {
-        error = `FIXER: ${execError.message}`;
-      }
+      // Deal with Node errors.
+      error += determineNodeError(nodeError);
+
       break;
     }
     case 1: {
       if (fixed.length > 0 && fixed !== fileText) {
         result = fixed;
         message = 'All fixable errors were fixed correctly.';
+      }
+      // If Node errors.
+      else if (nodeError) {
+        error += determineNodeError(nodeError);
       }
 
       break;
@@ -234,13 +232,29 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         result = fixed;
         message = 'FIXER failed to fix some of the fixable errors.';
       }
+      // If Node errors.
+      else if (nodeError) {
+        error += determineNodeError(nodeError);
+      }
 
       break;
     }
     default:
+      // A PHPCBF error occurred.
       error = errors[exitcode];
       if (fixed.length > 0) {
         error += '\n' + fixed + '\n';
+      }
+      // Other errors.
+      else {
+        // If Node errors.
+        if (nodeError) {
+          error += determineNodeError(nodeError);
+        }
+        // If no specific error is found, return a generic fatal error.
+        else {
+          error += 'FATAL: Unknown error occurred.';
+        }
       }
   }
 
@@ -256,6 +270,60 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   }
 
   return result;
+};
+
+/**
+ * Determine the Node error and return a formatted string of the error message(s) and stack trace.
+ * @param {ConsoleError} nodeError The Node error object.
+ * @returns {string} The formatted error message(s) and stack trace.
+ */
+const determineNodeError = (nodeError: ConsoleError): string => {
+  let error = 'FIXER NODE ERROR: ';
+  // Assert code is not undefined.
+  const code = nodeError.code!;
+
+  // Node.js specific errors (ERR_* codes)
+  const nodeErrorMessages: { [key: string]: string } = {
+    ERR_OPERATION_FAILED: 'A general script execution error occurred.',
+  };
+
+  // System errors (e.g. ENOENT, EACCES, etc)
+  const nodeSystemMessages = getSystemErrorMap().values();
+
+  // Merge the two together to make searching easier.
+  const errorMap = [
+    ...nodeSystemMessages,
+    ...Object.entries(nodeErrorMessages),
+  ];
+
+  let errorName = '';
+  let errorDescription = '';
+
+  // Search through the error map to find the error by name
+  for (const [name, description] of errorMap) {
+    if (name === code) {
+      errorDescription = description;
+      break;
+    }
+  }
+
+  // Timeout error
+  if (code === 'ETIMEDOUT') {
+    error += 'The fixer process timed out ';
+  }
+  // Path/file not found error
+  else if (code === 'ENOENT') {
+    error += `The path "${nodeError.path}" was not found `;
+  }
+  // Handle other error codes we may not be aware of
+  error += `[${code} ${errorDescription}].\n\n`;
+  error += `Internal message: ${nodeError.message}.\n\n`;
+
+  // Append stack trace and cause if available.
+  error += nodeError.stack ? `[Stack trace]: ${nodeError.stack}\n` : '';
+  error += nodeError.cause ? `\n[Caused by]: ${nodeError.cause}` : '';
+
+  return error;
 };
 
 /**
