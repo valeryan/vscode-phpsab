@@ -1,5 +1,4 @@
-import spawn from 'cross-spawn';
-import { SpawnSyncOptions } from 'node:child_process';
+import { spawnSync, SpawnSyncOptions } from 'node:child_process';
 import {
   ConfigurationChangeEvent,
   Disposable,
@@ -74,9 +73,9 @@ const getArgs = (
    */
 
   if (standard !== '') {
-    args.push(`--standard=${standard}`);
+    args.push(`--standard="${standard}"`);
   }
-  args.push(`--stdin-path=${filePath}`);
+  args.push(`--stdin-path="${filePath}"`);
   args = args.concat(additionalArguments);
   args.push('-');
   return args;
@@ -154,13 +153,17 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     env: process.env,
     encoding: 'utf8',
     input: fileText,
+    // Required to prevent EINVAL errors when spawning .bat files on Windows.
+    // https://github.com/valeryan/vscode-phpsab/issues/128
+    // https://github.com/nodejs/node/issues/52554
+    shell: true,
   };
 
   logger.info(
     `FIXER COMMAND: ${resourceConf.executablePathCBF} ${lintArgs.join(' ')}`,
   );
 
-  const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
+  const fixer = spawnSync(resourceConf.executablePathCBF, lintArgs, options);
   const stdout = fixer.stdout.toString();
 
   let fixed = stdout;
