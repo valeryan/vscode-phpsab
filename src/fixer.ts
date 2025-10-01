@@ -179,10 +179,6 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     logger.error(`FIXER STDERR: ${stderr.trim()}`);
   }
 
-  if (nodeError) {
-    logger.error(`FIXER NODE ERROR: ${nodeError.trim()}`);
-  }
-
   let fixed = stdout;
 
   let errors: { [key: number]: string } = {
