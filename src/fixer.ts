@@ -1,4 +1,5 @@
 import { spawnSync, SpawnSyncOptions } from 'node:child_process';
+import { getSystemErrorMap } from 'node:util';
 import {
   ConfigurationChangeEvent,
   Disposable,
@@ -29,10 +30,7 @@ const getSettings = async () => {
  * Load Configuration from editor
  */
 const reloadSettings = async (event: ConfigurationChangeEvent) => {
-  if (
-    !event.affectsConfiguration('phpsab') &&
-    !event.affectsConfiguration('editor.formatOnSaveTimeout')
-  ) {
+  if (!event.affectsConfiguration('phpsab')) {
     return;
   }
   settingsCache = await loadSettings();
@@ -164,7 +162,25 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   );
 
   const fixer = spawnSync(resourceConf.executablePathCBF, lintArgs, options);
+  const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
+  const stderr = fixer.stderr.toString();
+  const nodeError = fixer.error as ConsoleError;
+
+  logger.info(`FIXER EXIT CODE: ${exitcode}`);
+
+  // We only log STDOUT if it starts with ERROR (3.x versions of phpcbf output "ERROR"
+  // messages to stdout), as otherwise it could be the whole file contents,
+  // which clutters the log when debugging.
+  //
+  // This will be removed once we require phpcbf 4.x, which outputs errors to STDERR.
+  if (stdout && stdout.startsWith('ERROR')) {
+    logger.info(`FIXER STDOUT: ${stdout.trim()}`);
+  }
+
+  if (stderr) {
+    logger.error(`FIXER STDERR: ${stderr.trim()}`);
+  }
 
   let fixed = stdout;
 
@@ -187,28 +203,15 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
    * Exit code 2 is used to indicate that FIXER failed to fix some of the fixable errors it found
    * Exit code 3 is used for general script execution errors
    */
-  switch (fixer.status) {
+  switch (exitcode) {
     case null: {
-      // deal with some special case errors
-      error = 'A General Execution error occurred.';
-
-      if (fixer.error === undefined) {
-        break;
-      }
-      const execError: ConsoleError = fixer.error;
-      if (execError.code === 'ETIMEDOUT') {
-        error = 'FIXER: Formatting the document timed out.';
+      if (!nodeError) {
+        return '';
       }
 
-      if (execError.code === 'ENOENT') {
-        error = `FIXER: ${execError.message}. executablePath not found.`;
-      }
-      break;
-    }
-    case 0: {
-      if (settings.debug) {
-        window.showInformationMessage(message);
-      }
+      // Deal with Node errors.
+      error += determineNodeError(nodeError);
+
       break;
     }
     case 1: {
@@ -216,9 +219,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         result = fixed;
         message = 'All fixable errors were fixed correctly.';
       }
-
-      if (settings.debug) {
-        window.showInformationMessage(message);
+      // If Node errors.
+      else if (nodeError) {
+        error += determineNodeError(nodeError);
       }
 
       break;
@@ -228,27 +231,98 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         result = fixed;
         message = 'FIXER failed to fix some of the fixable errors.';
       }
-
-      if (settings.debug) {
-        window.showInformationMessage(message);
+      // If Node errors.
+      else if (nodeError) {
+        error += determineNodeError(nodeError);
       }
+
       break;
     }
     default:
-      error = errors[fixer.status];
+      // A PHPCBF error occurred.
+      error = errors[exitcode];
       if (fixed.length > 0) {
         error += '\n' + fixed + '\n';
       }
-      logger.error(fixed);
+      // Other errors.
+      else {
+        // If Node errors.
+        if (nodeError) {
+          error += determineNodeError(nodeError);
+        }
+        // If no specific error is found, return a generic fatal error.
+        else {
+          error += 'FATAL: Unknown error occurred.';
+        }
+      }
   }
 
   logger.endTimer('Fixer');
 
+  window.showInformationMessage(message);
+
   if (error !== '') {
+    logger.error(error);
     return Promise.reject(error);
+  } else {
+    logger.info(`FIXER MESSAGE: ${message}`);
   }
 
   return result;
+};
+
+/**
+ * Determine the Node error and return a formatted string of the error message(s) and stack trace.
+ * @param {ConsoleError} nodeError The Node error object.
+ * @returns {string} The formatted error message(s) and stack trace.
+ */
+const determineNodeError = (nodeError: ConsoleError): string => {
+  let error = 'FIXER NODE ERROR: ';
+  // Assert code is not undefined.
+  const code = nodeError.code!;
+
+  // Node.js specific errors (ERR_* codes)
+  const nodeErrorMessages: { [key: string]: string } = {
+    ERR_OPERATION_FAILED: 'A general script execution error occurred.',
+  };
+
+  // System errors (e.g. ENOENT, EACCES, etc)
+  const nodeSystemMessages = getSystemErrorMap().values();
+
+  // Merge the two together to make searching easier.
+  const errorMap = [
+    ...nodeSystemMessages,
+    ...Object.entries(nodeErrorMessages),
+  ];
+
+  let errorName = '';
+  let errorDescription = '';
+
+  // Search through the error map to find the error by name
+  for (const [name, description] of errorMap) {
+    if (name === code) {
+      errorDescription = description;
+      break;
+    }
+  }
+
+  // Timeout error
+  if (code === 'ETIMEDOUT') {
+    error += 'The fixer process timed out ';
+  }
+  // Path/file not found error
+  else if (code === 'ENOENT') {
+    error += `The path "${nodeError.path}" was not found `;
+  }
+  // Handle other error codes we may not be aware of
+  error += `[${code} ${errorDescription}].\n\n`;
+  error += `Internal message: ${nodeError.message}.\n\n`;
+
+  // Append stack trace and cause if available.
+  error += nodeError.stack ? `[Stack trace]: ${nodeError.stack}\n` : '';
+  error += nodeError.cause ? `\n[Caused by]: ${nodeError.cause}` : '';
+
+  return error;
 };
 
 /**
@@ -279,9 +353,11 @@ export const registerFixerAsDocumentProvider = (
     format(document, isFullDocument)
       .then((text) => {
         if (text.length > 0) {
+          // Edit the document with the fixes.
           return resolve([new TextEdit(fullRange, text)]);
         } else {
-          throw new Error('PHPCBF returned an empty document');
+          // Nothing to fix.
+          return resolve([]);
         }
       })
       .catch((err) => {
