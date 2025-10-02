@@ -140,8 +140,6 @@ const validate = async (document: TextDocument) => {
         ? resourceConf.workspaceRoot
         : undefined,
     env: process.env,
-    encoding: 'utf8',
-    tty: true,
     // Required to prevent EINVAL errors when spawning .bat files on Windows.
     // https://github.com/valeryan/vscode-phpsab/issues/128
     // https://github.com/nodejs/node/issues/52554
