@@ -1,5 +1,5 @@
 import { debounce } from 'lodash';
-import { spawn } from 'node:child_process';
+import { spawn, SpawnOptions } from 'node:child_process';
 import {
   CancellationTokenSource,
   ConfigurationChangeEvent,
@@ -7,11 +7,11 @@ import {
   DiagnosticCollection,
   DiagnosticSeverity,
   Disposable,
+  languages,
   Range,
   TextDocument,
   TextDocumentChangeEvent,
   Uri,
-  languages,
   window,
   workspace,
 } from 'vscode';
@@ -134,14 +134,15 @@ const validate = async (document: TextDocument) => {
 
   let fileText = document.getText();
 
-  const options = {
+  const options: SpawnOptions = {
     cwd:
       resourceConf.workspaceRoot !== null
         ? resourceConf.workspaceRoot
         : undefined,
     env: process.env,
-    encoding: 'utf8',
-    tty: true,
+    // Required to prevent EINVAL errors when spawning .bat files on Windows.
+    // https://github.com/valeryan/vscode-phpsab/issues/128
+    // https://github.com/nodejs/node/issues/52554
     shell: true,
   };
   logger.info(
@@ -150,15 +151,21 @@ const validate = async (document: TextDocument) => {
 
   const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
 
-  sniffer.stdin.write(fileText);
-  sniffer.stdin.end();
+  if (sniffer.stdin) {
+    sniffer.stdin.write(fileText);
+    sniffer.stdin.end();
+  }
 
   let stdout = '';
   let stderr = '';
   let nodeError = '';
 
-  sniffer.stdout.on('data', (data) => (stdout += data));
-  sniffer.stderr.on('data', (data) => (stderr += data));
+  if (sniffer.stdout) {
+    sniffer.stdout.on('data', (data) => (stdout += data));
+  }
+  if (sniffer.stderr) {
+    sniffer.stderr.on('data', (data) => (stderr += data));
+  }
   sniffer.on('error', (error) => (nodeError += error));
 
   const done = new Promise<void>((resolve, reject) => {

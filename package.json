@@ -155,11 +155,9 @@
     "ts-watch": "tsc -watch -p ./"
   },
   "dependencies": {
-    "cross-spawn": "^7.0.3",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.6",
     "@types/lodash": "^4.14.202",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.11.20",
