@@ -151,14 +151,20 @@ const validate = async (document: TextDocument) => {
 
   const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
 
-  sniffer.stdin.write(fileText);
-  sniffer.stdin.end();
+  if (sniffer.stdin) {
+    sniffer.stdin.write(fileText);
+    sniffer.stdin.end();
+  }
 
   let stdout = '';
   let stderr = '';
 
-  sniffer.stdout.on('data', (data) => (stdout += data));
-  sniffer.stderr.on('data', (data) => (stderr += data));
+  if (sniffer.stdout) {
+    sniffer.stdout.on('data', (data) => (stdout += data));
+  }
+  if (sniffer.stderr) {
+    sniffer.stderr.on('data', (data) => (stderr += data));
+  }
 
   const done = new Promise<void>((resolve, reject) => {
     sniffer.on('close', () => {
