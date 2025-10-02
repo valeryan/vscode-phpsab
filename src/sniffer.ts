@@ -154,6 +154,11 @@ const validate = async (document: TextDocument) => {
   if (sniffer.stdin) {
     sniffer.stdin.write(fileText);
     sniffer.stdin.end();
+  } else {
+    // Kill the process if we can't write to its `stdin`. We use `SIGKILL` to forcefully
+    // terminate the process, and prevent it from hanging indefinitely.
+    // This allows the `done` promise to resolve.
+    sniffer.kill('SIGKILL');
   }
 
   let stdout = '';
@@ -184,7 +189,19 @@ const validate = async (document: TextDocument) => {
         logger.error(`SNIFFER NODE ERROR: ${nodeError.trim()}`);
       }
 
-      if (token.isCancellationRequested || !stdout) {
+      // If the sniffer was cancelled, OR the process was killed manually, OR there's
+      // no output from sniffer, then just resolve the promise and return early.
+      if (token.isCancellationRequested || sniffer.killed || !stdout) {
+        // If the process was killed manually, we log an error message and inform the user.
+        if (sniffer.killed) {
+          const errorMsg =
+            'Unable to communicate with PHPCS. Please check your installation/configuration and try again.';
+          logger.error(
+            `${errorMsg}\nSniffer stdin is null - cannot send file content to phpcs`,
+          );
+          window.showErrorMessage(errorMsg, 'OK');
+        }
+
         resolve();
         return;
       }
