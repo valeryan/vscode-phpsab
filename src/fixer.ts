@@ -1,5 +1,4 @@
 import { spawnSync, SpawnSyncOptions } from 'node:child_process';
-import { getSystemErrorMap } from 'node:util';
 import {
   ConfigurationChangeEvent,
   Disposable,
