@@ -1,5 +1,5 @@
 import { debounce } from 'lodash';
-import { spawn } from 'node:child_process';
+import { spawn, SpawnOptions } from 'node:child_process';
 import {
   CancellationTokenSource,
   ConfigurationChangeEvent,
@@ -7,19 +7,21 @@ import {
   DiagnosticCollection,
   DiagnosticSeverity,
   Disposable,
+  languages,
   Range,
   TextDocument,
   TextDocumentChangeEvent,
   Uri,
-  languages,
   window,
   workspace,
 } from 'vscode';
+import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
+import { determineNodeError } from './utils';
 
 const enum runConfig {
   save = 'onSave',
@@ -134,14 +136,15 @@ const validate = async (document: TextDocument) => {
 
   let fileText = document.getText();
 
-  const options = {
+  const options: SpawnOptions = {
     cwd:
       resourceConf.workspaceRoot !== null
         ? resourceConf.workspaceRoot
         : undefined,
     env: process.env,
-    encoding: 'utf8',
-    tty: true,
+    // Required to prevent EINVAL errors when spawning .bat files on Windows.
+    // https://github.com/valeryan/vscode-phpsab/issues/128
+    // https://github.com/nodejs/node/issues/52554
     shell: true,
   };
   logger.info(
@@ -150,22 +153,67 @@ const validate = async (document: TextDocument) => {
 
   const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
 
-  sniffer.stdin.write(fileText);
-  sniffer.stdin.end();
+  if (sniffer.stdin) {
+    sniffer.stdin.write(fileText);
+    sniffer.stdin.end();
+  } else {
+    // Kill the process if we can't write to its `stdin`. We use `SIGKILL` to forcefully
+    // terminate the process, and prevent it from hanging indefinitely.
+    // This allows the `done` promise to resolve.
+    sniffer.kill('SIGKILL');
+  }
 
   let stdout = '';
   let stderr = '';
+  let nodeError: ConsoleError | null = null;
 
-  sniffer.stdout.on('data', (data) => (stdout += data));
-  sniffer.stderr.on('data', (data) => (stderr += data));
+  if (sniffer.stdout) {
+    sniffer.stdout.on('data', (data) => (stdout += data));
+  }
+  if (sniffer.stderr) {
+    sniffer.stderr.on('data', (data) => (stderr += data));
+  }
+
+  sniffer.on('error', (error) => (nodeError = error as ConsoleError));
 
   const done = new Promise<void>((resolve, reject) => {
-    sniffer.on('close', () => {
-      if (token.isCancellationRequested || !stdout) {
+    sniffer.on('close', (exitcode) => {
+      logger.info(`SNIFFER EXIT CODE: ${exitcode}`);
+
+      if (stdout) {
+        logger.info(`SNIFFER STDOUT: ${stdout.trim()}`);
+      }
+
+      if (stderr) {
+        logger.error(`SNIFFER STDERR: ${stderr.trim()}`);
+      }
+
+      // If the sniffer was cancelled, OR the process was killed manually, OR there's
+      // no output from sniffer, then just resolve the promise and return early.
+      if (token.isCancellationRequested || sniffer.killed || !stdout) {
+        let errorMsg = '';
+        let extraLoggerMsg = '';
+        // If the process was killed manually, we log an error message and inform the user.
+        if (sniffer.killed) {
+          errorMsg =
+            'Unable to communicate with PHPCS. Please check your installation/configuration and try again.';
+          extraLoggerMsg = `\nSniffer stdin is null - cannot send file content to phpcs`;
+        } else if (nodeError) {
+          // Destructure the returned object and assign to variables.
+          ({ errorMsg, extraLoggerMsg } = determineNodeError(
+            nodeError,
+            'sniffer',
+          ));
+        }
+
+        logger.error(`${errorMsg}${extraLoggerMsg}`);
+        window.showErrorMessage(errorMsg, 'OK');
+
         resolve();
         return;
       }
       const diagnostics: Diagnostic[] = [];
+      // try-catch to handle JSON parse errors
       try {
         const { files }: PHPCSReport = JSON.parse(stdout);
         for (const file in files) {
@@ -209,7 +257,7 @@ const validate = async (document: TextDocument) => {
         } else {
           message += 'Unexpected error';
         }
-        window.showErrorMessage(message);
+        window.showErrorMessage(message, 'OK');
         logger.error(message);
         reject(message);
       }

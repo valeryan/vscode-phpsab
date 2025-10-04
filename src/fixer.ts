@@ -1,5 +1,4 @@
-import spawn from 'cross-spawn';
-import { SpawnSyncOptions } from 'node:child_process';
+import { spawnSync, SpawnSyncOptions } from 'node:child_process';
 import {
   ConfigurationChangeEvent,
   Disposable,
@@ -16,6 +15,7 @@ import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
+import { determineNodeError } from './utils';
 
 let settingsCache: Settings;
 
@@ -30,10 +30,7 @@ const getSettings = async () => {
  * Load Configuration from editor
  */
 const reloadSettings = async (event: ConfigurationChangeEvent) => {
-  if (
-    !event.affectsConfiguration('phpsab') &&
-    !event.affectsConfiguration('editor.formatOnSaveTimeout')
-  ) {
+  if (!event.affectsConfiguration('phpsab')) {
     return;
   }
   settingsCache = await loadSettings();
@@ -74,9 +71,9 @@ const getArgs = (
    */
 
   if (standard !== '') {
-    args.push(`--standard=${standard}`);
+    args.push(`--standard="${standard}"`);
   }
-  args.push(`--stdin-path=${filePath}`);
+  args.push(`--stdin-path="${filePath}"`);
   args = args.concat(additionalArguments);
   args.push('-');
   return args;
@@ -154,14 +151,36 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     env: process.env,
     encoding: 'utf8',
     input: fileText,
+    // Required to prevent EINVAL errors when spawning .bat files on Windows.
+    // https://github.com/valeryan/vscode-phpsab/issues/128
+    // https://github.com/nodejs/node/issues/52554
+    shell: true,
   };
 
   logger.info(
     `FIXER COMMAND: ${resourceConf.executablePathCBF} ${lintArgs.join(' ')}`,
   );
 
-  const fixer = spawn.sync(resourceConf.executablePathCBF, lintArgs, options);
+  const fixer = spawnSync(resourceConf.executablePathCBF, lintArgs, options);
+  const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
+  const stderr = fixer.stderr.toString();
+  const nodeError = fixer.error as ConsoleError;
+
+  logger.info(`FIXER EXIT CODE: ${exitcode}`);
+
+  // We only log STDOUT if it starts with ERROR (3.x versions of phpcbf output "ERROR"
+  // messages to stdout), as otherwise it could be the whole file contents,
+  // which clutters the log when debugging.
+  //
+  // This will be removed once we require phpcbf 4.x, which outputs errors to STDERR.
+  if (stdout && stdout.startsWith('ERROR')) {
+    logger.info(`FIXER STDOUT: ${stdout.trim()}`);
+  }
+
+  if (stderr) {
+    logger.error(`FIXER STDERR: ${stderr.trim()}`);
+  }
 
   let fixed = stdout;
 
@@ -176,6 +195,8 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   let error: string = '';
   let result: string = '';
   let message: string = 'No fixable errors were found.';
+  let errorMsg: string = '';
+  let extraLoggerMsg: string = '';
 
   /**
    * fixer exit codes:
@@ -184,28 +205,17 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
    * Exit code 2 is used to indicate that FIXER failed to fix some of the fixable errors it found
    * Exit code 3 is used for general script execution errors
    */
-  switch (fixer.status) {
+  switch (exitcode) {
     case null: {
-      // deal with some special case errors
-      error = 'A General Execution error occurred.';
-
-      if (fixer.error === undefined) {
-        break;
-      }
-      const execError: ConsoleError = fixer.error;
-      if (execError.code === 'ETIMEDOUT') {
-        error = 'FIXER: Formatting the document timed out.';
+      if (!nodeError) {
+        return '';
       }
 
-      if (execError.code === 'ENOENT') {
-        error = `FIXER: ${execError.message}. executablePath not found.`;
-      }
-      break;
-    }
-    case 0: {
-      if (settings.debug) {
-        window.showInformationMessage(message);
-      }
+      // Deal with Node errors.
+      // Destructure the returned object and assign to variables.
+      ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
+      error += errorMsg;
+
       break;
     }
     case 1: {
@@ -213,9 +223,11 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         result = fixed;
         message = 'All fixable errors were fixed correctly.';
       }
-
-      if (settings.debug) {
-        window.showInformationMessage(message);
+      // If Node errors.
+      else if (nodeError) {
+        // Destructure the returned object and assign to variables.
+        ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
+        error += errorMsg;
       }
 
       break;
@@ -225,24 +237,48 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         result = fixed;
         message = 'FIXER failed to fix some of the fixable errors.';
       }
-
-      if (settings.debug) {
-        window.showInformationMessage(message);
+      // If Node errors.
+      else if (nodeError) {
+        // Destructure the returned object and assign to variables.
+        ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
+        error += errorMsg;
       }
+
       break;
     }
     default:
-      error = errors[fixer.status];
+      // A PHPCBF error occurred.
+      error = errors[exitcode];
       if (fixed.length > 0) {
         error += '\n' + fixed + '\n';
       }
-      logger.error(fixed);
+      // Other errors.
+      else {
+        // If Node errors.
+        if (nodeError) {
+          // Destructure the returned object and assign to variables.
+          ({ errorMsg, extraLoggerMsg } = determineNodeError(
+            nodeError,
+            'fixer',
+          ));
+          error += errorMsg;
+        }
+        // If no specific error is found, return a generic fatal error.
+        else {
+          error += 'FATAL: Unknown error occurred.';
+        }
+      }
   }
 
   logger.endTimer('Fixer');
 
+  window.showInformationMessage(message);
+
   if (error !== '') {
+    logger.error(`${error}${extraLoggerMsg}`);
     return Promise.reject(error);
+  } else {
+    logger.info(`FIXER MESSAGE: ${message}`);
   }
 
   return result;
@@ -276,13 +312,15 @@ export const registerFixerAsDocumentProvider = (
     format(document, isFullDocument)
       .then((text) => {
         if (text.length > 0) {
+          // Edit the document with the fixes.
           return resolve([new TextEdit(fullRange, text)]);
         } else {
-          throw new Error('PHPCBF returned an empty document');
+          // Nothing to fix.
+          return resolve([]);
         }
       })
       .catch((err) => {
-        window.showErrorMessage(err);
+        window.showErrorMessage(err, 'OK');
         return reject(err);
       });
   });
