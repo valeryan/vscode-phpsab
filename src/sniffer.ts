@@ -15,11 +15,13 @@ import {
   window,
   workspace,
 } from 'vscode';
+import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
+import { determineNodeError } from './utils';
 
 const enum runConfig {
   save = 'onSave',
@@ -163,7 +165,7 @@ const validate = async (document: TextDocument) => {
 
   let stdout = '';
   let stderr = '';
-  let nodeError = '';
+  let nodeError: ConsoleError | null = null;
 
   if (sniffer.stdout) {
     sniffer.stdout.on('data', (data) => (stdout += data));
@@ -171,7 +173,8 @@ const validate = async (document: TextDocument) => {
   if (sniffer.stderr) {
     sniffer.stderr.on('data', (data) => (stderr += data));
   }
-  sniffer.on('error', (error) => (nodeError += error));
+
+  sniffer.on('error', (error) => (nodeError = error as ConsoleError));
 
   const done = new Promise<void>((resolve, reject) => {
     sniffer.on('close', (exitcode) => {
@@ -185,27 +188,32 @@ const validate = async (document: TextDocument) => {
         logger.error(`SNIFFER STDERR: ${stderr.trim()}`);
       }
 
-      if (nodeError) {
-        logger.error(`SNIFFER NODE ERROR: ${nodeError.trim()}`);
-      }
-
       // If the sniffer was cancelled, OR the process was killed manually, OR there's
       // no output from sniffer, then just resolve the promise and return early.
       if (token.isCancellationRequested || sniffer.killed || !stdout) {
+        let errorMsg = '';
+        let extraLoggerMsg = '';
         // If the process was killed manually, we log an error message and inform the user.
         if (sniffer.killed) {
-          const errorMsg =
+          errorMsg =
             'Unable to communicate with PHPCS. Please check your installation/configuration and try again.';
-          logger.error(
-            `${errorMsg}\nSniffer stdin is null - cannot send file content to phpcs`,
-          );
-          window.showErrorMessage(errorMsg, 'OK');
+          extraLoggerMsg = `\nSniffer stdin is null - cannot send file content to phpcs`;
+        } else if (nodeError) {
+          // Destructure the returned object and assign to variables.
+          ({ errorMsg, extraLoggerMsg } = determineNodeError(
+            nodeError,
+            'sniffer',
+          ));
         }
+
+        logger.error(`${errorMsg}${extraLoggerMsg}`);
+        window.showErrorMessage(errorMsg, 'OK');
 
         resolve();
         return;
       }
       const diagnostics: Diagnostic[] = [];
+      // try-catch to handle JSON parse errors
       try {
         const { files }: PHPCSReport = JSON.parse(stdout);
         for (const file in files) {
@@ -249,7 +257,7 @@ const validate = async (document: TextDocument) => {
         } else {
           message += 'Unexpected error';
         }
-        window.showErrorMessage(message);
+        window.showErrorMessage(message, 'OK');
         logger.error(message);
         reject(message);
       }

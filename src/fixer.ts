@@ -16,6 +16,7 @@ import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
+import { determineNodeError } from './utils';
 
 let settingsCache: Settings;
 
@@ -195,6 +196,8 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   let error: string = '';
   let result: string = '';
   let message: string = 'No fixable errors were found.';
+  let errorMsg: string = '';
+  let extraLoggerMsg: string = '';
 
   /**
    * fixer exit codes:
@@ -210,7 +213,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       }
 
       // Deal with Node errors.
-      error += determineNodeError(nodeError);
+      // Destructure the returned object and assign to variables.
+      ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
+      error += errorMsg;
 
       break;
     }
@@ -221,7 +226,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       }
       // If Node errors.
       else if (nodeError) {
-        error += determineNodeError(nodeError);
+        // Destructure the returned object and assign to variables.
+        ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
+        error += errorMsg;
       }
 
       break;
@@ -233,7 +240,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       }
       // If Node errors.
       else if (nodeError) {
-        error += determineNodeError(nodeError);
+        // Destructure the returned object and assign to variables.
+        ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
+        error += errorMsg;
       }
 
       break;
@@ -248,7 +257,12 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       else {
         // If Node errors.
         if (nodeError) {
-          error += determineNodeError(nodeError);
+          // Destructure the returned object and assign to variables.
+          ({ errorMsg, extraLoggerMsg } = determineNodeError(
+            nodeError,
+            'fixer',
+          ));
+          error += errorMsg;
         }
         // If no specific error is found, return a generic fatal error.
         else {
@@ -262,67 +276,13 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   window.showInformationMessage(message);
 
   if (error !== '') {
-    logger.error(error);
+    logger.error(`${error}${extraLoggerMsg}`);
     return Promise.reject(error);
   } else {
     logger.info(`FIXER MESSAGE: ${message}`);
   }
 
   return result;
-};
-
-/**
- * Determine the Node error and return a formatted string of the error message(s) and stack trace.
- * @param {ConsoleError} nodeError The Node error object.
- * @returns {string} The formatted error message(s) and stack trace.
- */
-const determineNodeError = (nodeError: ConsoleError): string => {
-  let error = 'FIXER NODE ERROR: ';
-  // Assert code is not undefined.
-  const code = nodeError.code!;
-
-  // Node.js specific errors (ERR_* codes)
-  const nodeErrorMessages: { [key: string]: string } = {
-    ERR_OPERATION_FAILED: 'A general script execution error occurred.',
-  };
-
-  // System errors (e.g. ENOENT, EACCES, etc)
-  const nodeSystemMessages = getSystemErrorMap().values();
-
-  // Merge the two together to make searching easier.
-  const errorMap = [
-    ...nodeSystemMessages,
-    ...Object.entries(nodeErrorMessages),
-  ];
-
-  let errorName = '';
-  let errorDescription = '';
-
-  // Search through the error map to find the error by name
-  for (const [name, description] of errorMap) {
-    if (name === code) {
-      errorDescription = description;
-      break;
-    }
-  }
-
-  // Timeout error
-  if (code === 'ETIMEDOUT') {
-    error += 'The fixer process timed out ';
-  }
-  // Path/file not found error
-  else if (code === 'ENOENT') {
-    error += `The path "${nodeError.path}" was not found `;
-  }
-  // Handle other error codes we may not be aware of
-  error += `[${code} ${errorDescription}].\n\n`;
-  error += `Internal message: ${nodeError.message}.\n\n`;
-
-  // Append stack trace and cause if available.
-  error += nodeError.stack ? `[Stack trace]: ${nodeError.stack}\n` : '';
-  error += nodeError.cause ? `\n[Caused by]: ${nodeError.cause}` : '';
-
-  return error;
 };
 
 /**
@@ -361,7 +321,7 @@ export const registerFixerAsDocumentProvider = (
         }
       })
       .catch((err) => {
-        window.showErrorMessage(err);
+        window.showErrorMessage(err, 'OK');
         return reject(err);
       });
   });
