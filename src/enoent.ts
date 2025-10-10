@@ -21,15 +21,15 @@ import { isWin } from './resolvers/path-resolver-utils';
 
 /**
  * Add ENOENT error handling for Windows spawned processes using spawn or spawnSync.
- * @param {ChildProcess| SpawnSyncReturns<string | Buffer<ArrayBufferLike>>} cp The ChildProcess instance or SpawnSyncReturns object
+ * @param {ChildProcess| SpawnSyncReturns<string | Buffer>} cp The ChildProcess instance or SpawnSyncReturns object
  * @param {any} parsed The parsed command information
  * @returns {Error | null | void} For spawnSync returns the `Error` object if ENOENT detected, `null` otherwise. For spawn and non-Windows systems returns `void`.
  */
 export function addWindowsEnoentError(
-  cp: ChildProcess | SpawnSyncReturns<string | Buffer<ArrayBufferLike>>,
+  cp: ChildProcess | SpawnSyncReturns<string | Buffer>,
   parsed: any,
   syscall: 'spawn' | 'spawnSync',
-) {
+): Error | null | void {
   // If not on Windows, don't do anything
   if (!isWin()) {
     logger.info('Not on Windows, skipping ENOENT handler setup.');
