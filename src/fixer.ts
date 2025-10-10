@@ -10,6 +10,7 @@ import {
   window,
   workspace,
 } from 'vscode';
+import { addWindowsEnoentError } from './enoent';
 import { ConsoleError } from './interfaces/console-error';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
@@ -165,7 +166,15 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
   const stderr = fixer.stderr.toString();
-  const nodeError = fixer.error as ConsoleError;
+
+  const parsed = {
+    original: { command: resourceConf.executablePathCBF, args: lintArgs },
+    commandfile: resourceConf.executablePathCBF,
+  };
+
+  const nodeError =
+    (fixer.error as ConsoleError) ||
+    addWindowsEnoentError(fixer, parsed, 'spawnSync');
 
   logger.info(`FIXER EXIT CODE: ${exitcode}`);
 

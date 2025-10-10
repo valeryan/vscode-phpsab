@@ -15,6 +15,7 @@ import {
   window,
   workspace,
 } from 'vscode';
+import { addWindowsEnoentError } from './enoent';
 import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
@@ -152,6 +153,15 @@ const validate = async (document: TextDocument) => {
   );
 
   const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
+
+  const parsed = {
+    spawnargs: sniffer.spawnargs,
+    original: { command: resourceConf.executablePathCS, args: lintArgs },
+    commandfile: resourceConf.executablePathCS,
+  };
+  logger.debug('SNIFFER PARSED:', parsed);
+
+  addWindowsEnoentError(sniffer, parsed, 'spawn');
 
   if (sniffer.stdin) {
     sniffer.stdin.write(fileText);
