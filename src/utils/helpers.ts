@@ -80,3 +80,41 @@ export const determineNodeError = (
 
   return { errorMsg, extraLoggerMsg };
 };
+
+/**
+ * Build the arguments needed to execute sniffer or fixer.
+ * @param {TextDocument} document The text document to be linted or fixed.
+ * @param {string} standard The coding standard to use.
+ * @param {string[]} additionalArguments Any additional arguments to pass to the executable.
+ * @param {string} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @returns {string[]} The array of arguments to pass to the sniffer or fixer executable.
+ */
+export const getArgs = (
+  document: TextDocument,
+  standard: string,
+  additionalArguments: string[],
+  toolType: 'sniffer' | 'fixer',
+): string[] => {
+  // Process linting paths.
+  let filePath = document.fileName;
+  let args = [];
+
+  // If sniffer, we need to add the JSON report argument.
+  if (toolType === 'sniffer') {
+    args.push('--report=json');
+  }
+
+  args.push('-q');
+
+  // Double quotes are required for the standards and stdin-paths with spaces in them.
+
+  // If a standard is set, add it to the args.
+  if (standard !== '') {
+    args.push(`--standard="${standard}"`);
+  }
+
+  args.push(`--stdin-path="${filePath}"`);
+  args = args.concat(additionalArguments);
+  args.push('-');
+  return args;
+};

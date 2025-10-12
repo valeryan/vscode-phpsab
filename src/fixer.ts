@@ -16,7 +16,7 @@ import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { determineNodeError } from './utils/helpers';
+import { determineNodeError, getArgs } from './utils/helpers';
 
 let settingsCache: Settings;
 
@@ -35,49 +35,6 @@ const reloadSettings = async (event: ConfigurationChangeEvent) => {
     return;
   }
   settingsCache = await loadSettings();
-};
-
-/**
- * Build the arguments needed to execute fixer
- * @param fileName
- * @param standard
- */
-const getArgs = (
-  document: TextDocument,
-  standard: string,
-  additionalArguments: string[],
-) => {
-  // Process linting paths.
-  let filePath = document.fileName;
-
-  let args = [];
-  args.push('-q');
-
-  /**
-   * Important Note as explained in PR #155:
-   *
-   * For the fixer to work properly, we don't add `shell: true` to spawn.sync's options,
-   * so spawn runs with the default of `shell: false`. This is important because when spawn runs on
-   * Windows with the default it automatically escapes the command and values, including
-   * surrounding them in double quotes (" ").
-   *
-   * So we don't need to add double quotes around the values for the `--standard` and `--stdin-path`
-   * options, otherwise the values will get double the amount of quotes and errors will occur.
-   *
-   * e.g. ["ERROR" - 10:33:56 PM] ERROR: the ""d:\Name\projects\my project\phpcs.xml"" coding
-   * standard is not installed. The installed coding standards are MySource, PEAR, PSR1, PSR2,
-   * PSR12, Squiz, Zend and JPSR12.
-   *
-   * The sniffer is different, it needs to be surrounded by double quotes.
-   */
-
-  if (standard !== '') {
-    args.push(`--standard="${standard}"`);
-  }
-  args.push(`--stdin-path="${filePath}"`);
-  args = args.concat(additionalArguments);
-  args.push('-');
-  return args;
 };
 
 /**
@@ -140,7 +97,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     resourceConf,
   ).resolve();
 
-  const lintArgs = getArgs(document, standard, additionalArguments);
+  const lintArgs = getArgs(document, standard, additionalArguments, 'fixer');
 
   let fileText = document.getText();
 
