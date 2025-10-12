@@ -16,8 +16,8 @@
  */
 
 import { ChildProcess, SpawnSyncReturns } from 'node:child_process';
-import { logger } from './logger';
-import { isWin } from './resolvers/path-resolver-utils';
+import { logger } from '../../logger';
+import { isWin } from '../../resolvers/path-resolver-utils';
 
 /**
  * Add ENOENT error handling for Windows spawned processes using spawn or spawnSync.

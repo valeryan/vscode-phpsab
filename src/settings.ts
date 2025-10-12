@@ -5,7 +5,7 @@ import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
-import { getExtensionInfo } from './utils';
+import { getExtensionInfo } from './utils/helpers';
 
 /**
  * Check if the editor is in single file mode.

@@ -15,14 +15,14 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { addWindowsEnoentError } from './enoent';
 import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
-import { determineNodeError } from './utils';
+import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
+import { determineNodeError } from './utils/helpers';
 
 const enum runConfig {
   save = 'onSave',
