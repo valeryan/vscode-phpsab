@@ -1,5 +1,5 @@
 import { getSystemErrorMap } from 'node:util';
-import { ExtensionContext, extensions } from 'vscode';
+import { ExtensionContext, extensions, TextDocument } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
 
