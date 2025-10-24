@@ -5,6 +5,7 @@ import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
+import { joinPaths, normalizePath } from './resolvers/path-resolver-utils';
 import { getExtensionInfo } from './utils/helpers';
 
 /**
@@ -34,18 +35,26 @@ const resolveRootPath = (resource: Uri) => {
 const resolveCBFExecutablePath = async (
   settings: ResourceSettings,
 ): Promise<ResourceSettings> => {
+  // If no path is set, try and find it via the path resolver.
   if (!settings.executablePathCBF) {
     let executablePathResolver = createPathResolver(settings, 'phpcbf');
     settings.executablePathCBF = await executablePathResolver.resolve();
-  } else if (
+  }
+  // If a relative path is set, resolve it against the workspace root.
+  else if (
     !path.isAbsolute(settings.executablePathCBF) &&
     settings.workspaceRoot !== null
   ) {
-    settings.executablePathCBF = path.join(
+    settings.executablePathCBF = joinPaths(
       settings.workspaceRoot,
       settings.executablePathCBF,
     );
   }
+  // Otherwise normalize the absolute path.
+  else {
+    settings.executablePathCBF = normalizePath(settings.executablePathCBF);
+  }
+
   return settings;
 };
 
@@ -56,18 +65,26 @@ const resolveCBFExecutablePath = async (
 const resolveCSExecutablePath = async (
   settings: ResourceSettings,
 ): Promise<ResourceSettings> => {
+  // If no path is set, try and find it via the path resolver.
   if (!settings.executablePathCS) {
     let executablePathResolver = createPathResolver(settings, 'phpcs');
     settings.executablePathCS = await executablePathResolver.resolve();
-  } else if (
+  }
+  // If a relative path is set, resolve it against the workspace root.
+  else if (
     !path.isAbsolute(settings.executablePathCS) &&
     settings.workspaceRoot !== null
   ) {
-    settings.executablePathCS = path.join(
+    settings.executablePathCS = joinPaths(
       settings.workspaceRoot,
       settings.executablePathCS,
     );
   }
+  // Otherwise normalize the absolute path.
+  else {
+    settings.executablePathCS = normalizePath(settings.executablePathCS);
+  }
+
   return settings;
 };
 
