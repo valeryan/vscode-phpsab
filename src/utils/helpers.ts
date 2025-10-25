@@ -102,17 +102,22 @@ export const getArgs = (
     args.push('--report=json');
   }
 
+  // Quiet output - no errors or warnings.
   args.push('-q');
-
-  // Double quotes are required for the standards and stdin-paths with spaces in them.
 
   // If a standard is set, add it to the args.
   if (standard !== '') {
-    args.push(`--standard="${standard}"`);
+    args.push(`--standard=${standard}`);
   }
 
-  args.push(`--stdin-path="${filePath}"`);
+  // Add the file path argument for stdin path resolution.
+  args.push(`--stdin-path=${filePath}`);
+  // Append any additional arguments.
   args = args.concat(additionalArguments);
+
+  // Indicate we will be passing the file contents via stdin.
+  // This must be the last argument.
   args.push('-');
+
   return args;
 };
