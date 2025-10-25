@@ -7,6 +7,7 @@ import { isSingleFileMode } from '../settings';
 import {
   getPlatformExtension,
   getPlatformPathSeparator,
+  normalizePath,
 } from './path-resolver-utils';
 
 export const createStandardsPathResolver = (
@@ -19,7 +20,7 @@ export const createStandardsPathResolver = (
     extension,
     pathSeparator,
     resolve: async () => {
-      let configured = config.standard ?? '';
+      let configured = normalizePath(config.standard ?? '');
       if (config.autoRulesetSearch === false || isSingleFileMode()) {
         return configured;
       }

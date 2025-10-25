@@ -1,5 +1,5 @@
 import { getSystemErrorMap } from 'node:util';
-import { ExtensionContext, extensions, TextDocument } from 'vscode';
+import { ExtensionContext, extensions } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
 
@@ -83,20 +83,18 @@ export const determineNodeError = (
 
 /**
  * Build the arguments needed to execute sniffer or fixer.
- * @param {TextDocument} document The text document to be linted or fixed.
+ * @param {string} filePath The file path to be linted or fixed. (Note: The path is obtained via vscode's API, so it's already normalized.)
  * @param {string} standard The coding standard to use.
  * @param {string[]} additionalArguments Any additional arguments to pass to the executable.
  * @param {string} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
  * @returns {string[]} The array of arguments to pass to the sniffer or fixer executable.
  */
 export const getArgs = (
-  document: TextDocument,
+  filePath: string,
   standard: string,
   additionalArguments: string[],
   toolType: 'sniffer' | 'fixer',
 ): string[] => {
-  // Process linting paths.
-  let filePath = document.fileName;
   let args = [];
 
   // If sniffer, we need to add the JSON report argument.

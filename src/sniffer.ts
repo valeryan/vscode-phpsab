@@ -93,7 +93,13 @@ const validate = async (document: TextDocument) => {
     document,
     resourceConf,
   ).resolve();
-  const lintArgs = getArgs(document, standard, additionalArguments, 'sniffer');
+
+  const lintArgs = getArgs(
+    document.fileName,
+    standard,
+    additionalArguments,
+    'sniffer',
+  );
 
   let fileText = document.getText();
 

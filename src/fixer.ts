@@ -97,7 +97,12 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     resourceConf,
   ).resolve();
 
-  const lintArgs = getArgs(document, standard, additionalArguments, 'fixer');
+  const lintArgs = getArgs(
+    document.fileName,
+    standard,
+    additionalArguments,
+    'fixer',
+  );
 
   let fileText = document.getText();
 
