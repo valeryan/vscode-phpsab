@@ -120,14 +120,13 @@ const validate = async (document: TextDocument) => {
 
   const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
 
-  const parsed = {
-    spawnargs: sniffer.spawnargs,
-    original: { command: resourceConf.executablePathCS, args: lintArgs },
-    commandfile: resourceConf.executablePathCS,
+  // Set the original command information (not parsed) for Windows ENOENT error handling
+  const originalCommand = {
+    commandPath: resourceConf.executablePathCS,
+    args: lintArgs,
   };
-  logger.debug('SNIFFER PARSED:', parsed);
 
-  addWindowsEnoentError(sniffer, parsed, 'spawn');
+  addWindowsEnoentError(sniffer, originalCommand, 'spawn');
 
   if (sniffer.stdin) {
     sniffer.stdin.write(fileText);

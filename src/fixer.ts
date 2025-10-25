@@ -129,14 +129,15 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const stdout = fixer.stdout.toString();
   const stderr = fixer.stderr.toString();
 
-  const parsed = {
-    original: { command: resourceConf.executablePathCBF, args: lintArgs },
-    commandfile: resourceConf.executablePathCBF,
+  // Set the original command information (not parsed) for Windows ENOENT error handling
+  const originalCommand = {
+    commandPath: resourceConf.executablePathCBF,
+    args: lintArgs,
   };
 
   const nodeError =
     (fixer.error as ConsoleError) ||
-    addWindowsEnoentError(fixer, parsed, 'spawnSync');
+    addWindowsEnoentError(fixer, originalCommand, 'spawnSync');
 
   logger.info(`FIXER EXIT CODE: ${exitcode}`);
 
