@@ -16,7 +16,7 @@ import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { determineNodeError, getArgs } from './utils/helpers';
+import { determineNodeError, getArgs, parseArgs } from './utils/helpers';
 
 let settingsCache: Settings;
 
@@ -120,11 +120,13 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     shell: true,
   };
 
+  const parsedArgs = parseArgs(lintArgs);
+
   logger.info(
-    `FIXER COMMAND: ${resourceConf.executablePathCBF} ${lintArgs.join(' ')}`,
+    `FIXER COMMAND: ${resourceConf.executablePathCBF} ${parsedArgs.join(' ')}`,
   );
 
-  const fixer = spawnSync(resourceConf.executablePathCBF, lintArgs, options);
+  const fixer = spawnSync(resourceConf.executablePathCBF, parsedArgs, options);
   const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
   const stderr = fixer.stderr.toString();

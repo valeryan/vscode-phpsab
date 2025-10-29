@@ -2,6 +2,7 @@ import { getSystemErrorMap } from 'node:util';
 import { ExtensionContext, extensions } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
+import { isWin } from '../resolvers/path-resolver-utils';
 
 const extensionInfo: ExtensionInfo = {} as ExtensionInfo;
 
@@ -120,4 +121,32 @@ export const getArgs = (
   args.push('-');
 
   return args;
+};
+
+/**
+ * Parse command line arguments.
+ * @param {string[]} args The command line arguments to parse.
+ * @returns The parsed arguments.
+ */
+export const parseArgs = (args: string[]) => {
+  const parsedArgs: string[] = [];
+
+  // For each argument, wrap in quotes to allow spaces in paths
+  // and to help prevent command injection.
+  args.forEach((arg: string) => {
+    // Windows...
+    if (isWin()) {
+      // Wrap in double quotes.
+      // See https://ss64.com/nt/syntax-esc.html#quotes
+      parsedArgs.push(`"${arg}"`);
+    }
+    // *nix...
+    else {
+      // Wrap in single quotes.
+      // See https://ss64.com/bash/syntax-quoting.html
+      parsedArgs.push(`'${arg}'`);
+    }
+  });
+
+  return parsedArgs;
 };

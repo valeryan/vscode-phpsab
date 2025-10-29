@@ -22,7 +22,7 @@ import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { determineNodeError, getArgs } from './utils/helpers';
+import { determineNodeError, getArgs, parseArgs } from './utils/helpers';
 
 const enum runConfig {
   save = 'onSave',
@@ -114,11 +114,14 @@ const validate = async (document: TextDocument) => {
     // https://github.com/nodejs/node/issues/52554
     shell: true,
   };
+
+  const parsedArgs = parseArgs(lintArgs);
+
   logger.info(
-    `SNIFFER COMMAND: ${resourceConf.executablePathCS} ${lintArgs.join(' ')}`,
+    `SNIFFER COMMAND: ${resourceConf.executablePathCS} ${parsedArgs.join(' ')}`,
   );
 
-  const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
+  const sniffer = spawn(resourceConf.executablePathCS, parsedArgs, options);
 
   // Set the original command information (not parsed) for Windows ENOENT error handling
   const originalCommand = {
