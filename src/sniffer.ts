@@ -89,10 +89,19 @@ const validate = async (document: TextDocument) => {
   runnerCancellations.set(document.uri, runner);
   const { token } = runner;
 
-  const standard = await createStandardsPathResolver(
-    document,
-    resourceConf,
-  ).resolve();
+  let standard: string;
+
+  try {
+    standard = await createStandardsPathResolver(
+      document,
+      resourceConf,
+    ).resolve();
+  } catch (error: any) {
+    window.showErrorMessage(error.message, 'OK');
+    logger.error(error.message);
+
+    return;
+  }
 
   const lintArgs = getArgs(
     document.fileName,
