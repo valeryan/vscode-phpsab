@@ -65,20 +65,6 @@ const validate = async (document: TextDocument) => {
   }
   logger.startTimer('Sniffer');
 
-  const additionalArguments = resourceConf.snifferArguments.filter((arg) => {
-    if (
-      arg.indexOf('--report') === -1 &&
-      arg.indexOf('--standard') === -1 &&
-      arg.indexOf('--stdin-path') === -1 &&
-      arg !== '-q' &&
-      arg !== '-'
-    ) {
-      return true;
-    }
-
-    return false;
-  });
-
   const oldRunner = runnerCancellations.get(document.uri);
   if (oldRunner) {
     oldRunner.cancel();
@@ -106,7 +92,7 @@ const validate = async (document: TextDocument) => {
   const lintArgs = getArgs(
     document.fileName,
     standard,
-    additionalArguments,
+    resourceConf.snifferArguments,
     'sniffer',
   );
 

@@ -78,19 +78,6 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   }
   logger.startTimer('Fixer');
 
-  const additionalArguments = resourceConf.fixerArguments.filter((arg) => {
-    if (
-      arg.indexOf('--standard') === -1 &&
-      arg.indexOf('--stdin-path') === -1 &&
-      arg !== '-q' &&
-      arg !== '-'
-    ) {
-      return true;
-    }
-
-    return false;
-  });
-
   // setup and spawn fixer process
 
   let standard: string;
@@ -110,7 +97,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const lintArgs = getArgs(
     document.fileName,
     standard,
-    additionalArguments,
+    resourceConf.fixerArguments,
     'fixer',
   );
 

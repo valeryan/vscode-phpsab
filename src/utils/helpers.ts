@@ -113,6 +113,10 @@ export const getArgs = (
 
   // Add the file path argument for stdin path resolution.
   args.push(`--stdin-path=${filePath}`);
+
+  // Validate additional arguments.
+  additionalArguments = validateAdditionalArguments(additionalArguments);
+
   // Append any additional arguments.
   args = args.concat(additionalArguments);
 
@@ -121,6 +125,38 @@ export const getArgs = (
   args.push('-');
 
   return args;
+};
+
+/**
+ * Validate the additional arguments.
+ * @param {string[]} additionalArguments Array of additional arguments
+ * @returns {string[]} Array of valid additional arguments, otherwise an empty array.
+ */
+const validateAdditionalArguments = (
+  additionalArguments: string[],
+): string[] => {
+  // Filter out arguments that are added internally.
+  additionalArguments = additionalArguments.filter((arg) => {
+    if (
+      arg.indexOf('--report') === -1 &&
+      arg.indexOf('--standard') === -1 &&
+      arg.indexOf('--stdin-path') === -1 &&
+      arg !== '-q' &&
+      arg !== '-'
+    ) {
+      return true;
+    }
+
+    return false;
+  });
+
+  // If array is not empty (after filtering), return the array.
+  if (additionalArguments.length > 0) {
+    return additionalArguments;
+  }
+
+  // Otherwise, return an empty array.
+  return [];
 };
 
 /**
