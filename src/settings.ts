@@ -104,20 +104,25 @@ const validate = async (
   settings: ResourceSettings,
   resource: string,
 ): Promise<ResourceSettings> => {
+  let msg = '';
   if (
     settings.snifferEnable &&
     !(await executableExist(settings.executablePathCS))
   ) {
-    logger.log(`The phpcs executable was not found for ${resource}`);
+    msg = `The phpcs executable was not found for ${resource}. Sniffer is being disabled for this workspace.`;
     settings.snifferEnable = false;
   }
   if (
     settings.fixerEnable &&
     !(await executableExist(settings.executablePathCBF))
   ) {
-    logger.log(`The phpcbf executable was not found for ${resource}`);
+    msg = `The phpcbf executable was not found for ${resource}. Fixer is being disabled for this workspace.`;
     settings.fixerEnable = false;
   }
+
+  logger.log(msg);
+  window.showWarningMessage(msg, 'OK');
+
   return settings;
 };
 
