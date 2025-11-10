@@ -1,5 +1,16 @@
+import type {
+  PHPCSArgumentKey,
+  PHPCSInternalArgumentKey,
+} from '@phpsab/interfaces/arguments';
+import {
+  PHPCSArgumentValidation,
+  validAdditionalArguments,
+  validFlags,
+  validInternalArguments,
+} from '@phpsab/interfaces/arguments';
+import { logger } from '@phpsab/logger';
 import { getSystemErrorMap } from 'node:util';
-import { ExtensionContext, extensions } from 'vscode';
+import { ExtensionContext, extensions, window } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
 import { isWin } from '../resolvers/path-resolver-utils';
@@ -128,41 +139,82 @@ export const getArgs = (
 };
 
 /**
- * Validate the additional arguments.
+ * Validate and filter the additional arguments, ensuring they don't contain any malicious code.
  * @param {string[]} additionalArguments Array of additional arguments
  * @returns {string[]} Array of valid additional arguments, otherwise an empty array.
  */
 const validateAdditionalArguments = (
   additionalArguments: string[],
 ): string[] => {
-  // Filter out arguments that are added internally.
-  additionalArguments = additionalArguments.filter((arg) => {
-    if (
-      arg.indexOf('--report') === -1 &&
-      arg.indexOf('--standard') === -1 &&
-      arg.indexOf('--stdin-path') === -1 &&
-      arg !== '-q' &&
-      arg !== '-'
-    ) {
-      return true;
-    }
-
-    return false;
-  });
-
-  // If array is not empty (after filtering), return the array.
-  if (additionalArguments.length > 0) {
-    return additionalArguments;
+  // If no additional arguments are provided, return an empty array early (no need to continue).
+  if (additionalArguments.length === 0) {
+    return [];
   }
 
-  // Otherwise, return an empty array.
+  // Set a variable with a default true value so we can test it later.
+  let isArgValid: boolean = true;
+  const argErrors: string[] = [];
+
+  // Set a default warning message in case we need it later.
+  let warningMsg = `Some additional arguments were removed due to validation failure or tried to overwrite internally-added arguments.\nThe supplied arguments were: "${additionalArguments.join(', ')}".`;
+
+  // Filter the arguments.
+  const filteredArguments = additionalArguments.filter((arg) => {
+    // If the argument is an internally added argument, filter it out.
+    if (validInternalArguments.includes(getArgumentKey(arg))) {
+      isArgValid = false;
+      return false;
+    }
+
+    // If we get here, the argument is not internally added, so we can continue to validate it.
+
+    // Validate the argument.
+    const { isValid, errors } = validateArgument(arg);
+
+    // Set isArgValid to the result of the validation so we can
+    // use it later outside this scope.
+    isArgValid = isValid;
+
+    // Collect any errors for logging later.
+    argErrors.push(...errors);
+
+    // Then filter it depending on it's validity.
+    return isArgValid;
+  });
+
+  // If array is not empty (after filtering), then return the filtered array.
+  if (filteredArguments.length > 0) {
+    // If any arguments were invalid, inform the user.
+    if (!isArgValid) {
+      warningMsg += `\nRunning with the filtered arguments: "${filteredArguments.join(', ')}".`;
+      warningMsg +=
+        argErrors.length > 0 ? `\nErrors:\n- ${argErrors.join('\n- ')}` : '';
+      logger.warn(warningMsg);
+      window.showWarningMessage(warningMsg, 'OK');
+    }
+
+    return filteredArguments;
+  }
+
+  // If we get here all the additional arguments are invalid.
+
+  // Log and show a warning message to the user.
+  if (additionalArguments.length > 0) {
+    warningMsg += `\nRunning without additional arguments.`;
+    warningMsg += `\nErrors:\n- ${argErrors.join('\n- ')}`;
+
+    logger.warn(warningMsg);
+    window.showWarningMessage(warningMsg, 'OK');
+  }
+
+  // Return an empty array.
   return [];
 };
 
 /**
  * Parse command line arguments.
  * @param {string[]} args The command line arguments to parse.
- * @returns The parsed arguments.
+ * @returns {string[]} The parsed arguments.
  */
 export const parseArgs = (args: string[]) => {
   const parsedArgs: string[] = [];
@@ -185,4 +237,116 @@ export const parseArgs = (args: string[]) => {
   });
 
   return parsedArgs;
+};
+
+/**
+ * Validates a PHPCS argument against the whitelist
+ * @param {string} arg The argument to validate
+ * @returns {PHPCSArgumentValidation} The validation result
+ */
+const validateArgument = (arg: string): PHPCSArgumentValidation => {
+  const errors: string[] = [];
+
+  // Validate that argument starts with a dash
+  if (!arg.startsWith('-')) {
+    return { isValid: false, errors: [`Invalid argument: "${arg}"`] };
+  }
+
+  // Handle key-value arguments
+  if (arg.includes('=')) {
+    return validateKeyValueArgument(arg, errors);
+  }
+
+  // Handle flag arguments (no value)
+  if (!validFlags.includes(arg)) {
+    errors.push(`Invalid flag argument: "${arg}"`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
+/**
+ * Validates key-value arguments (e.g., --severity=5)
+ * @param {string} arg The argument to validate
+ * @param {string[]} errors The array to collect error messages
+ * @returns {PHPCSArgumentValidation} The validation result
+ */
+const validateKeyValueArgument = (
+  arg: string,
+  errors: string[],
+): PHPCSArgumentValidation => {
+  const [key, value] = arg.split('=', 2) as [PHPCSArgumentKey, string];
+
+  if (!validAdditionalArguments.includes(key)) {
+    return { isValid: false, errors: [`Invalid argument: "${arg}"`] };
+  }
+
+  // Validate specific argument values
+  switch (key) {
+    case '--filter':
+      if (!validateFilterValue(value)) {
+        errors.push(
+          `Invalid argument value: "${value}". This must be either 'GitStaged', 'GitModified', or a valid file path.`,
+        );
+      }
+      break;
+
+    case '--ignore':
+      // Ignore is a comma-separated list of glob patterns.
+      if (!/^[a-zA-Z0-9.*/_\\,-]+$/.test(value)) {
+        errors.push(
+          `Invalid argument value: "${value}". This must be a comma-separated list of glob patterns.`,
+        );
+      }
+      break;
+
+    case '--severity':
+    case '--error-severity':
+    case '--warning-severity':
+      // Validate severity levels, which are numeric 0-10
+      if (!/^(0|[1-9]|10)$/.test(value)) {
+        errors.push(`Invalid argument value: "${value}". This must be 0-10.`);
+      }
+      break;
+
+    default:
+      errors.push(`Invalid argument value: "${value}"`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
+/**
+ * Validates --filter argument values
+ * @param {string} value The filter value to validate
+ * @returns {boolean} Whether the filter value is valid
+ */
+const validateFilterValue = (value: string): boolean => {
+  const isValidSpecialValue = value === 'GitStaged' || value === 'GitModified';
+  const isValidFilePath = /^[a-zA-Z0-9._/\\: -]+$/.test(value);
+
+  if (isValidSpecialValue || isValidFilePath) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * Extracts the argument key from a command line key-value argument.
+ * @param {string} arg The argument (e.g., "--standard=PSR12" or "-q")
+ * @returns {PHPCSInternalArgumentKey} The key part (e.g., "--standard" or "-q")
+ */
+const getArgumentKey = (arg: string): PHPCSInternalArgumentKey => {
+  // If the argument contains an '=', split and return the key part.
+  // Otherwise, return the argument as is.
+  return (
+    arg.includes('=') ? arg.split('=', 2)[0] : arg
+  ) as PHPCSInternalArgumentKey;
 };
