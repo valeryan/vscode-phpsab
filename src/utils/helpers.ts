@@ -1,18 +1,18 @@
+import { getSystemErrorMap } from 'node:util';
+import { ExtensionContext, extensions, window } from 'vscode';
 import type {
   PHPCSArgumentKey,
   PHPCSInternalArgumentKey,
-} from '@phpsab/interfaces/arguments';
+} from '../interfaces/arguments';
 import {
   PHPCSArgumentValidation,
   validAdditionalArguments,
   validFlags,
   validInternalArguments,
-} from '@phpsab/interfaces/arguments';
-import { logger } from '@phpsab/logger';
-import { getSystemErrorMap } from 'node:util';
-import { ExtensionContext, extensions, window } from 'vscode';
+} from '../interfaces/arguments';
 import { ConsoleError } from '../interfaces/console-error';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
+import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
 
 const extensionInfo: ExtensionInfo = {} as ExtensionInfo;
