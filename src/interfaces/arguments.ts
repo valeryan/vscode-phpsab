@@ -25,12 +25,12 @@ class InternalArguments {
   '--report': 'json';
 
   /**
-   * @property {boolean} `-q` Quiet mode. Boolean flag.
+   * @property {unknown} `-q` Quiet mode.
    */
   '-q': unknown;
 
   /**
-   * @property {boolean} `-` Check stdin.
+   * @property {unknown} `-` Check stdin.
    */
   '-': unknown;
 }
