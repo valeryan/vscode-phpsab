@@ -16,7 +16,12 @@ import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { determineNodeError, getArgs, parseArgs } from './utils/helpers';
+import {
+  constructCommandString,
+  determineNodeError,
+  getArgs,
+  parseArgs,
+} from './utils/helpers';
 
 let settingsCache: Settings;
 
@@ -72,7 +77,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   if (resourceConf.fixerEnable === false) {
     window.showInformationMessage(
-      'Fixer is disable for this workspace or PHPCBF was not found for this workspace.',
+      'Fixer is disabled for this workspace or PHPCBF was not found for this workspace.',
     );
     return '';
   }
@@ -117,20 +122,22 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     shell: true,
   };
 
+  const CBFExecutable = resourceConf.executablePathCBF;
   const parsedArgs = parseArgs(lintArgs);
 
-  logger.info(
-    `FIXER COMMAND: ${resourceConf.executablePathCBF} ${parsedArgs.join(' ')}`,
-  );
+  const command = constructCommandString(CBFExecutable, parsedArgs);
 
-  const fixer = spawnSync(resourceConf.executablePathCBF, parsedArgs, options);
+  logger.info(`FIXER COMMAND: ${command}`);
+
+  const fixer = spawnSync(command, options);
+
   const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
   const stderr = fixer.stderr.toString();
 
   // Set the original command information (not parsed) for Windows ENOENT error handling
   const originalCommand = {
-    commandPath: resourceConf.executablePathCBF,
+    commandPath: CBFExecutable,
     args: lintArgs,
   };
 

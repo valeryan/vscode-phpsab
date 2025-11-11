@@ -350,3 +350,24 @@ const getArgumentKey = (arg: string): PHPCSInternalArgumentKey => {
     arg.includes('=') ? arg.split('=', 2)[0] : arg
   ) as PHPCSInternalArgumentKey;
 };
+
+/**
+ * Constructs a command string from a command and an array of arguments.
+ *
+ * When using `shell: true` in spawn and spawnSync, Node v24+ deprecates passing args as an array
+ * and now emits a warning message. So we need to concatenate the command and args into a single
+ * command string instead.
+ *
+ * @see https://github.com/nodejs/node/pull/57199
+ *
+ * @param {string} command The command to execute.
+ * @param {string[]} args The array of arguments to pass to the command.
+ * @returns {string} The constructed command string.
+ */
+export const constructCommandString = (command: string, args: string[]) => {
+  // Wrap command in quotes to handle spaces in paths.
+  command = `"${command}"`;
+
+  // Concatenate the command and the arguments together delimited by spaces.
+  return `${command} ${args.join(' ')}`;
+};
