@@ -156,7 +156,10 @@ const validateAdditionalArguments = (
   const argErrors: string[] = [];
 
   // Set a default warning message in case we need it later.
-  let warningMsg = `Some additional arguments were removed due to validation failure or tried to overwrite internally-added arguments.\nThe supplied arguments were: "${additionalArguments.join(', ')}".`;
+  let txt =
+    'Some additional arguments were removed due to validation failure or they tried to overwrite internally-added arguments.';
+  let warningMsg = txt;
+  let logMsg = `${txt}\nThe supplied arguments were: "${additionalArguments.join(', ')}".`;
 
   // Filter the arguments.
   const filteredArguments = additionalArguments.filter((arg) => {
@@ -182,33 +185,39 @@ const validateAdditionalArguments = (
     return isArgValid;
   });
 
-  // If array is not empty (after filtering), then return the filtered array.
+  // If array is not empty (after filtering)...
   if (filteredArguments.length > 0) {
-    // If any arguments were invalid, inform the user.
+    // If any arguments were invalid, set some messages.
     if (!isArgValid) {
-      warningMsg += `\nRunning with the filtered arguments: "${filteredArguments.join(', ')}".`;
-      warningMsg +=
-        argErrors.length > 0 ? `\nErrors:\n- ${argErrors.join('\n- ')}` : '';
-      logger.warn(warningMsg);
-      window.showWarningMessage(warningMsg, 'OK');
+      txt = '\nRunning with the filtered arguments';
+      logMsg += `${txt}: "${filteredArguments.join(', ')}".`;
     }
-
-    return filteredArguments;
+  }
+  // If the filtered arguments array is empty, it means all arguments were invalid.
+  else {
+    txt = `\nRunning without additional arguments`;
+    logMsg += `${txt}.`;
   }
 
-  // If we get here all the additional arguments are invalid.
+  logMsg +=
+    argErrors.length > 0 ? `\nErrors:\n- ${argErrors.join('\n- ')}` : '';
 
-  // Log and show a warning message to the user.
-  if (additionalArguments.length > 0) {
-    warningMsg += `\nRunning without additional arguments.`;
-    warningMsg += `\nErrors:\n- ${argErrors.join('\n- ')}`;
+  warningMsg += `${txt}, for more details please see the Output channel.`;
 
-    logger.warn(warningMsg);
-    window.showWarningMessage(warningMsg, 'OK');
-  }
+  // Log the warning messages and inform the user.
+  logger.warn(logMsg);
+  // Show a warning message to the user, and offer to open the output channel.
+  window
+    .showWarningMessage(warningMsg, 'OK', 'Open Output Channel')
+    .then((selection) => {
+      // If user chose to open output channel, then show it.
+      if (selection === 'Open Output Channel') {
+        logger.showChannel();
+      }
+    });
 
-  // Return an empty array.
-  return [];
+  // Return the filtered array or an empty array.
+  return filteredArguments ?? [];
 };
 
 /**
@@ -287,6 +296,7 @@ const validateKeyValueArgument = (
   // Validate specific argument values
   switch (key) {
     case '--filter':
+      // Filter is either 'GitStaged', 'GitModified', or a path to a custom filter class.
       if (!validateFilterValue(value)) {
         errors.push(
           `Invalid argument value: "${value}". This must be either 'GitStaged', 'GitModified', or a valid file path.`,

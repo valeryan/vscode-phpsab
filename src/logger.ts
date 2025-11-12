@@ -157,6 +157,15 @@ const logMessage = (level: string, message: string, meta?: unknown) => {
   }
 };
 
+/**
+ * Show the output channel to the user.
+ */
+const showChannel = () => {
+  if (outputChannel) {
+    outputChannel.show();
+  }
+};
+
 export const logger = {
   log,
   info,
@@ -167,4 +176,5 @@ export const logger = {
   endTimer,
   setDebugMode,
   setupOutputChannel,
+  showChannel,
 };

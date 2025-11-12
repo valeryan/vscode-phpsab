@@ -45,7 +45,7 @@ class InternalArguments {
  */
 class AdditionalArguments {
   /**
-   * @property {string} `--filter` Optional filter to limit files processed.
+   * @property {string} `--filter` Optional filter to limit files processed. Either GitStaged, GitModified, or a path to a custom filter class.
    */
   '--filter'?: string;
 
