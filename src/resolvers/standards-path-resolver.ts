@@ -22,7 +22,7 @@ export const createStandardsPathResolver = (
     resolve: async () => {
       let configured = normalizePath(config.standard ?? '');
 
-      if (!isStandardValid(configured)) {
+      if (!isStandardValid(configured, config.allowedAutoRulesets)) {
         throw new Error(`Invalid coding standard:\n"${configured}".`);
       }
 
@@ -97,9 +97,13 @@ export const createStandardsPathResolver = (
  * @see https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Usage#specifying-a-coding-standard
  *
  * @param {string} standard The coding standard to validate
+ * @param {string[]} allowedRulesets The allowed rulesets
  * @returns {boolean} True if standard contains only safe characters
  */
-const isStandardValid = (standard: string): boolean => {
+const isStandardValid = (
+  standard: string,
+  allowedRulesets: string[],
+): boolean => {
   if (standard === '') return true; // Empty is allowed
 
   let standards: string[] = [standard];
@@ -110,6 +114,22 @@ const isStandardValid = (standard: string): boolean => {
   }
 
   for (const stnd of standards) {
+    // Check if it's an allowed xml ruleset.
+    // If standard is included in allowed rulesets array, AND it matches the xml ruleset pattern,
+    // then it's valid.
+    if (
+      allowedRulesets.includes(stnd) &&
+      /^[a-zA-Z0-9._/\\: -]+\.xml(\.dist)?$/i.test(stnd)
+    ) {
+      continue; // Valid - continue to next standard
+    }
+
+    // Check if it resembles a directory path to a standard
+    // (doesn't actually check if it's a real path).
+    if (/^[a-zA-Z0-9._/\\: -]+$/.test(stnd)) {
+      continue; // Valid - continue to next standard
+    }
+
     // If standard doesn't contain path separators, treat as standard name and
     // check if it's a safe standard name (only safe characters allowed
     // (alphanumeric, hyphens, underscores)).
@@ -118,16 +138,6 @@ const isStandardValid = (standard: string): boolean => {
         return false;
       }
 
-      continue; // Valid - continue to next standard
-    }
-
-    // Check if it's an XML ruleset file
-    if (/^[a-zA-Z0-9._/\\: -]+\.xml$/i.test(stnd)) {
-      continue; // Valid - continue to next standard
-    }
-
-    // Check if it's a directory path to a standard
-    if (/^[a-zA-Z0-9._/\\: -]+$/.test(stnd)) {
       continue; // Valid - continue to next standard
     }
 
