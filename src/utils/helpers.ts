@@ -204,17 +204,20 @@ const validateAdditionalArguments = (
 
   warningMsg += `${txt}, for more details please see the Output channel.`;
 
-  // Log the warning messages and inform the user.
-  logger.warn(logMsg);
-  // Show a warning message to the user, and offer to open the output channel.
-  window
-    .showWarningMessage(warningMsg, 'OK', 'Open Output Channel')
-    .then((selection) => {
-      // If user chose to open output channel, then show it.
-      if (selection === 'Open Output Channel') {
-        logger.showChannel();
-      }
-    });
+  // If any arguments were invalid...
+  if (!isArgValid) {
+    // Log the warning messages and inform the user.
+    logger.warn(logMsg);
+    // Show a warning message to the user, and offer to open the output channel.
+    window
+      .showWarningMessage(warningMsg, 'OK', 'Open Output Channel')
+      .then((selection) => {
+        // If user chose to open output channel, then show it.
+        if (selection === 'Open Output Channel') {
+          logger.showChannel();
+        }
+      });
+  }
 
   // Return the filtered array or an empty array.
   return filteredArguments ?? [];
