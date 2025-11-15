@@ -326,12 +326,7 @@ export const activateSniffer = async (
   settings: Settings,
 ) => {
   settingsCache = settings;
-  if (
-    settings.resources.filter((folder) => folder.snifferEnable === true)
-      .length === 0
-  ) {
-    return;
-  }
+
   workspace.onDidChangeConfiguration(onConfigChange, null, subscriptions);
   workspace.onDidOpenTextDocument(validate, null, subscriptions);
   workspace.onDidCloseTextDocument(
