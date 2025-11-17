@@ -30,9 +30,21 @@ jobs:
       - name: Install Dependencies
         run: |
           npm ci
+
       - name: Npm Version
         run: |
-          npm version ${TAG_NAME} --no-git-tag-version
+          if ! npm version ${TAG_NAME} --no-git-tag-version; then
+          echo "❌ Error: Failed to update package.json version $(node -p "require('./package.json').version") to ${TAG_NAME}"
+            echo ""
+            echo "This could happen if:"
+            echo "  • The version format '${TAG_NAME}' is invalid (must be valid semver like v1.0.0)"
+            echo "  • The version already exists in package.json"
+            echo "  • There are syntax errors in package.json"
+            exit 1
+          fi
+
+          echo "Successfully updated package version to ${TAG_NAME}"
+
       - name: Print Git Diff
         run: |
           git diff
