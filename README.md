@@ -13,8 +13,7 @@ This extension is available on both [VS Code Marketplace](https://marketplace.vi
 
 This extension supports the [latest stable version of PHPCS 3.x](https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/). If you are using an older version of PHPCS, please upgrade to the latest 3.x version.
 
-> [!WARNING]
-> PHPCS 4.x not currently supported.
+> **NOTE:** PHPCS 4.x is not currently supported.
 
 ## Maintenance Status
 
