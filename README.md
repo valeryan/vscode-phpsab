@@ -41,7 +41,9 @@ or right mouse context menu `Format Document`.
 
 ### Format on save
 
-You can also use this formatter with Format on Save enabled. Format on save has two modes: `File` and `Modified`. This extension implements support for the modified mode by using phpcbf with the `Git Modified` filter that is provided by phpcbf.
+You can also use this formatter with Format on Save enabled via the setting `editor.formatOnSave`.
+
+Format on save has two modes: `File` and `Modified`, via the setting `editor.formatOnSaveMode`. To enable usage of the modified mode, this extension supports the `Git Modified` filter argument provided by PHPCBF: `--filter=GitModified`. Just add it to the extension's `phpsab.fixerArguments` setting.
 
 ## Multi-Root Workspace Support
 
@@ -53,14 +55,14 @@ This extension now supports formatting single files without needing a workspace 
 
 When in single file mode:
 
--   The global user settings are used instead of workspace settings.
--   The `autoRulesetSearch` setting is ignored, and will essentially act as if it was set to `false` (and just return the file path as set in `standard`).
+- The global user settings are used instead of workspace settings.
+- The `phpsab.autoRulesetSearch` setting is ignored, and will essentially act as if it was set to `false` (and just return the value as set in `phpsab.standard`).
 
 A global composer setup is required:
 
--   The `executablePathCS` and `executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, _OR_ set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
+- The `phpsab.executablePathCS` and `phpsab.executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, _OR_ set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
 
--   If the `phpsab.standard` setting is used for a ruleset file then it **must** be the full absolute path.
+- If the `phpsab.standard` setting is used for a ruleset file then it **must** be the full absolute path.
 
 ## Linter Installation
 
@@ -99,9 +101,9 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 ### Plugin Installation
 
 1. Open Visual Studio Code.
-1. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
-1. Type ext install phpsab to find the extension.
-1. Press Enter or click the cloud icon to install it.
+1. Press <kbd>Ctrl + P</kbd> on Windows or <kbd>Cmd + P</kbd> on Mac to open the Quick Open dialog.
+1. Type `ext install phpsab` to find the extension.
+1. Press <kbd>Enter</kbd> or click the cloud icon to install it.
 1. Restart Visual Studio Code!
 
 This extension is available on both [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab) and [Open VSX Registry](https://open-vsx.org/extension/ValeryanM/vscode-phpsab).
@@ -176,7 +178,7 @@ If omitted, the plugin will try to locate `phpcs` using you local composer.json,
 }
 ```
 
-> If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+> **NOTE:** If you are setting this value in the extension settings user interface, make sure to leave out the quotes
 
 ```
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
@@ -195,7 +197,7 @@ If omitted, the extension will try to locate `phpcbf` using you local composer.j
 }
 ```
 
-> If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+> **NOTE:** If you are setting this value in the extension settings user interface, make sure to leave out the quotes
 
 ```
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
@@ -239,7 +241,7 @@ The following values are applicable:
     }
     ```
 
-1. The setting can be set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcbf`.
+3. The setting can be set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcbf`.
 
     ```json
     {
@@ -259,7 +261,7 @@ The following values are applicable:
     ./vendor/bin/phpcs --config-set installed_paths <path/to/custom/coding/standard>
     ```
 
-1. The setting can be set to the absolute path to a custom coding standard:
+4. The setting can be set to the absolute path to a custom coding standard:
 
     ```json
     {
@@ -275,7 +277,7 @@ The following values are applicable:
     }
     ```
 
-1. The setting can be set to your workspace relative path to a custom coding standard:
+5. The setting can be set to your workspace relative path to a custom coding standard:
 
     ```json
     {
@@ -331,7 +333,7 @@ When `snifferMode` is `onType` this setting controls how long to wait after typi
 
 [ *Scope:* All | Optional | *Type:* boolean | *Default:* false ]
 
-Determines if the Sniffer includes the source of the diagnostic data with error messages.
+Determines if the Sniffer includes the source error code of the diagnostic data with error messages (eg. `Squiz.WhiteSpace.FunctionSpacing.Before`).
 
 ## Advanced Configuration
 
@@ -347,13 +349,13 @@ This setting allows you to override the path to your composer.json file when it 
 
 [ *Scope:* All | Optional | *Type:* boolean | Default: false ]
 
-Write debug information to the PHP Sniffer & Beautifier output channel and enable the display extra notices.
+Write debug information to the `PHP Sniffer & Beautifier` output channel and enable the display of extra notices.
 
 ### The phpcs report contains invalid json
 
 This error occurs when something goes wrong in phpcs execution such as PHP Notices, PHP Fatal Exceptions, Other Script Output, etc, most of which can be detected as follows:
 
-Execute the phpcbf command in your terminal with --report=json and see whether the output contains anything other than valid json.
+Execute the `phpcbf` command in your terminal with `--report=json` and see whether the output contains anything other than valid json.
 
 ## Acknowledgements
 
