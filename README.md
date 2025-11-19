@@ -13,6 +13,9 @@ This extension is available on both [VS Code Marketplace](https://marketplace.vi
 
 This extension supports the [latest stable version of PHPCS 3.x](https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/). If you are using an older version of PHPCS, please upgrade to the latest 3.x version.
 
+> [!WARNING]
+> PHPCS 4.x not currently supported.
+
 ## Maintenance Status
 
 My focus has shifted away from PHP to .NET development, I'm currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with me.
