@@ -129,15 +129,29 @@ This setting controls whether `phpcbf` fixer is enabled.
 
 Passes additional arguments to `phpcbf` runner.
 
+> **IMPORTANT:**
+> The only additional arguments this extension supports are:
+>
+> - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
+> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
+> - `--severity` (0-10)
+> - `--error-severity` (0-10)
+> - `--warning-severity` (0-10)
+> - `--ignore-annotations` (just a boolean flag.)
+>
+> Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
+
+> **NOTE:** All arguments passed will be surrounded in double quotes automatically.
+
 _Example_
 
 ```bash
 {
-    phpsab.fixerArguments: ["-n", "--ignore=tests/*"]
+    phpsab.fixerArguments: ["--ignore=tests/*"]
 }
 
 # Translated
-phpcbf -n --ignore=tests/* <file>
+phpcbf "--ignore=tests/*" <file>
 ```
 
 ### **phpsab.snifferEnable**
@@ -152,15 +166,29 @@ This setting controls whether `phpcs` sniffer is enabled.
 
 Passes additional arguments to `phpcs` runner.
 
+> **IMPORTANT:**
+> The only additional arguments this extension supports are:
+>
+> - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
+> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
+> - `--severity` (0-10)
+> - `--error-severity` (0-10)
+> - `--warning-severity` (0-10)
+> - `--ignore-annotations` (just a boolean flag.)
+>
+> Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
+
+> **NOTE:** All arguments passed will be surrounded in double quotes automatically.
+
 _Example_
 
 ```bash
 {
-    phpsab.snifferArguments: ["-n", "--ignore=tests/*"]
+    phpsab.snifferArguments: ["--ignore=tests/*"]
 }
 
 # Translated
-phpcs -n --ignore=tests/* <file>
+phpcs "--ignore=tests/*" <file>
 ```
 
 ### **phpsab.executablePathCS**
