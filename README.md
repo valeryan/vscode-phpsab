@@ -231,7 +231,7 @@ The following values are applicable:
     ./vendor/bin/phpcs --config-set default_standard <value>
     ```
 
-1. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
+2. The setting can be set to the name of a built-in coding standard ( ie. `PEAR`, `PSR1`, `PSR2`, `PSR12`, `Squiz`, `Zend` ) and you are good to go.
 
     ```json
     {
