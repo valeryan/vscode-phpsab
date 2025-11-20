@@ -23,7 +23,7 @@
 
 -   Fix global path resolver (#115) ([d30e3dc](https://github.com/valeryan/vscode-phpsab/commit/d30e3dc))
 
-## [0.0.17] - 2024-02-29
+## [0.0.17] - 2024-02-27
 
 -   Update the readme to include a note on setting paths in the settings UI
     Fixes #74
@@ -63,7 +63,7 @@ Co-authored-by: Jonathan Bossenger <jonathanbossenger@gmail.com>
 Co-authored-by: Samuel Hilson <samuelrhilson@gmail.com>
 Co-authored-by: Sibin Grasic <sibin.grasic@oblak.studio>
 
-## [0.0.16] - 2022-12-01
+## [0.0.16] - 2023-01-03
 
 -   Bump path-parse from 1.0.6 to 1.0.7 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/61
 -   Bump minimist from 1.2.5 to 1.2.6 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/70
@@ -84,77 +84,3 @@ Co-authored-by: Sibin Grasic <sibin.grasic@oblak.studio>
 -   @stormrockwell made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/78
 
 **Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v.0.0.15...v.0.0.16
-
-## [0.0.15] - 2022-01-01
-
--   Changed fixer to throw an exception if an empty document is returned.
-
-## [0.0.14] - 2021-12-01
-
--   Add support for only fixing modified lines of code
--   Add a logging library that send debug info an output channel
-
-## [0.0.13] - 2021-11-01
-
--   Dependency Update
--   Github Action to publish on tags
-
-## [0.0.12] - 2021-10-01
-
--   Add support of options
--   Dependency Updates
-
-## [0.0.11] - 2021-09-01
-
--   Remove phpclikill method.
--   Update dependencies
-
-## [0.0.10] - 2021-08-01
-
--   Dependency Update for lodash
-
-## [0.0.9] - 2021-07-01
-
--   Swap to webpack for bundling to reduce extension size
--   Revert removal of the php task killer
-
-## [0.0.8] - 2021-06-01
-
--   Broken publish, bumping version to fix
-
-## [0.0.7] - 2021-05-01
-
--   Fix typescript error with lodash
-
-## [0.0.6] - 2021-04-01
-
--   Add better multi-root workspace support
--   The setting AutoConfigSearch is renamed to AutoRulesetSearch to make its purpose more clear
--   Extension activation was updated so that the `PHPCBF: Fix this file` is always registered even if phpcbf is not found.
--   Swapped to ESLint for internal code cleanup
--   Updated all Dependencies
--   Updated documentation to reflect some code changes
-
-## 0.0.5
-
--   Remove timeout settings to support vscode 1.42 changes.
-
-## [0.0.4] - 2021-02-01
-
--   Updated Dependencies
--   Fix an issue causing the content of files to be deleted by the Fixer
--   Add basic support for resolving standards files in a multi-workspace project
-
-## [0.0.3] - 2021-01-01
-
--   Fix some language in the DEVELOPMENT.md
--   Fix some debug information
--   Add a check for windows OS to prevent the kill task command from firing on windows
-
-## [0.0.2] - 2020-12-01
-
--   Adding Keywords for Marketplace
-
-## [0.0.1] - 2020-11-01
-
--   Initial Alpha release
