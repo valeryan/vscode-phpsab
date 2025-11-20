@@ -222,11 +222,38 @@ jobs:
           git add CHANGELOG.md
           git commit -m "docs: update changelog for release ${{ env.TAG_NAME }}"
           git push origin HEAD:main
+
+  test-summary:
+    name: Test Summary (Pre-release)
+    needs: [validate-and-build, update-version, update-changelog]
+    runs-on: ubuntu-latest
+    if: github.event.release.prerelease == true
+    steps:
+      - name: Display Test Results
+        run: |
+          echo "🧪 PRE-RELEASE TEST MODE"
+          echo "========================"
+          echo ""
+          echo "✅ Version validation: PASSED"
+          echo "✅ Build and tests: PASSED"
+          echo "✅ Package.json update: ${{ needs.update-version.result }}"
+          echo "✅ Changelog update: ${{ needs.update-changelog.result }}"
+          echo ""
+          echo "🚫 DEPLOYMENT SKIPPED (pre-release)"
+          echo ""
+          echo "📋 Summary:"
+          echo "- Version: ${{ needs.validate-and-build.outputs.version }}"
+          echo "- Tag: ${{ env.TAG_NAME }}"
+          echo "- Pre-release: ${{ github.event.release.prerelease }}"
+          echo ""
+          echo "To deploy for real, create a full release (not pre-release)"
+
   deploy:
     name: Deploy to Marketplaces
     needs: [validate-and-build, update-version, update-changelog]
     runs-on: ubuntu-latest
     environment: production
+    if: github.event.release.prerelease == false
     steps:
       - name: Checkout Updated Repository
         uses: actions/checkout@v4
