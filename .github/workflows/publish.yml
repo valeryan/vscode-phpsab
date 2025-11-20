@@ -7,73 +7,241 @@ on:
 env:
   TAG_NAME: ${{ github.ref_name }}
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
-  version:
-    name: Update Published Version
+  validate-and-build:
+    name: Validate Release and Build Extension
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
+    outputs:
+      version: ${{ steps.parse-version.outputs.version }}
+      is-valid: ${{ steps.parse-version.outputs.is-valid }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Git
+      - name: Parse and Validate Version
+        id: parse-version
         run: |
-          git config user.name "Samuel Hilson"
-          git config user.email samrhilson@gmail.com
+          TAG_NAME="${{ env.TAG_NAME }}"
+
+          # Remove 'v' prefix if present and validate semver format
+          if [[ $TAG_NAME =~ ^v?([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9\.-]+)?(\+[a-zA-Z0-9\.-]+)?)$ ]]; then
+            VERSION=${BASH_REMATCH[1]}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is-valid=true" >> $GITHUB_OUTPUT
+            echo "✅ Valid version format: $VERSION"
+          else
+            echo "is-valid=false" >> $GITHUB_OUTPUT
+            echo "❌ Invalid version format: $TAG_NAME"
+            echo "Version must follow semver format (e.g., v1.0.0, 1.0.0, v1.0.0-beta.1)"
+            exit 1
+          fi
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: |
-          npm ci
+        run: npm ci
 
-      - name: Npm Version
+      - name: Lint and Test
         run: |
-          if ! npm version ${TAG_NAME} --no-git-tag-version; then
-          echo "❌ Error: Failed to update package.json version $(node -p "require('./package.json').version") to ${TAG_NAME}"
-            echo ""
-            echo "This could happen if:"
-            echo "  • The version format '${TAG_NAME}' is invalid (must be valid semver like v1.0.0)"
-            echo "  • The version already exists in package.json"
-            echo "  • There are syntax errors in package.json"
+          npm run lint
+          npm run test
+
+      - name: Build Extension
+        run: npm run vscode:prepublish
+
+      - name: Verify Build Output
+        run: |
+          if [ ! -f "out/main.js" ]; then
+            echo "❌ Build failed: out/main.js not found"
             exit 1
           fi
+          echo "✅ Build successful"
 
-          echo "Successfully updated package version to ${TAG_NAME}"
+  update-version:
+    name: Update Package Version
+    needs: validate-and-build
+    runs-on: ubuntu-latest
+    if: needs.validate-and-build.outputs.is-valid == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Print Git Diff
+      - name: Setup Git
         run: |
-          git diff
-      - name: Commit Changes
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Update Package Version
         run: |
-          git add .
-          git commit -m "published version update: ${TAG_NAME}"
-          git push origin HEAD:main -f
-      - name: Checkout Updated Repo
+          VERSION="${{ needs.validate-and-build.outputs.version }}"
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+
+          if [ "$VERSION" = "$CURRENT_VERSION" ]; then
+            echo "ℹ️  Package.json already has version $VERSION, skipping update"
+          else
+            echo "📦 Updating package.json from $CURRENT_VERSION to $VERSION"
+            npm version $VERSION --no-git-tag-version
+            echo "✅ Successfully updated package version to $VERSION"
+          fi
+
+      - name: Check for Changes
+        id: git-check
+        run: |
+          if git diff --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No changes to commit"
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "📝 Changes detected:"
+            git diff --name-only
+          fi
+
+      - name: Commit and Push Changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore: update version to ${{ needs.validate-and-build.outputs.version }} for release ${{ env.TAG_NAME }}"
+          git push origin HEAD:main
+      - name: Update Tag Reference
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          # Move the existing tag to point to the new commit (preserves GitHub release relationship)
+          git tag ${{ env.TAG_NAME }} -f
+          git push origin ${{ env.TAG_NAME }} -f
+          echo "✅ Updated tag ${{ env.TAG_NAME }} to point to version commit"
+
+  update-changelog:
+    name: Update Changelog
+    needs: [validate-and-build, update-version]
+    runs-on: ubuntu-latest
+    if: needs.validate-and-build.outputs.is-valid == 'true'
+    steps:
+      - name: Checkout Updated Repository
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Get Release Notes and Update Changelog
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Get the release notes from GitHub
+            const releaseNotes = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: process.env.TAG_NAME
+            });
+
+            // Read current changelog
+            const changelogPath = 'CHANGELOG.md';
+            let changelog = '';
+            try {
+              changelog = fs.readFileSync(changelogPath, 'utf8');
+            } catch (error) {
+              console.log('CHANGELOG.md not found, creating new one');
+              changelog = '# Changelog\n\n';
+            }
+
+            // Format the new entry
+            const version = '${{ needs.validate-and-build.outputs.version }}';
+            const today = new Date().toISOString().split('T')[0];
+            const newEntry = `## [${version}] - ${today}\n\n${releaseNotes.data.body}\n\n`;
+
+            // Insert the new entry after the first line (# Changelog)
+            const lines = changelog.split('\n');
+            const headerIndex = lines.findIndex(line => line.startsWith('# Changelog'));
+
+            if (headerIndex !== -1) {
+              // Insert after the header and any existing blank lines
+              let insertIndex = headerIndex + 1;
+              while (insertIndex < lines.length && lines[insertIndex].trim() === '') {
+                insertIndex++;
+              }
+              lines.splice(insertIndex, 0, newEntry);
+            } else {
+              // If no header found, prepend to the file
+              lines.unshift('# Changelog', '', newEntry.trim());
+            }
+
+            // Write the updated changelog
+            const updatedChangelog = lines.join('\n');
+            fs.writeFileSync(changelogPath, updatedChangelog);
+
+            console.log(`✅ Updated CHANGELOG.md with release notes for ${version}`);
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ env.TAG_NAME }}
+
+      - name: Check for Changelog Changes
+        id: changelog-check
+        run: |
+          if git diff --quiet; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "ℹ️  No changelog changes to commit"
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "📝 Changelog changes detected"
+          fi
+
+      - name: Commit Changelog Changes
+        if: steps.changelog-check.outputs.changes == 'true'
+        run: |
+          git add CHANGELOG.md
+          git commit -m "docs: update changelog for release ${{ env.TAG_NAME }}"
+          git push origin HEAD:main
+  deploy:
+    name: Deploy to Marketplaces
+    needs: [validate-and-build, update-version, update-changelog]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout Updated Repository
         uses: actions/checkout@v4
         with:
           ref: 'main'
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Re-point Tag
-        run: |
-          git tag ${TAG_NAME} main -f
-          git push origin -f --tags
-
-  deploy:
-    name: Deploy Published Version
-    needs: version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm ci
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v1
@@ -85,3 +253,7 @@ jobs:
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
+
+      - name: Report Success
+        run: |
+          echo "✅ Successfully published to both marketplaces"
