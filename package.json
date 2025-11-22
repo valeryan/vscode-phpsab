@@ -144,7 +144,7 @@
           "scope": "resource",
           "type": "string",
           "default": "",
-          "description": "(Optional) The path to the PHP executable."
+          "markdownDescription": "(Optional) The path to the PHP executable. This setting will only be used if the PHP executable from VSCode's built-in PHP extension setting `php.validate.executablePath` or Devsense's PHP Tools extension `php.executablePath` are not set."
         }
       }
     }
