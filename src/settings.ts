@@ -62,6 +62,43 @@ const resolveCSExecutablePath = async (
   return settings;
 };
 
+/**
+ * Resolve PHP executable path with proper precedence handling
+ * @param {WorkspaceConfiguration} config phpsab configuration
+ * @param {WorkspaceConfiguration} phpConfig php configuration
+ * @returns {string} The resolved PHP executable path
+ */
+const resolvePhpExecutablePath = async (
+  config: WorkspaceConfiguration,
+  phpConfig: WorkspaceConfiguration,
+): Promise<string> => {
+  const phpExecutableSources = [
+    {
+      name: 'VSCode PHP Language Features Built-in Extension',
+      path: phpConfig.get<string>('validate.executablePath', ''),
+    },
+    {
+      name: 'Devsense PHP Tools Extension',
+      path: phpConfig.get<string>('executablePath', ''),
+    },
+    {
+      name: 'PHPSAB Extension',
+      path: config.get<string>('phpExecutablePath', ''),
+    },
+  ];
+
+  for (const source of phpExecutableSources) {
+    // Return the first valid (non-empty) existing executable path found
+    if (source.path && (await executableExist(source.path))) {
+      logger.debug(`Using PHP executable from ${source.name}: ${source.path}`);
+      return source.path;
+    }
+  }
+
+  // If no executable path is found, return an empty string
+  return '';
+};
+
 const executableExist = async (path: string) => {
   try {
     if (!path) {
@@ -135,13 +172,15 @@ export const loadSettings = async () => {
 
   // update settings from config
   const config = workspace.getConfiguration('phpsab');
+  const PHPconfig = workspace.getConfiguration('php');
+
   let settings: Settings = {
     resources: resourcesSettings,
     snifferMode: config.get('snifferMode', 'onSave'),
     snifferShowSources: config.get('snifferShowSources', false),
     snifferTypeDelay: config.get('snifferTypeDelay', 250),
     debug: config.get('debug', false),
-    phpExecutablePath: config.get('phpExecutablePath', ''),
+    phpExecutablePath: await resolvePhpExecutablePath(config, PHPconfig),
   };
 
   logger.setDebugMode(settings.debug);

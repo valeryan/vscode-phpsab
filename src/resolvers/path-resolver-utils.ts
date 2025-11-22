@@ -1,3 +1,4 @@
+import { logger } from '@phpsab/logger';
 import path from 'node:path';
 
 export const getPlatformExtension = (): string =>
@@ -23,6 +24,9 @@ export const addPhpToEnvPath = (phpExecutablePath: string) => {
   if (!process.env?.PATH?.includes(phpExecutablePath)) {
     process.env.PATH =
       process.env.PATH + getEnvPathSeparator() + phpExecutablePath;
+    logger.debug(
+      `Added PHP executable path (${phpExecutablePath}) to extension environment.`,
+    );
   }
 };
 // Create passthrough methods for path, allows for easier replacement in test
