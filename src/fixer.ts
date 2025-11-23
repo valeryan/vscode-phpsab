@@ -112,8 +112,8 @@ const isFullDocumentRange = (range: Range, document: TextDocument) =>
  *
  * The regex is designed to match the various different OS and shell error messages
  * that indicate the `php` command is not found.
- * The regex is flexible to accommodate some of the most common formats
- * "command not found" errors. But there may be some edge cases where some OS and shells may
+ * The regex is flexible to accommodate some of the most common formats of "command not found"
+ * errors. But there may be some edge cases where some OS and shells may
  * have different formats than those described here. Those edge cases should be added to the
  * regex as and when they occur.
  *
@@ -128,38 +128,31 @@ const isFullDocumentRange = (range: Range, document: TextDocument) =>
  * 4. command not found: php
  * 5. Unknown command php
  *
- * The final regex can be seen in action here: https://regex101.com/r/Ob1YKB/1
+ * The final regex can be seen in action here: https://regex101.com/r/Ob1YKB
  */
 const getPhpNotFoundRegex = (): RegExp => {
-  // This regex will match `php`, with or without single or double quotes.
-  const phpRegex = `(["']?php["']?)`;
-  // This regex will match a single character either a colon OR a whitespace.
-  const colonSingleRegex = `([:\s]+)?`;
-  // This regex will match both a colon AND a whitespace.
-  const colonGroupRegex = `((:\s)+)?`;
+  // Match 'php' with optional quotes
+  const php = `["']?php["']?`;
 
-  // Combine the php and the colon regexes to match the php command with or without
-  // a colon after it (e.g. "php: ").
-  const colonAfterPhpRegex = new RegExp(`(${phpRegex}${colonSingleRegex})?`);
+  // Match optional colon and/or whitespace separators
+  const separator = `[:\\s]*`;
 
-  // Combine the colon regex with the php regex to match php command with or without
-  // a colon before it (e.g. ": php").
-  const colonBeforePhpRegex = new RegExp(`${colonGroupRegex}${phpRegex}`);
-
-  // The error regexes will match various error messages that indicate the
-  // php command is not recognized.
-  const errorRegexArray = [
-    `is\\s+not\\s+recognized`,
-    `command\\s+not\\s+found${colonBeforePhpRegex.source}?`,
-    `cannot\\s+be\\s+found`,
-    `unknown\\s+command\\s?${colonBeforePhpRegex.source}`,
+  // Error message patterns that indicate php command is not found
+  const errorPatterns = [
+    'is\\s+not\\s+recognized',
+    'command\\s+not\\s+found',
+    'cannot\\s+be\\s+found',
+    'unknown\\s+command',
   ];
 
-  // Join the error regexes with OR operator.
-  const errorRegex = new RegExp(errorRegexArray.join('|'));
+  // Join error patterns into a single group.
+  const error = `(${errorPatterns.join(`|`)})`;
+  // Build regex to match php before error OR php after error.
+  const pattern = `(${php}${separator})?${error}(${separator}${php})?$`;
 
-  // Construct the final regex to match the php command error message.
-  return new RegExp(`${colonAfterPhpRegex.source}(${errorRegex.source})`, 'i');
+  const regex = new RegExp(pattern, 'im');
+
+  return regex;
 };
 
 /**
