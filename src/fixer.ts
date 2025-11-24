@@ -148,9 +148,9 @@ const getPhpNotFoundRegex = (): RegExp => {
   // Join error patterns into a single group.
   const error = `(${errorPatterns.join(`|`)})`;
   // Build regex to match php before error OR php after error.
-  const pattern = `(${php}${separator})?${error}(${separator}${php})?$`;
+  const pattern = `(${php}${separator})?${error}(${separator}${php})?`;
 
-  const regex = new RegExp(pattern, 'im');
+  const regex = new RegExp(pattern, 'i');
 
   return regex;
 };
