@@ -3,23 +3,22 @@
  * Used by the publish workflow
  */
 
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, writeFileSync } from 'fs';
 
-module.exports = async ({ github, context, core }) => {
+export default async ({ github, context, core }) => {
   try {
     // Get the release notes from GitHub
     const releaseNotes = await github.rest.repos.generateReleaseNotes({
       owner: context.repo.owner,
       repo: context.repo.repo,
-      tag_name: process.env.TAG_NAME
+      tag_name: process.env.TAG_NAME,
     });
 
     // Read current changelog
     const changelogPath = 'CHANGELOG.md';
     let changelog = '';
     try {
-      changelog = fs.readFileSync(changelogPath, 'utf8');
+      changelog = readFileSync(changelogPath, 'utf8');
     } catch (error) {
       console.log('CHANGELOG.md not found, creating new one');
       changelog = '# Changelog\n\n';
@@ -32,7 +31,9 @@ module.exports = async ({ github, context, core }) => {
 
     // Insert the new entry after the first line (# Changelog)
     const lines = changelog.split('\n');
-    const headerIndex = lines.findIndex(line => line.startsWith('# Changelog'));
+    const headerIndex = lines.findIndex((line) =>
+      line.startsWith('# Changelog'),
+    );
 
     if (headerIndex !== -1) {
       // Insert after the header and any existing blank lines
@@ -48,14 +49,13 @@ module.exports = async ({ github, context, core }) => {
 
     // Write the updated changelog
     const updatedChangelog = lines.join('\n');
-    fs.writeFileSync(changelogPath, updatedChangelog);
+    writeFileSync(changelogPath, updatedChangelog);
 
     console.log(`✅ Updated CHANGELOG.md with release notes for ${version}`);
 
     // Set output for debugging
     core.setOutput('changelog-updated', 'true');
     core.setOutput('version', version);
-
   } catch (error) {
     console.error('❌ Error updating changelog:', error);
     core.setFailed(`Failed to update changelog: ${error.message}`);
