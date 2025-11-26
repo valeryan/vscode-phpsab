@@ -21,4 +21,7 @@ export const joinPaths = (...args: string[]): string => path.join(...args);
  * @param string The path to normalize.
  * @returns The normalized path.
  */
-export const normalizePath = (string: string): string => path.normalize(string);
+export const normalizePath = (string: string): string => {
+  if (string === '') return '';
+  return path.normalize(string);
+};
