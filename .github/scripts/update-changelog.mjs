@@ -27,7 +27,21 @@ export default async ({ github, context, core }) => {
     // Format the new entry
     const version = process.env.VERSION;
     const today = new Date().toISOString().split('T')[0];
-    const newEntry = `## [${version}] - ${today}\n\n${releaseNotes.data.body}\n\n`;
+
+    // Check for duplicate version
+    const versionPattern = new RegExp(`^## \\[${version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\]`, 'm');
+    if (versionPattern.test(changelog)) {
+      const errorMsg = `Version ${version} already exists in CHANGELOG.md. Please remove the duplicate entry or use a different version.`;
+      console.error(`❌ ${errorMsg}`);
+      core.setFailed(errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    // Normalize header levels in release notes (## -> ###)
+    // This ensures proper hierarchy under the version header (##)
+    const normalizedBody = releaseNotes.data.body.replace(/^## /gm, '### ');
+
+    const newEntry = `## [${version}] - ${today}\n\n${normalizedBody}\n\n`;
 
     // Insert the new entry after the first line (# Changelog)
     const lines = changelog.split('\n');
