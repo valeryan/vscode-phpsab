@@ -1,15 +1,17 @@
 # Changelog
-## <small>0.0.20 (2024-11-14)</small>
+
+## [0.0.20] - 2024-11-14
+
 * Wrap the --stdin-path argument in double quotes by @jonathanbossenger in https://github.com/valeryan/vscode-phpsab/pull/139
 * PHPCS urls and supported version by @jonathanbossenger in https://github.com/valeryan/vscode-phpsab/pull/140
 * Escape filePath and args passed to the phpcs command by @aslamdoctor in https://github.com/valeryan/vscode-phpsab/pull/145
 
-## New Contributors
+### New Contributors
 * @aslamdoctor made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/145
 
 **Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v.0.0.19...v.0.0.20
 
-## <small>0.0.19 (2024-09-02)</small>
+## [0.0.19] - 2024-09-02
 
 * fix: Error: spawn EINVAL (#129) ([f9f1352](https://github.com/valeryan/vscode-phpsab/commit/f9f1352)), closes [#129](https://github.com/valeryan/vscode-phpsab/issues/129) [#128](https://github.com/valeryan/vscode-phpsab/issues/128)
 * chore(development): add commitizen, update docs (#116) ([d0117bc](https://github.com/valeryan/vscode-phpsab/commit/d0117bc)), closes [#116](https://github.com/valeryan/vscode-phpsab/issues/116)
@@ -17,11 +19,11 @@
 * fix bad github name (#112) ([2270cef](https://github.com/valeryan/vscode-phpsab/commit/2270cef)), closes [#112](https://github.com/valeryan/vscode-phpsab/issues/112)
 
 
-## <small>0.0.18 (2024-02-29)</small>
+## [0.0.18] - 2024-02-29
 
 -   Fix global path resolver (#115) ([d30e3dc](https://github.com/valeryan/vscode-phpsab/commit/d30e3dc))
 
-## 0.0.17
+## [0.0.17] - 2024-02-27
 
 -   Update the readme to include a note on setting paths in the settings UI
     Fixes #74
@@ -61,7 +63,7 @@ Co-authored-by: Jonathan Bossenger <jonathanbossenger@gmail.com>
 Co-authored-by: Samuel Hilson <samuelrhilson@gmail.com>
 Co-authored-by: Sibin Grasic <sibin.grasic@oblak.studio>
 
-## 0.0.16
+## [0.0.16] - 2023-01-03
 
 -   Bump path-parse from 1.0.6 to 1.0.7 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/61
 -   Bump minimist from 1.2.5 to 1.2.6 by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/70
@@ -77,82 +79,8 @@ Co-authored-by: Sibin Grasic <sibin.grasic@oblak.studio>
 -   Bump minimatch and mocha by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/84
 -   Bump nanoid and mocha by @dependabot in https://github.com/valeryan/vscode-phpsab/pull/85
 
-## New Contributors
+### New Contributors
 
 -   @stormrockwell made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/78
 
 **Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v.0.0.15...v.0.0.16
-
-## 0.0.15
-
--   Changed fixer to throw an exception if an empty document is returned.
-
-## 0.0.14
-
--   Add support for only fixing modified lines of code
--   Add a logging library that send debug info an output channel
-
-## 0.0.13
-
--   Dependency Update
--   Github Action to publish on tags
-
-## 0.0.12
-
--   Add support of options
--   Dependency Updates
-
-## 0.0.11
-
--   Remove phpclikill method.
--   Update dependencies
-
-## 0.0.10
-
--   Dependency Update for lodash
-
-## 0.0.9
-
--   Swap to webpack for bundling to reduce extension size
--   Revert removal of the php task killer
-
-## 0.0.8
-
--   Broken publish, bumping version to fix
-
-## 0.0.7
-
--   Fix typescript error with lodash
-
-## 0.0.6
-
--   Add better multi-root workspace support
--   The setting AutoConfigSearch is renamed to AutoRulesetSearch to make its purpose more clear
--   Extension activation was updated so that the `PHPCBF: Fix this file` is always registered even if phpcbf is not found.
--   Swapped to ESLint for internal code cleanup
--   Updated all Dependencies
--   Updated documentation to reflect some code changes
-
-## 0.0.5
-
--   Remove timeout settings to support vscode 1.42 changes.
-
-## 0.0.4
-
--   Updated Dependencies
--   Fix an issue causing the content of files to be deleted by the Fixer
--   Add basic support for resolving standards files in a multi-workspace project
-
-## 0.0.3
-
--   Fix some language in the DEVELOPMENT.md
--   Fix some debug information
--   Add a check for windows OS to prevent the kill task command from firing on windows
-
-## 0.0.2
-
--   Adding Keywords for Marketplace
-
-## 0.0.1
-
--   Initial Alpha release
