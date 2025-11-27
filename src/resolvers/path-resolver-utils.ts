@@ -1,5 +1,5 @@
-import { logger } from '@phpsab/logger';
 import path from 'node:path';
+import { logger } from '../logger';
 
 /**
  * Is the current platform Windows?
