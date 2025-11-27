@@ -1,5 +1,5 @@
 import { debounce } from 'lodash';
-import { spawn } from 'node:child_process';
+import { spawn, SpawnOptions } from 'node:child_process';
 import {
   CancellationTokenSource,
   ConfigurationChangeEvent,
@@ -7,20 +7,28 @@ import {
   DiagnosticCollection,
   DiagnosticSeverity,
   Disposable,
+  languages,
   Range,
   TextDocument,
   TextDocumentChangeEvent,
   Uri,
-  languages,
   window,
   workspace,
 } from 'vscode';
+import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
+import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
+import {
+  constructCommandString,
+  determineNodeError,
+  getArgs,
+  parseArgs,
+} from './utils/helpers';
 
 const enum runConfig {
   save = 'onSave',
@@ -49,75 +57,19 @@ const getSettings = async () => {
 };
 
 /**
- * Build the arguments needed to execute sniffer
- * @param fileName
- * @param standard
- */
-const getArgs = (
-  document: TextDocument,
-  standard: string,
-  additionalArguments: string[],
-) => {
-  // Process linting paths.
-  let filePath = document.fileName;
-
-  let args = [];
-  args.push('--report=json');
-  args.push('-q');
-
-  /**
-   * Important Note as explained in PR #155:
-   *
-   * For the sniffer to work properly, we add `shell: true` to spawn's options.
-   * This is important because when spawn runs on Windows with `shell: true`, it won't automatically
-   * escape the command and values, instead it just passes it straight to the shell as is.
-   *
-   * So we need to add double quotes around the values for the `--standard` and `--stdin-path`
-   * options, otherwise when there's spaces in the values it will break the command and errors will
-   * occur (as documented in issues #136 and #144).
-   *
-   * The fixer is different, it doesn't need to be surrounded by double quotes.
-   */
-
-  if (standard !== '') {
-    args.push(`--standard="${standard}"`);
-  }
-  args.push(`--stdin-path="${filePath}"`);
-  args.push('-');
-  args = args.concat(additionalArguments);
-  return args;
-};
-
-/**
  * Lints a document.
  *
  * @param document - The document to lint.
  */
 const validate = async (document: TextDocument) => {
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-  if (!workspaceFolder) {
-    return;
-  }
+
   const settings = await getSettings();
-  const resourceConf = settings.resources[workspaceFolder.index];
+  const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
   if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
     return;
   }
   logger.startTimer('Sniffer');
-
-  const additionalArguments = resourceConf.snifferArguments.filter((arg) => {
-    if (
-      arg.indexOf('--report') === -1 &&
-      arg.indexOf('--standard') === -1 &&
-      arg.indexOf('--stdin-path') === -1 &&
-      arg !== '-q' &&
-      arg !== '-'
-    ) {
-      return true;
-    }
-
-    return false;
-  });
 
   const oldRunner = runnerCancellations.get(document.uri);
   if (oldRunner) {
@@ -129,11 +81,26 @@ const validate = async (document: TextDocument) => {
   runnerCancellations.set(document.uri, runner);
   const { token } = runner;
 
-  const standard = await createStandardsPathResolver(
-    document,
-    resourceConf,
-  ).resolve();
-  const lintArgs = getArgs(document, standard, additionalArguments);
+  let standard: string;
+
+  try {
+    standard = await createStandardsPathResolver(
+      document,
+      resourceConf,
+    ).resolve();
+  } catch (error: any) {
+    window.showErrorMessage(error.message, 'OK');
+    logger.error(error.message);
+
+    return;
+  }
+
+  const lintArgs = getArgs(
+    document.fileName,
+    standard,
+    resourceConf.snifferArguments,
+    'sniffer',
+  );
 
   let fileText = document.getText();
 
@@ -141,43 +108,101 @@ const validate = async (document: TextDocument) => {
     addPhpToEnvPath(settings.phpExecutablePath);
   }
 
-  const options = {
+  const options: SpawnOptions = {
     cwd:
       resourceConf.workspaceRoot !== null
         ? resourceConf.workspaceRoot
         : undefined,
     env: process.env,
-    encoding: 'utf8',
-    tty: true,
+    // Required to prevent EINVAL errors when spawning .bat files on Windows.
+    // https://github.com/valeryan/vscode-phpsab/issues/128
+    // https://github.com/nodejs/node/issues/52554
     shell: true,
   };
-  logger.info(
-    `SNIFFER COMMAND: ${resourceConf.executablePathCS} ${lintArgs.join(' ')}`,
-  );
 
-  const sniffer = spawn(resourceConf.executablePathCS, lintArgs, options);
+  const CSExecutable = resourceConf.executablePathCS;
+  const parsedArgs = parseArgs(lintArgs);
 
-  sniffer.stdin.write(fileText);
-  sniffer.stdin.end();
+  const command = constructCommandString(CSExecutable, parsedArgs);
+
+  logger.info(`SNIFFER COMMAND: ${command}`);
+
+  const sniffer = spawn(command, options);
+
+  // Set the original command information (not parsed) for Windows ENOENT error handling
+  const originalCommand = {
+    commandPath: CSExecutable,
+    args: lintArgs,
+  };
+
+  addWindowsEnoentError(sniffer, originalCommand, 'spawn');
+
+  if (sniffer.stdin) {
+    sniffer.stdin.write(fileText);
+    sniffer.stdin.end();
+  } else {
+    // Kill the process if we can't write to its `stdin`. We use `SIGKILL` to forcefully
+    // terminate the process, and prevent it from hanging indefinitely.
+    // This allows the `done` promise to resolve.
+    sniffer.kill('SIGKILL');
+  }
 
   let stdout = '';
   let stderr = '';
+  let nodeError: ConsoleError | null = null;
 
-  sniffer.stdout.on('data', (data) => (stdout += data));
-  sniffer.stderr.on('data', (data) => (stderr += data));
+  if (sniffer.stdout) {
+    sniffer.stdout.on('data', (data) => (stdout += data));
+  }
+  if (sniffer.stderr) {
+    sniffer.stderr.on('data', (data) => (stderr += data));
+  }
+
+  sniffer.on('error', (error) => (nodeError = error as ConsoleError));
 
   const done = new Promise<void>((resolve, reject) => {
-    sniffer.on('close', () => {
-      if (token.isCancellationRequested || !stdout) {
+    sniffer.on('close', (exitcode) => {
+      logger.info(`SNIFFER EXIT CODE: ${exitcode}`);
+
+      if (stdout) {
+        logger.info(`SNIFFER STDOUT: ${stdout.trim()}`);
+      }
+
+      if (stderr) {
+        logger.error(`SNIFFER STDERR: ${stderr.trim()}`);
+      }
+
+      // If the sniffer was cancelled, OR the process was killed manually, OR there's
+      // no output from sniffer, then just resolve the promise and return early.
+      if (token.isCancellationRequested || sniffer.killed || !stdout) {
+        let errorMsg = '';
+        let extraLoggerMsg = '';
+        // If the process was killed manually, we log an error message and inform the user.
+        if (sniffer.killed) {
+          errorMsg =
+            'Unable to communicate with PHPCS. Please check your installation/configuration and try again.';
+          extraLoggerMsg = `\nSniffer stdin is null - cannot send file content to phpcs`;
+        } else if (nodeError) {
+          // Destructure the returned object and assign to variables.
+          ({ errorMsg, extraLoggerMsg } = determineNodeError(
+            nodeError,
+            'sniffer',
+          ));
+        }
+
+        logger.error(`${errorMsg}${extraLoggerMsg}`);
+        window.showErrorMessage(errorMsg, 'OK');
+
         resolve();
         return;
       }
       const diagnostics: Diagnostic[] = [];
+      // try-catch to handle JSON parse errors
       try {
         const { files }: PHPCSReport = JSON.parse(stdout);
         for (const file in files) {
           files[file].messages.forEach(
-            ({ message, line, column, type, source }) => {
+            ({ message, line, column, type, source, fixable }) => {
               const zeroLine = line - 1;
               const ZeroColumn = column - 1;
 
@@ -195,8 +220,9 @@ const validate = async (document: TextDocument) => {
               if (settings.snifferShowSources) {
                 output += `\n(${source})`;
               }
+              output += `\nAuto-fixable: ${fixable ? '✔️' : '❌'}`;
               const diagnostic = new Diagnostic(range, output, severity);
-              diagnostic.source = 'phpcs';
+              diagnostic.source = '\nphpcs';
               diagnostics.push(diagnostic);
             },
           );
@@ -215,7 +241,7 @@ const validate = async (document: TextDocument) => {
         } else {
           message += 'Unexpected error';
         }
-        window.showErrorMessage(message);
+        window.showErrorMessage(message, 'OK');
         logger.error(message);
         reject(message);
       }
@@ -305,12 +331,7 @@ export const activateSniffer = async (
   settings: Settings,
 ) => {
   settingsCache = settings;
-  if (
-    settings.resources.filter((folder) => folder.snifferEnable === true)
-      .length === 0
-  ) {
-    return;
-  }
+
   workspace.onDidChangeConfiguration(onConfigChange, null, subscriptions);
   workspace.onDidOpenTextDocument(validate, null, subscriptions);
   workspace.onDidCloseTextDocument(

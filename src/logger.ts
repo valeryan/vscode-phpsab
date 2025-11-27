@@ -1,4 +1,5 @@
 import { OutputChannel, window } from 'vscode';
+import { getExtensionInfo } from './utils/helpers';
 
 let outputChannel: OutputChannel;
 
@@ -17,7 +18,9 @@ export const setupOutputChannel = (channelOverride?: OutputChannel): void => {
     outputChannel = channelOverride;
     return;
   }
-  outputChannel = window.createOutputChannel('PHP Sniffer & Beautifier');
+  const { displayName } = getExtensionInfo();
+
+  outputChannel = window.createOutputChannel(displayName);
 };
 
 /**
@@ -63,6 +66,14 @@ export const debug = (message: string, data: unknown): void => {
  */
 export const log = (message: string): void => {
   logMessage('INFO', message);
+};
+
+/**
+ * Send a basic warning log to output channel
+ * @param message string to be logged
+ */
+export const warn = (message: string): void => {
+  logMessage('WARNING', message);
 };
 
 /**
@@ -146,13 +157,24 @@ const logMessage = (level: string, message: string, meta?: unknown) => {
   }
 };
 
+/**
+ * Show the output channel to the user.
+ */
+const showChannel = () => {
+  if (outputChannel) {
+    outputChannel.show();
+  }
+};
+
 export const logger = {
   log,
   info,
   debug,
+  warn,
   error,
   startTimer,
   endTimer,
   setDebugMode,
   setupOutputChannel,
+  showChannel,
 };

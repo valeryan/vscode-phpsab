@@ -1,10 +1,20 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { Uri, workspace } from 'vscode';
+import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
+import { joinPaths, normalizePath } from './resolvers/path-resolver-utils';
+import { getExtensionInfo } from './utils/helpers';
+
+/**
+ * Check if the editor is in single file mode.
+ * @returns {boolean} `true` if no workspace folders are open
+ */
+export const isSingleFileMode = (): boolean => {
+  return !workspace.workspaceFolders;
+};
 
 /**
  * Attempt to find the root path for a workspace or resource
@@ -25,18 +35,26 @@ const resolveRootPath = (resource: Uri) => {
 const resolveCBFExecutablePath = async (
   settings: ResourceSettings,
 ): Promise<ResourceSettings> => {
+  // If no path is set, try and find it via the path resolver.
   if (!settings.executablePathCBF) {
     let executablePathResolver = createPathResolver(settings, 'phpcbf');
     settings.executablePathCBF = await executablePathResolver.resolve();
-  } else if (
+  }
+  // If a relative path is set, resolve it against the workspace root.
+  else if (
     !path.isAbsolute(settings.executablePathCBF) &&
     settings.workspaceRoot !== null
   ) {
-    settings.executablePathCBF = path.join(
+    settings.executablePathCBF = joinPaths(
       settings.workspaceRoot,
       settings.executablePathCBF,
     );
   }
+  // Otherwise normalize the absolute path.
+  else {
+    settings.executablePathCBF = normalizePath(settings.executablePathCBF);
+  }
+
   return settings;
 };
 
@@ -47,18 +65,26 @@ const resolveCBFExecutablePath = async (
 const resolveCSExecutablePath = async (
   settings: ResourceSettings,
 ): Promise<ResourceSettings> => {
+  // If no path is set, try and find it via the path resolver.
   if (!settings.executablePathCS) {
     let executablePathResolver = createPathResolver(settings, 'phpcs');
     settings.executablePathCS = await executablePathResolver.resolve();
-  } else if (
+  }
+  // If a relative path is set, resolve it against the workspace root.
+  else if (
     !path.isAbsolute(settings.executablePathCS) &&
     settings.workspaceRoot !== null
   ) {
-    settings.executablePathCS = path.join(
+    settings.executablePathCS = joinPaths(
       settings.workspaceRoot,
       settings.executablePathCS,
     );
   }
+  // Otherwise normalize the absolute path.
+  else {
+    settings.executablePathCS = normalizePath(settings.executablePathCS);
+  }
+
   return settings;
 };
 
@@ -115,76 +141,115 @@ const validate = async (
   settings: ResourceSettings,
   resource: string,
 ): Promise<ResourceSettings> => {
+  let msg = '';
   if (
     settings.snifferEnable &&
     !(await executableExist(settings.executablePathCS))
   ) {
-    logger.log(`The phpcs executable was not found for ${resource}`);
+    msg = `The phpcs executable was not found for ${resource}. Sniffer is being disabled for this workspace.`;
     settings.snifferEnable = false;
   }
   if (
     settings.fixerEnable &&
     !(await executableExist(settings.executablePathCBF))
   ) {
-    logger.log(`The phpcbf executable was not found for ${resource}`);
+    msg = `The phpcbf executable was not found for ${resource}. Fixer is being disabled for this workspace.`;
     settings.fixerEnable = false;
   }
+
+  logger.log(msg);
+  window.showWarningMessage(msg, 'OK');
+
   return settings;
 };
 
 export const loadSettings = async () => {
-  if (!workspace.workspaceFolders) {
-    throw new Error('Unable to load configuration.');
-  }
   const resourcesSettings: Array<ResourceSettings> = [];
 
-  // Handle per Workspace settings
-  for (let index = 0; index < workspace.workspaceFolders.length; index++) {
-    const resource = workspace.workspaceFolders[index].uri;
-    const config = workspace.getConfiguration('phpsab', resource);
-    const rootPath = resolveRootPath(resource);
-    let settings: ResourceSettings = {
-      fixerEnable: config.get('fixerEnable', true),
-      fixerArguments: config.get('fixerArguments', []),
-      workspaceRoot: rootPath,
-      executablePathCBF: config.get('executablePathCBF', ''),
-      executablePathCS: config.get('executablePathCS', ''),
-      composerJsonPath: config.get('composerJsonPath', 'composer.json'),
-      standard: config.get('standard', ''),
-      autoRulesetSearch: config.get('autoRulesetSearch', true),
-      allowedAutoRulesets: config.get('allowedAutoRulesets', [
-        '.phpcs.xml',
-        'phpcs.xml',
-        'phpcs.dist.xml',
-        'ruleset.xml',
-      ]),
-      snifferEnable: config.get('snifferEnable', true),
-      snifferArguments: config.get('snifferArguments', []),
-    };
+  const globalConfig = workspace.getConfiguration('phpsab', null);
+  const PHPconfig = workspace.getConfiguration('php', null);
 
-    settings = await resolveCBFExecutablePath(settings);
-    settings = await resolveCSExecutablePath(settings);
+  // Handle case where no workspace folders exist (single file mode).
+  if (isSingleFileMode()) {
+    const { displayName } = getExtensionInfo();
 
-    settings = await validate(settings, workspace.workspaceFolders[index].name);
+    const warningMsg = `No workspace folder open. ${displayName} will run with limited functionality. Please open a folder or workspace.`;
 
-    resourcesSettings.splice(index, 0, settings);
+    logger.warn(warningMsg);
+    window.showWarningMessage(warningMsg, 'OK');
+
+    let settings = await getSettings(globalConfig);
+    settings = await validate(settings, 'Single File Mode');
+
+    resourcesSettings.push(settings);
+  } else {
+    // Handle per Workspace settings
+
+    // We know workspaceFolders is not null from the isSingleFileMode check above,
+    // so we can assert it with the non-null assertion operator `!`.
+    // https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#non-null-assertion-operator-postfix-
+    const workspaceFolders = workspace.workspaceFolders!;
+
+    for (let index = 0; index < workspaceFolders.length; index++) {
+      const resource = workspaceFolders[index].uri;
+      const config = workspace.getConfiguration('phpsab', resource);
+      const rootPath = resolveRootPath(resource);
+
+      let settings = await getSettings(config, rootPath);
+
+      settings = await validate(settings, workspaceFolders[index].name);
+
+      resourcesSettings.push(settings);
+    }
   }
 
   // update settings from config
-  const config = workspace.getConfiguration('phpsab');
-  const PHPconfig = workspace.getConfiguration('php');
-
   let settings: Settings = {
     resources: resourcesSettings,
-    snifferMode: config.get('snifferMode', 'onSave'),
-    snifferShowSources: config.get('snifferShowSources', false),
-    snifferTypeDelay: config.get('snifferTypeDelay', 250),
-    debug: config.get('debug', false),
-    phpExecutablePath: await resolvePhpExecutablePath(config, PHPconfig),
+    snifferMode: globalConfig.get('snifferMode', 'onSave'),
+    snifferShowSources: globalConfig.get('snifferShowSources', false),
+    snifferTypeDelay: globalConfig.get('snifferTypeDelay', 250),
+    debug: globalConfig.get('debug', false),
+    phpExecutablePath: await resolvePhpExecutablePath(globalConfig, PHPconfig),
   };
 
   logger.setDebugMode(settings.debug);
   logger.debug('CONFIGURATION', settings);
+
+  return settings;
+};
+
+/**
+ * Get settings from the workspace configuration.
+ * @param {WorkspaceConfiguration} config The workspace configuration to retrieve settings from.
+ * @param {string | null} rootPath The root path of the workspace or `null` if in single file mode.
+ * @returns {Promise<ResourceSettings>} The resource settings for the workspace.
+ */
+const getSettings = async (
+  config: WorkspaceConfiguration,
+  rootPath: string | null = null,
+) => {
+  let settings: ResourceSettings = {
+    fixerEnable: config.get('fixerEnable', true),
+    fixerArguments: config.get('fixerArguments', []),
+    workspaceRoot: rootPath,
+    executablePathCBF: config.get('executablePathCBF', ''),
+    executablePathCS: config.get('executablePathCS', ''),
+    composerJsonPath: config.get('composerJsonPath', 'composer.json'),
+    standard: config.get('standard', ''),
+    autoRulesetSearch: config.get('autoRulesetSearch', true),
+    allowedAutoRulesets: config.get('allowedAutoRulesets', [
+      '.phpcs.xml',
+      'phpcs.xml',
+      'phpcs.dist.xml',
+      'ruleset.xml',
+    ]),
+    snifferEnable: config.get('snifferEnable', true),
+    snifferArguments: config.get('snifferArguments', []),
+  };
+
+  settings = await resolveCBFExecutablePath(settings);
+  settings = await resolveCSExecutablePath(settings);
 
   return settings;
 };
