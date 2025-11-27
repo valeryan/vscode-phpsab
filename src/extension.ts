@@ -7,7 +7,7 @@ import { activateFixer, registerFixerAsDocumentProvider } from './fixer';
 import { disposeLogger, logger } from './logger';
 import { loadSettings } from './settings';
 import { activateSniffer, disposeSniffer } from './sniffer';
-import { getExtensionInfo, setExtensionInfo } from './utils';
+import { getExtensionInfo, setExtensionInfo } from './utils/helpers';
 
 /**
  * Activate Extension
