@@ -22,6 +22,7 @@ import { logger } from './logger';
 import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
+import { getPhpNotFoundRegex } from './utils/error-handling/error-helpers';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
 import {
   constructCommandString,
@@ -182,12 +183,20 @@ const validate = async (document: TextDocument) => {
           errorMsg =
             'Unable to communicate with PHPCS. Please check your installation/configuration and try again.';
           extraLoggerMsg = `\nSniffer stdin is null - cannot send file content to phpcs`;
-        } else if (nodeError) {
+        }
+        // Check if there was a node error during the spawn process.
+        else if (nodeError) {
           // Destructure the returned object and assign to variables.
           ({ errorMsg, extraLoggerMsg } = determineNodeError(
             nodeError,
             'sniffer',
           ));
+        }
+        // Check if stderr returns with the "php is not recognized" or equivalent error.
+        // If it does, then show an error message to the user because PHP is not on the
+        // system's environment path.
+        else if (getPhpNotFoundRegex().test(stderr)) {
+          errorMsg = `Please add PHP to your system's environment path, or use the extension setting "phpExecutablePath". - PHPCS error: ${stderr}`;
         }
 
         logger.error(`${errorMsg}${extraLoggerMsg}`);
