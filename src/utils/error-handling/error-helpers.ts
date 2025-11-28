@@ -103,6 +103,7 @@ export const getPhpNotFoundRegex = (): RegExp => {
     'command\\s+not\\s+found',
     'cannot\\s+be\\s+found',
     'unknown\\s+command',
+    'no\\s+such\\s+file\\s+or\\s+directory',
   ];
 
   // Join error patterns into a single group.
