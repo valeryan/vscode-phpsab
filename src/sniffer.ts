@@ -22,14 +22,12 @@ import { logger } from './logger';
 import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
-import { getPhpNotFoundRegex } from './utils/error-handling/error-helpers';
-import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
 import {
-  constructCommandString,
   determineNodeError,
-  getArgs,
-  parseArgs,
-} from './utils/helpers';
+  getPhpNotFoundRegex,
+} from './utils/error-handling/error-helpers';
+import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
+import { constructCommandString, getArgs, parseArgs } from './utils/helpers';
 
 const enum runConfig {
   save = 'onSave',
