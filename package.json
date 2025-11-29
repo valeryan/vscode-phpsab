@@ -139,6 +139,12 @@
           "type": "boolean",
           "default": false,
           "description": "Write debug info to the console"
+        },
+        "phpsab.phpExecutablePath": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "markdownDescription": "(Optional) The path to the PHP executable. This setting will only be used if the PHP executable from VSCode's built-in PHP extension setting `php.validate.executablePath` or Devsense's PHP Tools extension `php.executablePath` are not set."
         }
       }
     }

@@ -13,15 +13,15 @@ import {
 import { ConsoleError } from './interfaces/console-error';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
+import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
-import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
 import {
-  constructCommandString,
   determineNodeError,
-  getArgs,
-  parseArgs,
-} from './utils/helpers';
+  getPhpNotFoundRegex,
+} from './utils/error-handling/error-helpers';
+import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
+import { constructCommandString, getArgs, parseArgs } from './utils/helpers';
 
 let settingsCache: Settings;
 
@@ -108,6 +108,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   let fileText = document.getText();
 
+  if (settings.phpExecutablePath != '') {
+    addPhpToEnvPath(settings.phpExecutablePath);
+  }
+
   const options: SpawnSyncOptions = {
     cwd:
       resourceConf.workspaceRoot !== null
@@ -175,6 +179,17 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   let message: string = 'No fixable errors were found.';
   let errorMsg: string = '';
   let extraLoggerMsg: string = '';
+
+  // Test the regex against the stderr output.
+  //
+  // If fixer returns with stderr as the error "php is not recognized" or equivalent,
+  // then show an error message to the user because PHP is not on the system's environment path.
+  if (getPhpNotFoundRegex().test(stderr)) {
+    error = `Please add PHP to your system's environment path, or use the extension setting "phpExecutablePath". - PHPCBF error: ${stderr}`;
+
+    window.showErrorMessage(error, 'OK');
+    return '';
+  }
 
   /**
    * fixer exit codes:
