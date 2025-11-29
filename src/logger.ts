@@ -52,9 +52,9 @@ export const info = (message: string): void => {
  * Sends a log message and a data to the output channel if debug is enabled.
  * This method purpose is for logging data object.
  * @param message the message to be logged
- * @param data extra data that is useful for debugging
+ * @param data [optional] extra data that is useful for debugging
  */
-export const debug = (message: string, data: unknown): void => {
+export const debug = (message: string, data?: unknown): void => {
   if (debugMode) {
     logMessage('DEBUG', message, data);
   }

@@ -88,6 +88,43 @@ const resolveCSExecutablePath = async (
   return settings;
 };
 
+/**
+ * Resolve PHP executable path with proper precedence handling
+ * @param {WorkspaceConfiguration} config phpsab configuration
+ * @param {WorkspaceConfiguration} phpConfig php configuration
+ * @returns {string} The resolved PHP executable path
+ */
+const resolvePhpExecutablePath = async (
+  config: WorkspaceConfiguration,
+  phpConfig: WorkspaceConfiguration,
+): Promise<string> => {
+  const phpExecutableSources = [
+    {
+      name: 'VSCode PHP Language Features Built-in Extension',
+      path: phpConfig.get<string>('validate.executablePath', ''),
+    },
+    {
+      name: 'Devsense PHP Tools Extension',
+      path: phpConfig.get<string>('executablePath', ''),
+    },
+    {
+      name: 'PHPSAB Extension',
+      path: config.get<string>('phpExecutablePath', ''),
+    },
+  ];
+
+  for (const source of phpExecutableSources) {
+    // Return the first valid (non-empty) existing executable path found
+    if (source.path && (await executableExist(source.path))) {
+      logger.debug(`Using PHP executable from ${source.name}: ${source.path}`);
+      return source.path;
+    }
+  }
+
+  // If no executable path is found, return an empty string
+  return '';
+};
+
 const executableExist = async (path: string) => {
   try {
     if (!path) {
@@ -130,6 +167,7 @@ export const loadSettings = async () => {
   const resourcesSettings: Array<ResourceSettings> = [];
 
   const globalConfig = workspace.getConfiguration('phpsab', null);
+  const PHPconfig = workspace.getConfiguration('php', null);
 
   // Handle case where no workspace folders exist (single file mode).
   if (isSingleFileMode()) {
@@ -172,6 +210,7 @@ export const loadSettings = async () => {
     snifferShowSources: globalConfig.get('snifferShowSources', false),
     snifferTypeDelay: globalConfig.get('snifferTypeDelay', 250),
     debug: globalConfig.get('debug', false),
+    phpExecutablePath: await resolvePhpExecutablePath(globalConfig, PHPconfig),
   };
 
   logger.setDebugMode(settings.debug);
