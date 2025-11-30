@@ -371,6 +371,18 @@ Determines if the Sniffer includes the source error code of the diagnostic data 
 
 This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
+### **phpsab.phpExecutablePath**
+
+[ *Scope:* All | Optional | *Type:* string | *Default:* null ]
+
+This setting controls the path for the `php` executable. If you don't have PHP in your system `PATH` and the extension errors that it cannot find PHP, then you may specify the absolute path to the `php` executable. This setting will only be used if PHP isn't set in VSCode's built-in PHP setting `php.validate.executablePath` or Devsense's "PHP Tools" extension setting `php.executablePath`.
+
+The order of precedence for finding PHP path in the settings is as follows:
+
+1. VSCode's built-in "PHP Language Features" extension setting `php.validate.executablePath`.
+2. Devsense's "PHP Tools" extension setting `php.executablePath`.
+3. This extension's `phpsab.phpExecutablePath` setting.
+
 ## Diagnosing common errors
 
 ### **phpsab.debug**
