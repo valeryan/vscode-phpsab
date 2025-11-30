@@ -13,6 +13,8 @@ This extension is available on both [VS Code Marketplace](https://marketplace.vi
 
 This extension supports the [latest stable version of PHPCS 3.x](https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/). If you are using an older version of PHPCS, please upgrade to the latest 3.x version.
 
+> **NOTE:** PHPCS 4.x is not currently supported.
+
 ## Maintenance Status
 
 My focus has shifted away from PHP to .NET development, I'm currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with me.
@@ -39,7 +41,9 @@ or right mouse context menu `Format Document`.
 
 ### Format on save
 
-You can also use this formatter with Format on Save enabled. Format on save has two modes: `File` and `Modified`. This extension implements support for the modified mode by using phpcbf with the `Git Modified` filter that is provided by phpcbf.
+You can also use this formatter with Format on Save enabled via the setting `editor.formatOnSave`.
+
+Format on save has two modes: `File` and `Modified`, via the setting `editor.formatOnSaveMode`. To enable usage of the modified mode, this extension supports the `Git Modified` filter argument provided by PHPCBF: `--filter=GitModified`. Just add it to the extension's `phpsab.fixerArguments` setting.
 
 ## Multi-Root Workspace Support
 
@@ -51,14 +55,14 @@ This extension now supports formatting single files without needing a workspace 
 
 When in single file mode:
 
--   The global user settings are used instead of workspace settings.
--   The `autoRulesetSearch` setting is ignored, and will essentially act as if it was set to `false` (and just return the file path as set in `standard`).
+- The global user settings are used instead of workspace settings.
+- The `phpsab.autoRulesetSearch` setting is ignored, and will essentially act as if it was set to `false` (and just return the value as set in `phpsab.standard`).
 
 A global composer setup is required:
 
--   The `executablePathCS` and `executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, _OR_ set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
+- The `phpsab.executablePathCS` and `phpsab.executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, _OR_ set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
 
--   If the `phpsab.standard` setting is used for a ruleset file then it **must** be the full absolute path.
+- If the `phpsab.standard` setting is used for a ruleset file then it **must** be the full absolute path.
 
 ## Linter Installation
 
@@ -97,9 +101,9 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 ### Plugin Installation
 
 1. Open Visual Studio Code.
-1. Press `Ctrl+P` on Windows or `Cmd+P` on Mac to open the Quick Open dialog.
-1. Type ext install phpsab to find the extension.
-1. Press Enter or click the cloud icon to install it.
+1. Press <kbd>Ctrl + P</kbd> on Windows or <kbd>Cmd + P</kbd> on Mac to open the Quick Open dialog.
+1. Type `ext install phpsab` to find the extension.
+1. Press <kbd>Enter</kbd> or click the cloud icon to install it.
 1. Restart Visual Studio Code!
 
 This extension is available on both [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab) and [Open VSX Registry](https://open-vsx.org/extension/ValeryanM/vscode-phpsab).
@@ -125,15 +129,29 @@ This setting controls whether `phpcbf` fixer is enabled.
 
 Passes additional arguments to `phpcbf` runner.
 
+> **IMPORTANT:**
+> The only additional arguments this extension supports are:
+>
+> - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
+> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
+> - `--severity` (0-10)
+> - `--error-severity` (0-10)
+> - `--warning-severity` (0-10)
+> - `--ignore-annotations` (just a boolean flag.)
+>
+> Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
+
+> **NOTE:** All arguments passed will be surrounded in double quotes automatically.
+
 _Example_
 
 ```bash
 {
-    phpsab.fixerArguments: ["-n", "--ignore=tests/*"]
+    phpsab.fixerArguments: ["--ignore=tests/*"]
 }
 
 # Translated
-phpcbf -n --ignore=tests/* <file>
+phpcbf "--ignore=tests/*" <file>
 ```
 
 ### **phpsab.snifferEnable**
@@ -148,15 +166,29 @@ This setting controls whether `phpcs` sniffer is enabled.
 
 Passes additional arguments to `phpcs` runner.
 
+> **IMPORTANT:**
+> The only additional arguments this extension supports are:
+>
+> - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
+> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
+> - `--severity` (0-10)
+> - `--error-severity` (0-10)
+> - `--warning-severity` (0-10)
+> - `--ignore-annotations` (just a boolean flag.)
+>
+> Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
+
+> **NOTE:** All arguments passed will be surrounded in double quotes automatically.
+
 _Example_
 
 ```bash
 {
-    phpsab.snifferArguments: ["-n", "--ignore=tests/*"]
+    phpsab.snifferArguments: ["--ignore=tests/*"]
 }
 
 # Translated
-phpcs -n --ignore=tests/* <file>
+phpcs "--ignore=tests/*" <file>
 ```
 
 ### **phpsab.executablePathCS**
@@ -174,7 +206,7 @@ If omitted, the plugin will try to locate `phpcs` using you local composer.json,
 }
 ```
 
-> If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+> **NOTE:** If you are setting this value in the extension settings user interface, make sure to leave out the quotes
 
 ```
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
@@ -193,7 +225,7 @@ If omitted, the extension will try to locate `phpcbf` using you local composer.j
 }
 ```
 
-> If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+> **NOTE:** If you are setting this value in the extension settings user interface, make sure to leave out the quotes
 
 ```
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
@@ -229,7 +261,7 @@ The following values are applicable:
     ./vendor/bin/phpcs --config-set default_standard <value>
     ```
 
-1. The setting can be set to the name of a built-in coding standard ( ie. `MySource`, `PEAR`, `PHPCS`, `PSR1`, `PSR2`, `Squiz`, `Zend` ) and you are good to go.
+2. The setting can be set to the name of a built-in coding standard ( ie. `PEAR`, `PSR1`, `PSR2`, `PSR12`, `Squiz`, `Zend` ) and you are good to go.
 
     ```json
     {
@@ -237,7 +269,7 @@ The following values are applicable:
     }
     ```
 
-1. The setting can be set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcbf`.
+3. The setting can be set to the name of a custom coding standard ( ie. `WordPress`, `Drupal`, etc. ). In this case you must ensure that the specified coding standard is installed and accessible by `phpcbf`.
 
     ```json
     {
@@ -257,7 +289,7 @@ The following values are applicable:
     ./vendor/bin/phpcs --config-set installed_paths <path/to/custom/coding/standard>
     ```
 
-1. The setting can be set to the absolute path to a custom coding standard:
+4. The setting can be set to the absolute path to a custom coding standard:
 
     ```json
     {
@@ -273,7 +305,7 @@ The following values are applicable:
     }
     ```
 
-1. The setting can be set to your workspace relative path to a custom coding standard:
+5. The setting can be set to your workspace relative path to a custom coding standard:
 
     ```json
     {
@@ -329,7 +361,7 @@ When `snifferMode` is `onType` this setting controls how long to wait after typi
 
 [ *Scope:* All | Optional | *Type:* boolean | *Default:* false ]
 
-Determines if the Sniffer includes the source of the diagnostic data with error messages.
+Determines if the Sniffer includes the source error code of the diagnostic data with error messages (eg. `Squiz.WhiteSpace.FunctionSpacing.Before`).
 
 ## Advanced Configuration
 
@@ -339,19 +371,31 @@ Determines if the Sniffer includes the source of the diagnostic data with error 
 
 This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
 
+### **phpsab.phpExecutablePath**
+
+[ *Scope:* All | Optional | *Type:* string | *Default:* null ]
+
+This setting controls the path for the `php` executable. If you don't have PHP in your system `PATH` and the extension errors that it cannot find PHP, then you may specify the absolute path to the `php` executable. This setting will only be used if PHP isn't set in VSCode's built-in PHP setting `php.validate.executablePath` or Devsense's "PHP Tools" extension setting `php.executablePath`.
+
+The order of precedence for finding PHP path in the settings is as follows:
+
+1. VSCode's built-in "PHP Language Features" extension setting `php.validate.executablePath`.
+2. Devsense's "PHP Tools" extension setting `php.executablePath`.
+3. This extension's `phpsab.phpExecutablePath` setting.
+
 ## Diagnosing common errors
 
 ### **phpsab.debug**
 
 [ *Scope:* All | Optional | *Type:* boolean | Default: false ]
 
-Write debug information to the PHP Sniffer & Beautifier output channel and enable the display extra notices.
+Write debug information to the `PHP Sniffer & Beautifier` output channel and enable the display of extra notices.
 
 ### The phpcs report contains invalid json
 
 This error occurs when something goes wrong in phpcs execution such as PHP Notices, PHP Fatal Exceptions, Other Script Output, etc, most of which can be detected as follows:
 
-Execute the phpcbf command in your terminal with --report=json and see whether the output contains anything other than valid json.
+Execute the `phpcbf` command in your terminal with `--report=json` and see whether the output contains anything other than valid json.
 
 ## Acknowledgements
 
