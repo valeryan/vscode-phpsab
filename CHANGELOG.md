@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.0.21] - 2025-12-01
+
+### What's Changed
+* Revert "Escape filePath and args passed to the phpcs command (#145)" by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/155
+* Bump serialize-javascript and mocha by @dependabot[bot] in https://github.com/valeryan/vscode-phpsab/pull/159
+* Bump esbuild from 0.20.1 to 0.25.0 by @dependabot[bot] in https://github.com/valeryan/vscode-phpsab/pull/164
+* Adding YCodeTech to readme by @valeryan in https://github.com/valeryan/vscode-phpsab/pull/166
+* Update readme to include links to VSX Open Registry and VS Code Marketplace by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/167
+* fix: empty document error when no changes needed by @dossy in https://github.com/valeryan/vscode-phpsab/pull/160
+* Removes the newline at the end of the fixed code by @jonathanbossenger in https://github.com/valeryan/vscode-phpsab/pull/142
+* Support single file mode by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/170
+* Feat: Display icons on problems to determine their auto fixability by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/165
+* Fix spaces in paths and validating arguments by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/172
+* Update dependencies to latest by @valeryan in https://github.com/valeryan/vscode-phpsab/pull/177
+* Adding back auto versioning by @valeryan in https://github.com/valeryan/vscode-phpsab/pull/151
+* Fix php not found by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/157
+* Release v0.0.21 by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/176
+* fix: update vscode compatibility version by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/180
+
+### New Contributors
+* @dossy made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/160
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.20...v0.0.21
+
+
 ## [0.0.20] - 2024-11-14
 
 * Wrap the --stdin-path argument in double quotes by @jonathanbossenger in https://github.com/valeryan/vscode-phpsab/pull/139
