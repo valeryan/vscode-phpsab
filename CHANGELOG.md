@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.0.21-beta.1] - 2025-11-30
+## [0.0.21] - 2025-12-01
 
 ### What's Changed
 * Revert "Escape filePath and args passed to the phpcs command (#145)" by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/155
@@ -17,11 +17,12 @@
 * Adding back auto versioning by @valeryan in https://github.com/valeryan/vscode-phpsab/pull/151
 * Fix php not found by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/157
 * Release v0.0.21 by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/176
+* fix: update vscode compatibility version by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/180
 
 ### New Contributors
 * @dossy made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/160
 
-**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.20...v0.0.21-beta.1
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.20...v0.0.21
 
 
 ## [0.0.20] - 2024-11-14

@@ -2,7 +2,7 @@
   "name": "vscode-phpsab",
   "displayName": "PHP Sniffer & Beautifier",
   "description": "PHP Sniffer & Beautifier for Visual Studio Code",
-  "version": "0.0.21-beta.1",
+  "version": "0.0.21",
   "icon": "php_logo.png",
   "publisher": "valeryanm",
   "homepage": "https://github.com/valeryan/vscode-phpsab",
@@ -15,7 +15,7 @@
     "url": "https://github.com/valeryan/vscode-phpsab/issues"
   },
   "engines": {
-    "vscode": "^1.86.0"
+    "vscode": "^1.106.1"
   },
   "categories": [
     "Formatters",
