@@ -172,8 +172,6 @@
     "@typescript-eslint/parser": "^8.48.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
-    "commitizen": "^4.3.1",
-    "cz-conventional-changelog": "^3.3.0",
     "esbuild": "^0.27.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
@@ -183,10 +181,5 @@
     "sinon": "^21.0.0",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
   }
 }
