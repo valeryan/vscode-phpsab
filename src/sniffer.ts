@@ -227,7 +227,9 @@ const validate = async (document: TextDocument) => {
               if (settings.snifferShowSources) {
                 output += `\n(${source})`;
               }
-              output += `\nAuto-fixable: ${fixable ? '✔️' : '❌'}`;
+              if (settings.snifferShowFixabilityIcons) {
+                output += `\nAuto-fixable: ${fixable ? '✔️' : '❌'}`;
+              }
               const diagnostic = new Diagnostic(range, output, severity);
               diagnostic.source = '\nphpcs';
               diagnostics.push(diagnostic);
