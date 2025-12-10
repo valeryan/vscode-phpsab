@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { TextDocument, workspace } from 'vscode';
+import { TextDocument, window, workspace } from 'vscode';
 import { PathResolver } from '../interfaces/path-resolver';
 import { ResourceSettings } from '../interfaces/resource-settings';
 import { logger } from '../logger';
@@ -35,6 +35,8 @@ export const createStandardsPathResolver = (
       ) {
         return configured;
       }
+
+      // Start auto-ruleset search...
 
       let resolvedPath: string | null = null;
       const resource = document.uri;
@@ -76,12 +78,31 @@ export const createStandardsPathResolver = (
         let c = files[i];
         try {
           await fs.access(c, fs.constants.R_OK | fs.constants.W_OK);
+
+          logger.info(`Using the found coding standard ruleset: "${c}"`);
+
           return (resolvedPath = c);
         } catch (error) {
           continue;
         }
       }
 
+      // If we reach here, no ruleset was found.
+
+      // If no ruleset was found, show a warning message to the user and log it.
+      if (!resolvedPath) {
+        let warningTxt =
+          'Failed to automatically find a coding standard ruleset. ';
+
+        warningTxt += configured
+          ? `Using the "phpsab.standard" setting instead: "${configured}"`
+          : 'Using PHPCS default standard instead (the "phpsab.standard" setting is not set).';
+
+        logger.warn(warningTxt);
+        window.showWarningMessage(warningTxt);
+      }
+
+      // If no ruleset was found, return the configured standard.
       return resolvedPath ?? configured;
     },
   };
