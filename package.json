@@ -135,6 +135,11 @@
           "default": false,
           "description": "Control if phpcs report should include sniff sources."
         },
+        "phpsab.snifferShowFixabilityIcons": {
+          "type": "boolean",
+          "default": true,
+          "description": "Control if phpcs should show auto-fixable icons in the Problems panel."
+        },
         "phpsab.debug": {
           "type": "boolean",
           "default": false,

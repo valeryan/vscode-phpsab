@@ -362,6 +362,16 @@ When `snifferMode` is `onType` this setting controls how long to wait after typi
 
 Determines if the Sniffer includes the source error code of the diagnostic data with error messages (eg. `Squiz.WhiteSpace.FunctionSpacing.Before`).
 
+### **phpsab.snifferShowFixabilityIcons**
+
+[ *Scope:* All | Optional | *Type:* boolean | *Default:* true ]
+
+Determines if the Sniffer shows auto-fixable icons in the Problems panel (and on-hover intellisense) for each diagnostic.
+
+A check mark (✔️) indicates that the issue is auto-fixable by phpcbf, while a cross mark (❌) indicates that it is not and must be fixed manually.
+
+By default, the icons will be shown, but can be disabled by setting this option to `false`.
+
 ## Advanced Configuration
 
 ### **phpsab.composerJsonPath**

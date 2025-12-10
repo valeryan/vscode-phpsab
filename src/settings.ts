@@ -208,6 +208,10 @@ export const loadSettings = async () => {
     resources: resourcesSettings,
     snifferMode: globalConfig.get('snifferMode', 'onSave'),
     snifferShowSources: globalConfig.get('snifferShowSources', false),
+    snifferShowFixabilityIcons: globalConfig.get(
+      'snifferShowFixabilityIcons',
+      true,
+    ),
     snifferTypeDelay: globalConfig.get('snifferTypeDelay', 250),
     debug: globalConfig.get('debug', false),
     phpExecutablePath: await resolvePhpExecutablePath(globalConfig, PHPconfig),
