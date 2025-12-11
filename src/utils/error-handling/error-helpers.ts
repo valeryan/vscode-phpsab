@@ -15,6 +15,35 @@ export const determineNodeError = (
   // Assert code is not undefined.
   const code = nodeError.code!;
 
+  // Timeout error
+  if (code === 'ETIMEDOUT') {
+    errorMsg += `The ${toolType} process timed out `;
+  }
+  // Path/file not found error
+  else if (code === 'ENOENT') {
+    errorMsg += `The path "${nodeError.path}" was not found `;
+  }
+  // Handle other error codes we may not be aware of
+  errorMsg += `[${code} ${getErrorCodeDescription(code)}].\n\n`;
+
+  // Add extra information for debugging for logger only.
+  let extraLoggerMsg = `Internal message: ${nodeError.message}.\n\n`;
+
+  // Append stack trace and cause if available.
+  extraLoggerMsg += nodeError.stack
+    ? `[Stack trace]: ${nodeError.stack}\n`
+    : '';
+  extraLoggerMsg += nodeError.cause ? `\n[Caused by]: ${nodeError.cause}` : '';
+
+  return { errorMsg, extraLoggerMsg };
+};
+
+/**
+ * Get a description for a given error code.
+ * @param {string} code The error code string.
+ * @returns {string} Description of the error code.
+ */
+export const getErrorCodeDescription = (code: string): string => {
   // Node.js specific errors (ERR_* codes)
   const nodeErrorMessages: { [key: string]: string } = {
     ERR_OPERATION_FAILED: 'A general script execution error occurred.',
@@ -29,38 +58,14 @@ export const determineNodeError = (
     ...Object.entries(nodeErrorMessages),
   ];
 
-  let errorName = '';
-  let errorDescription = '';
-
   // Search through the error map to find the error by name
   for (const [name, description] of errorMap) {
     if (name === code) {
-      errorDescription = description;
-      break;
+      return description;
     }
   }
 
-  // Timeout error
-  if (code === 'ETIMEDOUT') {
-    errorMsg += `The ${toolType} process timed out `;
-  }
-  // Path/file not found error
-  else if (code === 'ENOENT') {
-    errorMsg += `The path "${nodeError.path}" was not found `;
-  }
-  // Handle other error codes we may not be aware of
-  errorMsg += `[${code} ${errorDescription}].\n\n`;
-
-  // Add extra information for debugging for logger only.
-  let extraLoggerMsg = `Internal message: ${nodeError.message}.\n\n`;
-
-  // Append stack trace and cause if available.
-  extraLoggerMsg += nodeError.stack
-    ? `[Stack trace]: ${nodeError.stack}\n`
-    : '';
-  extraLoggerMsg += nodeError.cause ? `\n[Caused by]: ${nodeError.cause}` : '';
-
-  return { errorMsg, extraLoggerMsg };
+  return 'Unknown error occurred';
 };
 
 /**
