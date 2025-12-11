@@ -2,11 +2,14 @@
  * Copyright (c) 2019 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { commands, ExtensionContext, languages } from 'vscode';
-import { activateFixer, registerFixerAsDocumentProvider } from './fixer';
-import { disposeLogger, logger } from './logger';
-import { loadSettings } from './settings';
-import { activateSniffer, disposeSniffer } from './sniffer';
+import {
+  activateFixer,
+  registerFixerAsDocumentProvider,
+} from '@phpsab/services/fixer';
+import { disposeLogger, logger } from '@phpsab/services/logger';
+import { loadSettings } from '@phpsab/services/settings';
+import { activateSniffer, disposeSniffer } from '@phpsab/services/sniffer';
+import { ExtensionContext, commands, languages } from 'vscode';
 import { getExtensionInfo, setExtensionInfo } from './utils/helpers';
 
 /**
@@ -23,8 +26,8 @@ export const activate = async (context: ExtensionContext) => {
   logger.log(`Extension Version: ${version}.`);
 
   const settings = await loadSettings();
-  activateFixer(context.subscriptions, settings);
   activateSniffer(context.subscriptions, settings);
+  activateFixer(context.subscriptions, settings);
   // register format from command palette
   context.subscriptions.push(
     commands.registerTextEditorCommand('fixer.fix', (textEditor) => {
@@ -45,7 +48,7 @@ export const activate = async (context: ExtensionContext) => {
           );
           logger.info(`DEBUG: Range: ${JSON.stringify(range)}`);
           try {
-            return await registerFixerAsDocumentProvider(document, range);
+            return await registerFixerAsDocumentProvider(document);
           } catch (error) {
             logger.error(`DEBUG: Error in provider: ${error}`);
             throw error;

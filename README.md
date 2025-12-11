@@ -16,7 +16,7 @@ This extension supports the [latest stable version of PHPCS 3.x](https://github.
 
 ## Maintenance Status
 
-My focus has shifted away from PHP to .NET development, I'm currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with me.
+[valeryan](https://github.com/valeryan) is the creator of this extension but his focus has shifted away from PHP to .NET development, he is currently unable to dedicate much time to maintaining this project. However, the extension is fully operational in its current state. If you're interested in contributing as a co-maintainer to address any outstanding issues, please feel free to get in touch with any maintainers on this project.
 
 ### Active Maintainers
 
@@ -44,9 +44,15 @@ You can also use this formatter with Format on Save enabled via the setting `edi
 
 Format on save has two modes: `File` and `Modified`, via the setting `editor.formatOnSaveMode`. To enable usage of the modified mode, this extension supports the `Git Modified` filter argument provided by PHPCBF: `--filter=GitModified`. Just add it to the extension's `phpsab.fixerArguments` setting.
 
+## Cross Platform Path Support
+
+Going forward all path configuration should be done in a unix style. This means all paths should be configured using `/`. Where `/` will represent the root of the OS and on windows will be assumed to be the `C:\` drive. Other drives can be indicated like `/d/` (this would resolve to `/` on linux and the `/d` will be ignored). For specifying a path for `phpcs` or `phpcbf` do not include any extension such as `.bat`, it will be added for you. This will allow the settings for this extension to synchronize across systems using vscode settings sync and still function.
+
+> **Note:** The default for this extension is to leave the path configurations empty or default and let the auto resolver handle it for you. If you are using this extension but disabling all of its auto-magic handling of paths why are you really using it? ...
+
 ## Multi-Root Workspace Support
 
-This extension now fully supports Multi-Root Workspaces. The extension previously used the first root folder in your workspace to configure and run both phpcs and phpcbf. The new system allows each workspace to be configured and run independently with respect to the root folder of the open file being sniffed. This means you can have phpcs functionality in one folder and have it disabled in another within a workspace.
+This extension now fully supports Multi-Root Workspaces. The extension previously used the first root folder in your workspace to configure and run both `phpcs` and `phpcbf`. The new system allows each workspace to be configured and run independently with respect to the root folder of the open file being sniffed. This means you can have `phpcs` functionality in one folder and have it disabled in another within a workspace.
 
 ## Single File Mode Support
 
@@ -69,7 +75,7 @@ Before using this plugin, you must ensure that `phpcs` is installed on your syst
 
 Once phpcs is installed, you can proceed to install the vscode-phpsab plugin if it is not yet installed.
 
-> **NOTE:** This plugin can detect whether your project has been set up to use phpcbf via composer and use the project specific `phpcs & phpcbf` over the system-wide installation of `phpcs & phpcbf` automatically. This feature requires that both composer.json and composer.lock file exist in your workspace root or the `phpsab.composerJsonPath` in order to check for the composer dependency. If you wish to bypass this feature you can set the `phpsab.executablePathCS` and `phpsab.executablePathCBF` configuration settings.
+> **NOTE:** This plugin can detect whether your project has been set up to use phpcbf via composer and use the project specific `phpcs & phpcbf` over the system-wide installation of `phpcs & phpcbf` automatically. This feature requires that both composer.json and composer.lock file exist in your workspace root or the `phpsab.composerJsonPath` in order to check for the composer dependency. If you wish to bypass this feature see: `phpsab.snifferExecutablePath` and `phpsab.fixerExecutablePath`.
 
 > **NOTE:** `phpcbf` is installed along with `phpcs`.
 
@@ -78,20 +84,20 @@ Once phpcs is installed, you can proceed to install the vscode-phpsab plugin if 
 The `phpcs` linter can be installed globally using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-1. Require `phpcs` package by typing the following in a terminal:
+2. Require `phpcs` package by typing the following in a terminal:
 
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
 
-1. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
+3. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
 
 ### Project-wide Installation
 
 The `phpcs` linter can be installed in your project using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-1. Require `phpcs` package by typing the following at the root of your project in a terminal:
+2. Require `phpcs` package by typing the following at the root of your project in a terminal:
 
     ```bash
     composer require --dev squizlabs/php_codesniffer
@@ -111,126 +117,27 @@ This extension is available on both [VS Code Marketplace](https://marketplace.vi
 
 If you would like to run phpcs in your docker containers using this extension, a [fork exists](https://github.com/mtbdata711/vscode-phpsab-docker) that will provide you with Docker support.
 
-## Basic Configuration
+## Configuration
 
-There are various options that can be configured to control how the plugin operates which can be set
-in your user, workspace or folder preferences.
+There are various options that can be configured to control how the plugin operates which can be set in your user, workspace or folder preferences.
 
-### **phpsab.fixerEnable**
+### Ruleset Configuration
 
-[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
+#### **phpsab.composerJsonPath**
 
-This setting controls whether `phpcbf` fixer is enabled.
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
 
-### **phpsab.fixerArguments**
-
-[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
-
-Passes additional arguments to `phpcbf` runner.
-
-> **IMPORTANT:**
-> The only additional arguments this extension supports are:
->
-> - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
-> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
-> - `--severity` (0-10)
-> - `--error-severity` (0-10)
-> - `--warning-severity` (0-10)
-> - `--ignore-annotations` (just a boolean flag.)
->
-> Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
-
-> **NOTE:** All arguments passed will be surrounded in double quotes automatically.
-
-_Example_
-
-```bash
-{
-    phpsab.fixerArguments: ["--ignore=tests/*"]
-}
-
-# Translated
-phpcbf "--ignore=tests/*" <file>
-```
-
-### **phpsab.snifferEnable**
-
-[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
-
-This setting controls whether `phpcs` sniffer is enabled.
-
-### **phpsab.snifferArguments**
-
-[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
-
-Passes additional arguments to `phpcs` runner.
-
-> **IMPORTANT:**
-> The only additional arguments this extension supports are:
->
-> - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
-> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
-> - `--severity` (0-10)
-> - `--error-severity` (0-10)
-> - `--warning-severity` (0-10)
-> - `--ignore-annotations` (just a boolean flag.)
->
-> Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
-
-> **NOTE:** All arguments passed will be surrounded in double quotes automatically.
-
-_Example_
-
-```bash
-{
-    phpsab.snifferArguments: ["--ignore=tests/*"]
-}
-
-# Translated
-phpcs "--ignore=tests/*" <file>
-```
-
-### **phpsab.executablePathCS**
-
-[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
-
-This setting controls the executable path for `phpcs`. You may specify the absolute path or workspace relative path to the `phpcs` executable.
-If omitted, the plugin will try to locate `phpcs` using you local composer.json, then your global environment path.
-
-> **NOTE:** `phpcbf` is installed along with `phpcs`.
+Specify the path to your `composer.json` file if it's not located at the workspace root (default). You can provide either the absolute path or a workspace-relative path in a unix style.
 
 ```json
 {
-    "phpsab.executablePathCS": "C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat"
+    "phpsab.composerJsonPath": "/Path/to/composer.json"
 }
 ```
 
-> **NOTE:** If you are setting this value in the extension settings user interface, make sure to leave out the quotes
+> **Note:** The extension does not apply any automatic search logic to the composer.json path.
 
-```
-C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
-```
-
-### **phpsab.executablePathCBF**
-
-[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
-
-This setting controls the executable path for the `phpcbf`. You may specify the absolute path or workspace relative path to the `phpcbf` executable.
-If omitted, the extension will try to locate `phpcbf` using you local composer.json, then your global environment path.
-
-```json
-{
-    "phpsab.executablePathCBF": "C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat"
-}
-```
-
-> **NOTE:** If you are setting this value in the extension settings user interface, make sure to leave out the quotes
-
-```
-C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
-```
-
-### **phpsab.standard**
+#### **phpsab.standard**
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
@@ -320,7 +227,7 @@ The following values are applicable:
     }
     ```
 
-### **phpsab.autoRulesetSearch**
+#### **phpsab.autoRulesetSearch**
 
 [ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
@@ -328,7 +235,7 @@ Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpc
 
 > **NOTE:** This option does not apply for unsaved documents (in-memory). Also, the name of files that are searched for is configurable in this extension.
 
-### **phpsab.allowedAutoRulesets**
+#### **phpsab.allowedAutoRulesets**
 
 [ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [] ]
 
@@ -340,27 +247,86 @@ An array of filenames that could contain a valid phpcs ruleset.
 }
 ```
 
-### **phpsab.snifferMode**
+### Sniffer Configuration
+
+#### **phpsab.snifferEnable**
+
+[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
+
+This setting controls whether `phpcs` sniffer is enabled.
+
+### **phpsab.snifferArguments**
+
+[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
+
+Passes additional arguments to `phpcs` runner.
+
+> **IMPORTANT:**
+> The only additional arguments this extension supports are:
+>
+> - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
+> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
+> - `--severity` (0-10)
+> - `--error-severity` (0-10)
+> - `--warning-severity` (0-10)
+> - `--ignore-annotations` (just a boolean flag.)
+>
+> Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
+
+> **NOTE:** All arguments passed will be surrounded in double quotes automatically.
+
+_Example_
+
+```bash
+{
+    phpsab.snifferArguments: ["--ignore=tests/*"]
+}
+
+# Translated
+phpcs "--ignore=tests/*" <file>
+```
+
+#### **phpsab.snifferExecutablePath**
+
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
+
+This setting controls the executable path for `phpcs`. Leave this as default to to allow the extension to find `phpcs` for you using composer.json or your system path. You may specify the absolute path or workspace relative path to the `phpcs` executable using unix like Uris. See [Cross Platform Path Support](#cross-platform-path-support)
+
+> **NOTE:** `phpcbf` is installed along with `phpcs`.
+
+```json
+{
+    "phpsab.snifferExecutablePath": "/C/Path/To/Global/Composer/vendor/bin/phpcs"
+}
+```
+
+> All paths should be provided in unix style, for windows users the path will get translated by the extension, to specify the drive in windows use `/C/`.
+
+#### **phpsab.snifferShowSources**
+
+[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* false ]
+
+Determines if the Sniffer includes the source of the diagnostic data with error messages.
+
+#### **phpsab.snifferMode**
 
 [ *Scope:* All | Optional | *Type:* string | *Default:* onSave ]
+
+>**Note:** This setting is global and will change the mode in all workspaces.
 
 Enum dropdown options to set Sniffer Mode to `onSave` or `onType`.
 
 1. `onSave`: The Sniffer will only update diagnostics when the document is saved.
 
-1. `onType`: The Sniffer will update diagnostics as you type in a document.
+2. `onType`: The Sniffer will update diagnostics as you type in a document.
 
-### **phpsab.snifferTypeDelay**
+#### **phpsab.snifferTypeDelay**
 
 [ *Scope:* All | Optional | *Type:* number | *Default:* 250 ]
 
+>**Note:** This setting is global and will change the delay in all workspaces.
+
 When `snifferMode` is `onType` this setting controls how long to wait after typing stops to update. The number represents milliseconds.
-
-### **phpsab.snifferShowSources**
-
-[ *Scope:* All | Optional | *Type:* boolean | *Default:* false ]
-
-Determines if the Sniffer includes the source error code of the diagnostic data with error messages (eg. `Squiz.WhiteSpace.FunctionSpacing.Before`).
 
 ### **phpsab.snifferShowFixabilityIcons**
 
@@ -372,13 +338,60 @@ A check mark (✔️) indicates that the issue is auto-fixable by phpcbf, while 
 
 By default, the icons will be shown, but can be disabled by setting this option to `false`.
 
-## Advanced Configuration
+### Fixer Configuration
 
-### **phpsab.composerJsonPath**
+#### **phpsab.fixerEnable**
 
-[ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
+[ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
-This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
+This setting controls whether `phpcbf` fixer is enabled.
+
+### **phpsab.fixerArguments**
+
+[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
+
+Passes additional arguments to `phpcbf` runner.
+
+> **IMPORTANT:**
+> The only additional arguments this extension supports are:
+>
+> - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
+> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
+> - `--severity` (0-10)
+> - `--error-severity` (0-10)
+> - `--warning-severity` (0-10)
+> - `--ignore-annotations` (just a boolean flag.)
+>
+> Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
+
+> **NOTE:** All arguments passed will be surrounded in double quotes automatically.
+
+_Example_
+
+```bash
+{
+    phpsab.fixerArguments: ["--ignore=tests/*"]
+}
+
+# Translated
+phpcbf "--ignore=tests/*" <file>
+```
+
+#### **phpsab.fixerExecutablePath**
+
+[ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
+
+This setting controls the executable path for `phpcbf`. Leave this as default to to allow the extension to find `phpcbf` for you using composer.json or your system path. You may specify the absolute path or workspace relative path to the `phpcbf` executable using unix style Uris to disable auto searching. See [Cross Platform Path Support](#cross-platform-path-support)
+
+> **NOTE:** `phpcbf` is installed along with `phpcs`.
+
+```json
+{
+    "phpsab.fixerExecutablePath": "/C/Path/To/Global/Composer/vendor/bin/phpcbf"
+}
+```
+
+> All paths should be provided in unix style, for windows users the path will get translated by the extension, to specify the drive in windows use `/C/`.
 
 ### **phpsab.phpExecutablePath**
 
@@ -398,7 +411,9 @@ The order of precedence for finding PHP path in the settings is as follows:
 
 [ *Scope:* All | Optional | *Type:* boolean | Default: false ]
 
-Write debug information to the `PHP Sniffer & Beautifier` output channel and enable the display of extra notices.
+Choose if debug information should be sent to PHP Sniffer & Beautifier output channel and enable the displaying information notices.
+
+> **Note:** Errors are always sent to the output channel
 
 ### The phpcs report contains invalid json
 
@@ -406,9 +421,29 @@ This error occurs when something goes wrong in phpcs execution such as PHP Notic
 
 Execute the `phpcbf` command in your terminal with `--report=json` and see whether the output contains anything other than valid json.
 
+## Deprecated Settings
+
+### **phpsab.executablePathCS**
+
+(Deprecated in version 0.1.0)
+
+This setting has moved to **phpsab.snifferExecutablePath**. This setting will be fully removed in later releases. Please update your settings.
+
+### **phpsab.executablePathCBF**
+
+(Deprecated in version 0.1.0)
+
+This setting has moved to **phpsab.fixerExecutablePath**. This setting will be fully removed in later releases. Please update your settings.
+
 ## Acknowledgements
 
-This extension is based off of the `phpcs` extension created by [Ioannis Kappas](https://github.com/ikappas/vscode-phpcs/), the `PHP Sniffer` extension create by [wongjn](https://github.com/wongjn/vscode-php-sniffer) and the existing `phpcbf` extension by [Per Søderlind](https://github.com/soderlind/vscode-phpcbf). It uses some portions of these extensions to provide the `phpcs & phpcbf` functionality with auto config search.
+This extension draws inspiration from and utilizes certain portions of code from the following extensions:
+
+-   [vscode-phpcs](https://github.com/ikappas/vscode-phpcs/) by Ioannis Kappas
+-   [vscode-phpcbf](https://github.com/soderlind/vscode-phpcbf) by Per Søderlind
+-   [vscode-php-sniffer](https://github.com/wongjn/vscode-php-sniffer) by wongjn
+
+These extensions provided valuable functionality and insights that contributed to the development of this project.
 
 ## Contributing and Licensing
 

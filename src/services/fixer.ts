@@ -10,18 +10,15 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { ConsoleError } from './interfaces/console-error';
-import { Settings } from './interfaces/settings';
+import { ConsoleError } from '../interfaces/consoleError';
+import { Settings } from '../interfaces/settings';
+import { addPhpToEnvPath } from '../resolvers/pathResolverUtils';
+import { createStandardsPathResolver } from '../resolvers/standardsPathResolver';
+import { determineNodeError, getPhpNotFoundRegex } from '../utils/error-handling/error-helpers';
+import { addWindowsEnoentError } from '../utils/error-handling/windows-enoent-error';
+import { constructCommandString, getArgs, parseArgs } from '../utils/helpers';
 import { logger } from './logger';
-import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
-import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
-import {
-  determineNodeError,
-  getPhpNotFoundRegex,
-} from './utils/error-handling/error-helpers';
-import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { constructCommandString, getArgs, parseArgs } from './utils/helpers';
 
 let settingsCache: Settings;
 
@@ -54,31 +51,27 @@ const documentFullRange = (document: TextDocument) =>
   );
 
 /**
- *
- * @param range Range
- * @param document TextDocument
- * @returns boolean
- */
-const isFullDocumentRange = (range: Range, document: TextDocument) =>
-  range.isEqual(documentFullRange(document));
-
-/**
  * run the fixer process
  * @param document
  */
-const format = async (document: TextDocument, fullDocument: boolean) => {
+const format = async (document: TextDocument) => {
   const settings = await getSettings();
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
-
-  const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
+  if (!workspaceFolder) {
+    return '';
+  }
+  const resourceConf = settings.workspaces[workspaceFolder.index];
   if (document.languageId !== 'php') {
     return '';
   }
 
   if (resourceConf.fixerEnable === false) {
-    window.showInformationMessage(
-      'Fixer is disabled for this workspace or PHPCBF was not found for this workspace.',
-    );
+    const message =
+      'Fixer is disable for this workspace or PHPCBF was not found.';
+    logger.info(message);
+    if (settings.debug) {
+      window.showInformationMessage(message);
+    }
     return '';
   }
   logger.startTimer('Fixer');
@@ -126,7 +119,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     shell: true,
   };
 
-  const CBFExecutable = resourceConf.executablePathCBF;
+  const CBFExecutable = resourceConf.fixerExecutablePath;
   const parsedArgs = parseArgs(lintArgs);
 
   const command = constructCommandString(CBFExecutable, parsedArgs);
@@ -174,7 +167,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     255: 'FIXER: A Fatal execution error occurred.',
   };
 
-  let error: string = '';
+  let error: string | null = '';
   let result: string = '';
   let message: string = 'No fixable errors were found.';
   let errorMsg: string = '';
@@ -296,13 +289,11 @@ export const activateFixer = (
  */
 export const registerFixerAsDocumentProvider = (
   document: TextDocument,
-  range: Range,
 ): ProviderResult<TextEdit[]> => {
   return new Promise((resolve, reject) => {
     const fullRange = documentFullRange(document);
-    const isFullDocument = isFullDocumentRange(range, document);
 
-    format(document, isFullDocument)
+    format(document)
       .then((text) => {
         if (text.length > 0) {
           // Edit the document with the fixes.

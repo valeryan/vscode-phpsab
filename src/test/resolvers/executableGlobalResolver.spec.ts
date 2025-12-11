@@ -1,8 +1,8 @@
+import { createGlobalExecutablePathResolver } from '@phpsab/resolvers/executableGlobalResolver';
 import assert from 'assert';
 import fs from 'node:fs';
+import path from 'node:path';
 import sinon from 'sinon';
-import { createGlobalPathResolver } from '../../resolvers/global-path-resolver';
-import * as pathUtils from '../../resolvers/path-resolver-utils';
 
 suite('Global Path Resolver Test Suite', () => {
   let accessStub: sinon.SinonStub;
@@ -18,8 +18,8 @@ suite('Global Path Resolver Test Suite', () => {
     // Stub process.platform to control platform value
     platformStub = sinon.stub(process, 'platform').value('win32');
 
-    // Stub joinPaths method
-    joinPathsStub = sinon.stub(pathUtils, 'joinPaths');
+    // Stub path.join method directly
+    joinPathsStub = sinon.stub(path, 'join');
   });
 
   teardown(() => {
@@ -37,7 +37,7 @@ suite('Global Path Resolver Test Suite', () => {
     process.env.PATH = 'C:\\Windows\\System32;C:\\Program Files\\nodejs';
     accessStub.resolves(); // Make fs.access resolve successfully
     joinPathsStub.callsFake((...args: string[]) => args.join('\\'));
-    const resolver = createGlobalPathResolver('executable');
+    const resolver = createGlobalExecutablePathResolver('executable');
     const resolvedPath = await resolver.resolve();
     assert.strictEqual(resolvedPath, 'C:\\Windows\\System32\\executable');
   });
@@ -47,7 +47,7 @@ suite('Global Path Resolver Test Suite', () => {
     process.env.PATH = '/usr/bin:/usr/local/bin:/opt/bin';
     accessStub.resolves(); // Make fs.access resolve successfully
     joinPathsStub.callsFake((...args: string[]) => args.join('/'));
-    const resolver = createGlobalPathResolver('executable');
+    const resolver = createGlobalExecutablePathResolver('executable');
     const resolvedPath = await resolver.resolve();
     assert.strictEqual(resolvedPath, '/usr/bin/executable');
   });
@@ -57,7 +57,7 @@ suite('Global Path Resolver Test Suite', () => {
     process.env.PATH = '/usr/bin:/usr/local/bin::/opt/bin';
     accessStub.resolves(); // Make fs.access resolve successfully
     joinPathsStub.callsFake((...args: string[]) => args.join('/'));
-    const resolver = createGlobalPathResolver('executable');
+    const resolver = createGlobalExecutablePathResolver('executable');
     const resolvedPath = await resolver.resolve();
     assert.strictEqual(resolvedPath, '/usr/bin/executable');
   });
@@ -67,7 +67,7 @@ suite('Global Path Resolver Test Suite', () => {
     process.env.PATH = '/usr/bin:/usr/local/bin:/opt/bin';
     accessStub.rejects(new Error('File not found')); // Make fs.access reject
     joinPathsStub.callsFake((...args: string[]) => args.join('/'));
-    const resolver = createGlobalPathResolver('nonexistent');
+    const resolver = createGlobalExecutablePathResolver('nonexistent');
     const resolvedPath = await resolver.resolve();
     assert.strictEqual(resolvedPath, '');
   });
