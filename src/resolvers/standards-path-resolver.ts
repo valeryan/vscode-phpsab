@@ -1,9 +1,11 @@
 import fs from 'node:fs/promises';
 import { TextDocument, window, workspace } from 'vscode';
+import { ConsoleError } from '../interfaces/console-error';
 import { PathResolver } from '../interfaces/path-resolver';
 import { ResourceSettings } from '../interfaces/resource-settings';
 import { logger } from '../logger';
 import { isSingleFileMode } from '../settings';
+import { getErrorCodeDescription } from '../utils/error-handling/error-helpers';
 import {
   getPlatformExtension,
   getPlatformPathSeparator,
@@ -74,6 +76,8 @@ export const createStandardsPathResolver = (
       });
       logger.debug('Standards Search paths: ', searchPaths);
 
+      let errors: any = {};
+
       for (let i = 0, len = files.length; i < len; i++) {
         let c = files[i];
         try {
@@ -82,7 +86,21 @@ export const createStandardsPathResolver = (
           logger.info(`Using the found coding standard ruleset: "${c}"`);
 
           return (resolvedPath = c);
-        } catch (error) {
+        } catch (err) {
+          const error: ConsoleError = err as ConsoleError;
+          const errorCode = error.code ?? 'UNKNOWN';
+
+          // If the error code key does not exist yet,
+          // create it with an empty array as value.
+          if (!errors[errorCode]) {
+            errors[errorCode] = {
+              errorCodeDescription: getErrorCodeDescription(errorCode),
+              paths: [],
+            };
+          }
+          // Store the path.
+          errors[errorCode].paths.push(error.path);
+
           continue;
         }
       }
@@ -99,6 +117,21 @@ export const createStandardsPathResolver = (
           : 'Using PHPCS default standard instead (the "phpsab.standard" setting is not set).';
 
         logger.warn(warningTxt);
+
+        let errorMessage = 'Errors encountered while searching for rulesets:\n';
+        for (const [errorCode, errorInfo] of Object.entries(errors)) {
+          const info = errorInfo as {
+            errorCodeDescription: string;
+            paths: string[];
+          };
+          errorMessage += `${errorCode}: ${info.errorCodeDescription}\n`;
+          info.paths.forEach((path: string) => {
+            errorMessage += `  - "${path}"\n`;
+          });
+        }
+
+        logger.debug(errorMessage);
+
         window.showWarningMessage(warningTxt);
       }
 
