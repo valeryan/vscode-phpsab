@@ -217,7 +217,12 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       break;
     }
     case 1: {
-      if (fixed.length > 0 && fixed !== fileText) {
+      // No fixable errors were found; OR
+      // all errors were fixed successfully.
+
+      // If stdout has valid fixed output (and doesn't contain error messages),
+      // then this exit code indicates that all fixable errors were fixed.
+      if (hasValidFixedOutput(stdout, fileText)) {
         result = fixed;
         message = 'All fixable errors were fixed correctly.';
       }
@@ -231,7 +236,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
       break;
     }
     case 2: {
-      if (fixed.length > 0 && fixed !== fileText) {
+      // If stdout has valid fixed output (and doesn't contain error messages),
+      // then this exit code indicates that some fixable errors failed to be fixed.
+      if (hasValidFixedOutput(stdout, fileText)) {
         result = fixed;
         message = 'FIXER failed to fix some of the fixable errors.';
       }
@@ -280,6 +287,29 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   }
 
   return result;
+};
+
+/**
+ * Check if the fixer output represents successfully fixed code
+ *
+ * It checks if the output is valid by ensuring:
+ * - it's length is greater than 0; AND
+ * - is different to the input file text; AND
+ * - it doesn't start with a newline (EOL) character (all stdout errors start with a newline).
+ *
+ * @param {string} fileText The original file text
+ * @param {string} stdout The raw stdout (for EOL checking)
+ * @returns {boolean} boolean indicating if fixes were successfully applied
+ */
+const hasValidFixedOutput = (
+  stdout: string,
+  originalFileText: string,
+): boolean => {
+  return (
+    stdout.length > 0 &&
+    stdout !== originalFileText &&
+    !stdout.startsWith(getEOL())
+  );
 };
 
 /**
