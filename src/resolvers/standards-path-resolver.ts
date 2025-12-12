@@ -1,9 +1,11 @@
 import fs from 'node:fs/promises';
-import { TextDocument, workspace } from 'vscode';
+import { TextDocument, window, workspace } from 'vscode';
+import { ConsoleError } from '../interfaces/console-error';
 import { PathResolver } from '../interfaces/path-resolver';
 import { ResourceSettings } from '../interfaces/resource-settings';
 import { logger } from '../logger';
 import { isSingleFileMode } from '../settings';
+import { getErrorCodeDescription } from '../utils/error-handling/error-helpers';
 import {
   getPlatformExtension,
   getPlatformPathSeparator,
@@ -35,6 +37,8 @@ export const createStandardsPathResolver = (
       ) {
         return configured;
       }
+
+      // Start auto-ruleset search...
 
       let resolvedPath: string | null = null;
       const resource = document.uri;
@@ -72,16 +76,66 @@ export const createStandardsPathResolver = (
       });
       logger.debug('Standards Search paths: ', searchPaths);
 
+      let errors: any = {};
+
       for (let i = 0, len = files.length; i < len; i++) {
         let c = files[i];
         try {
           await fs.access(c, fs.constants.R_OK | fs.constants.W_OK);
+
+          logger.info(`Using the found coding standard ruleset: "${c}"`);
+
           return (resolvedPath = c);
-        } catch (error) {
+        } catch (err) {
+          const error: ConsoleError = err as ConsoleError;
+          const errorCode = error.code ?? 'UNKNOWN';
+
+          // If the error code key does not exist yet,
+          // create it with an empty array as value.
+          if (!errors[errorCode]) {
+            errors[errorCode] = {
+              errorCodeDescription: getErrorCodeDescription(errorCode),
+              paths: [],
+            };
+          }
+          // Store the path.
+          errors[errorCode].paths.push(error.path);
+
           continue;
         }
       }
 
+      // If we reach here, no ruleset was found.
+
+      // If no ruleset was found, show a warning message to the user and log it.
+      if (!resolvedPath) {
+        let warningTxt =
+          'Failed to automatically find a coding standard ruleset. ';
+
+        warningTxt += configured
+          ? `Using the "phpsab.standard" setting instead: "${configured}"`
+          : 'Using PHPCS default standard instead (the "phpsab.standard" setting is not set).';
+
+        logger.warn(warningTxt);
+
+        let errorMessage = 'Errors encountered while searching for rulesets:\n';
+        for (const [errorCode, errorInfo] of Object.entries(errors)) {
+          const info = errorInfo as {
+            errorCodeDescription: string;
+            paths: string[];
+          };
+          errorMessage += `${errorCode}: ${info.errorCodeDescription}\n`;
+          info.paths.forEach((path: string) => {
+            errorMessage += `  - "${path}"\n`;
+          });
+        }
+
+        logger.debug(errorMessage);
+
+        window.showWarningMessage(warningTxt);
+      }
+
+      // If no ruleset was found, return the configured standard.
       return resolvedPath ?? configured;
     },
   };
