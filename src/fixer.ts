@@ -181,7 +181,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   let error: string = '';
   let result: string = '';
-  let message: string = 'No fixable errors were found.';
+  let message: string = '';
   let errorMsg: string = '';
   let extraLoggerMsg: string = '';
 
@@ -216,6 +216,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
       break;
     }
+    case 0:
     case 1: {
       // No fixable errors were found; OR
       // all errors were fixed successfully.
@@ -231,6 +232,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         // Destructure the returned object and assign to variables.
         ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
         error += errorMsg;
+      }
+      // Otherwise, there were no fixable errors found.
+      else {
+        message = 'No fixable errors were found.';
       }
 
       break;
@@ -253,7 +258,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     }
     default:
       // A PHPCBF error occurred.
-      error = errors[exitcode];
+      error =
+        errors[exitcode] ||
+        `FIXER: An unknown error occurred with exit code ${exitcode}.`;
       if (fixed.length > 0) {
         error += '\n' + fixed + '\n';
       }
