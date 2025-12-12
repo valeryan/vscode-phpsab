@@ -1,3 +1,4 @@
+import os from 'node:os';
 import { ExtensionContext, extensions, window } from 'vscode';
 import type {
   PHPCSArgumentKey,
@@ -319,4 +320,12 @@ export const constructCommandString = (command: string, args: string[]) => {
 
   // Concatenate the command and the arguments together delimited by spaces.
   return `${command} ${args.join(' ')}`;
+};
+
+/**
+ * Get the operating system-specific end-of-line marker.
+ * @returns {string} The operating system-specific end-of-line marker. `\n` on POSIX and `\r\n` on Windows.
+ */
+export const getEOL = (): string => {
+  return os.EOL;
 };

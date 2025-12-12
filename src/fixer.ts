@@ -21,7 +21,12 @@ import {
   getPhpNotFoundRegex,
 } from './utils/error-handling/error-helpers';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { constructCommandString, getArgs, parseArgs } from './utils/helpers';
+import {
+  constructCommandString,
+  getArgs,
+  getEOL,
+  parseArgs,
+} from './utils/helpers';
 
 let settingsCache: Settings;
 
@@ -156,7 +161,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   // which clutters the log when debugging.
   //
   // This will be removed once we require phpcbf 4.x, which outputs errors to STDERR.
-  if (stdout && stdout.startsWith('ERROR')) {
+  if (stdout && (stdout.startsWith('ERROR') || stdout.startsWith(getEOL()))) {
     logger.info(`FIXER STDOUT: ${stdout.trim()}`);
   }
 
