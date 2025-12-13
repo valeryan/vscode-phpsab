@@ -21,7 +21,12 @@ import {
   getPhpNotFoundRegex,
 } from './utils/error-handling/error-helpers';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { constructCommandString, getArgs, parseArgs } from './utils/helpers';
+import {
+  constructCommandString,
+  getArgs,
+  getEOL,
+  parseArgs,
+} from './utils/helpers';
 
 let settingsCache: Settings;
 
@@ -156,7 +161,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   // which clutters the log when debugging.
   //
   // This will be removed once we require phpcbf 4.x, which outputs errors to STDERR.
-  if (stdout && stdout.startsWith('ERROR')) {
+  if (stdout && (stdout.startsWith('ERROR') || stdout.startsWith(getEOL()))) {
     logger.info(`FIXER STDOUT: ${stdout.trim()}`);
   }
 
@@ -176,7 +181,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   let error: string = '';
   let result: string = '';
-  let message: string = 'No fixable errors were found.';
+  let message: string = '';
   let errorMsg: string = '';
   let extraLoggerMsg: string = '';
 
@@ -211,8 +216,14 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
       break;
     }
+    case 0:
     case 1: {
-      if (fixed.length > 0 && fixed !== fileText) {
+      // No fixable errors were found; OR
+      // all errors were fixed successfully.
+
+      // If stdout has valid fixed output (and doesn't contain error messages),
+      // then this exit code indicates that all fixable errors were fixed.
+      if (hasValidFixedOutput(stdout, fileText)) {
         result = fixed;
         message = 'All fixable errors were fixed correctly.';
       }
@@ -222,11 +233,17 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
         ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
         error += errorMsg;
       }
+      // Otherwise, there were no fixable errors found.
+      else {
+        message = 'No fixable errors were found.';
+      }
 
       break;
     }
     case 2: {
-      if (fixed.length > 0 && fixed !== fileText) {
+      // If stdout has valid fixed output (and doesn't contain error messages),
+      // then this exit code indicates that some fixable errors failed to be fixed.
+      if (hasValidFixedOutput(stdout, fileText)) {
         result = fixed;
         message = 'FIXER failed to fix some of the fixable errors.';
       }
@@ -241,7 +258,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     }
     default:
       // A PHPCBF error occurred.
-      error = errors[exitcode];
+      error =
+        errors[exitcode] ||
+        `FIXER: An unknown error occurred with exit code ${exitcode}.`;
       if (fixed.length > 0) {
         error += '\n' + fixed + '\n';
       }
@@ -275,6 +294,29 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   }
 
   return result;
+};
+
+/**
+ * Check if the fixer output represents successfully fixed code
+ *
+ * It checks if the output is valid by ensuring:
+ * - it's length is greater than 0; AND
+ * - is different to the input file text; AND
+ * - it doesn't start with a newline (EOL) character (all stdout errors start with a newline).
+ *
+ * @param {string} fileText The original file text
+ * @param {string} stdout The raw stdout (for EOL checking)
+ * @returns {boolean} boolean indicating if fixes were successfully applied
+ */
+const hasValidFixedOutput = (
+  stdout: string,
+  originalFileText: string,
+): boolean => {
+  return (
+    stdout.length > 0 &&
+    stdout !== originalFileText &&
+    !stdout.startsWith(getEOL())
+  );
 };
 
 /**
