@@ -137,6 +137,7 @@ Passes additional arguments to `phpcbf` runner.
 > - `--error-severity` (0-10)
 > - `--warning-severity` (0-10)
 > - `--ignore-annotations` (just a boolean flag.)
+> - `--exclude` (a comma-separated list of sniffs to exclude.)
 >
 > Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
 
@@ -174,6 +175,7 @@ Passes additional arguments to `phpcs` runner.
 > - `--error-severity` (0-10)
 > - `--warning-severity` (0-10)
 > - `--ignore-annotations` (just a boolean flag.)
+> - `--exclude` (a comma-separated list of sniffs to exclude.)
 >
 > Any other arguments passed or values will be ignored. This is to prevent malicious code from being executed.
 
