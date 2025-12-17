@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.22] - 2025-12-17
+
+### What's Changed
+* Remove the commitizen package and update readme by @valeryan in https://github.com/valeryan/vscode-phpsab/pull/179
+* feat: ability to opt out of displaying the auto fixability icons by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/185
+* fix: add logging for auto ruleset search and fallback scenarios by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/186
+* fix: catch error messages from fixer stdout by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/188
+* Feat: Add support for the `--exclude` additional argument by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/192
+* Add PHPCS version compatibility checks and warn on 4.x usage by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/193
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.21...v0.0.22
+
+
 ## [0.0.21] - 2025-12-01
 
 ### What's Changed
