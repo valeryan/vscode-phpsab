@@ -68,6 +68,11 @@ class AdditionalArguments {
    * @property {number} `--warning-severity` Optional warning severity level (0-10) to filter warning messages.
    */
   '--warning-severity'?: number;
+
+  /**
+   * @property {string} `--exclude` Optional comma-separated list of sniffs to exclude.
+   */
+  '--exclude'?: string;
 }
 
 /**

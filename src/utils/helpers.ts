@@ -1,3 +1,4 @@
+import os from 'node:os';
 import { ExtensionContext, extensions, window } from 'vscode';
 import type {
   PHPCSArgumentKey,
@@ -261,6 +262,17 @@ const validateKeyValueArgument = (
       }
       break;
 
+    case '--exclude':
+      // Exclude is a comma-separated list of sniffs.
+
+      // Sniffs can contain letters, numbers, underscores, dots, and commas.
+      if (!/^[a-zA-Z0-9_\.,]+$/.test(value)) {
+        errors.push(
+          `Invalid argument value: "${value}". This must be a comma-separated list of sniffs containing only letters, numbers, underscores and dots.`,
+        );
+      }
+      break;
+
     default:
       errors.push(`Invalid argument value: "${value}"`);
   }
@@ -319,4 +331,12 @@ export const constructCommandString = (command: string, args: string[]) => {
 
   // Concatenate the command and the arguments together delimited by spaces.
   return `${command} ${args.join(' ')}`;
+};
+
+/**
+ * Get the operating system-specific end-of-line marker.
+ * @returns {string} The operating system-specific end-of-line marker. `\n` on POSIX and `\r\n` on Windows.
+ */
+export const getEOL = (): string => {
+  return os.EOL;
 };
