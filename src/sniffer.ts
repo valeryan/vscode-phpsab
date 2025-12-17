@@ -19,7 +19,6 @@ import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
-import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 import {
@@ -102,10 +101,6 @@ const validate = async (document: TextDocument) => {
   );
 
   let fileText = document.getText();
-
-  if (settings.phpExecutablePath != '') {
-    addPhpToEnvPath(settings.phpExecutablePath);
-  }
 
   const options: SpawnOptions = {
     cwd:

@@ -5,7 +5,11 @@ import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
-import { joinPaths, normalizePath } from './resolvers/path-resolver-utils';
+import {
+  addPhpToEnvPath,
+  joinPaths,
+  normalizePath,
+} from './resolvers/path-resolver-utils';
 import { getExtensionInfo } from './utils/helpers';
 
 /**
@@ -216,6 +220,10 @@ export const loadSettings = async () => {
     debug: globalConfig.get('debug', false),
     phpExecutablePath: await resolvePhpExecutablePath(globalConfig, PHPconfig),
   };
+
+  if (settings.phpExecutablePath != '') {
+    addPhpToEnvPath(settings.phpExecutablePath);
+  }
 
   logger.setDebugMode(settings.debug);
   logger.debug('CONFIGURATION', settings);
