@@ -13,6 +13,8 @@ This extension is available on both [VS Code Marketplace](https://marketplace.vi
 This extension supports the [latest stable version of PHPCS 3.x](https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/). If you are using an older version of PHPCS, please upgrade to the latest 3.x version.
 
 > **NOTE:** PHPCS 4.x is not currently supported.
+>
+> As of v0.0.22, the extension will detect if PHPCS/PHPCBF version 4.x is being used and will display a warning message to the user. Some features may not work as expected when using version 4.x. Please consider downgrading to the latest 3.x version.
 
 ## Maintenance Status
 

@@ -13,7 +13,6 @@ import {
 import { ConsoleError } from './interfaces/console-error';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
-import { addPhpToEnvPath } from './resolvers/path-resolver-utils';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
 import {
@@ -76,6 +75,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
+
   if (document.languageId !== 'php') {
     return '';
   }
@@ -112,10 +112,6 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   );
 
   let fileText = document.getText();
-
-  if (settings.phpExecutablePath != '') {
-    addPhpToEnvPath(settings.phpExecutablePath);
-  }
 
   const options: SpawnSyncOptions = {
     cwd:
