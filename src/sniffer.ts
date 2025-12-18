@@ -64,9 +64,15 @@ const validate = async (document: TextDocument) => {
 
   const settings = await getSettings();
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
-  if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
+
+  if (
+    document.languageId !== 'php' ||
+    resourceConf.snifferEnable === false ||
+    document.uri.scheme !== 'file'
+  ) {
     return;
   }
+
   logger.startTimer('Sniffer');
 
   const oldRunner = runnerCancellations.get(document.uri);
