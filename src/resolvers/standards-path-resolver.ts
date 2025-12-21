@@ -116,12 +116,11 @@ export const createStandardsPathResolver = (
 
       // If no ruleset was found, show a warning message to the user and log it.
       if (!resolvedPath) {
-        let warningTxt =
-          'Failed to automatically find a coding standard ruleset. ';
+        let warningTxt = 'Failed to automatically find a standard ruleset.\n';
 
         warningTxt += configured
           ? `Using the "phpsab.standard" setting instead: "${configured}"`
-          : 'Using PHPCS default standard instead (the "phpsab.standard" setting is not set).';
+          : 'Using a ruleset that PHPCS itself found automatically or the default standard instead (the "phpsab.standard" setting is not set).';
 
         logger.warn(warningTxt);
 

@@ -327,7 +327,7 @@ const checkPhpcsVersionCompatibility = async (
       (phpcbfVersion && phpcbfVersion.startsWith('4.'))
     ) {
       const version = phpcsVersion || phpcbfVersion;
-      warningMsg = `Version ${version} detected in "${resourceRoot}". Version 4.x is not supported yet. Some features may not work as expected. Please consider downgrading to the latest 3.x version. `;
+      warningMsg = `Version ${version} detected in "${resourceRoot}". Version 4.x is not supported yet. Some features may not work as expected. Please consider downgrading to the latest 3.x version.`;
     }
 
     // Only show warning if there's a message to display.
