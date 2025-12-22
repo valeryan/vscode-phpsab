@@ -1,5 +1,5 @@
 import os from 'node:os';
-import { ExtensionContext, extensions, window } from 'vscode';
+import { ExtensionContext, extensions, TextDocument, window } from 'vscode';
 import type {
   PHPCSArgumentKey,
   PHPCSInternalArgumentKey,
@@ -11,6 +11,7 @@ import {
   validInternalArguments,
 } from '../interfaces/arguments';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
+import { ResourceSettings } from '../interfaces/resource-settings';
 import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
 
@@ -339,4 +340,33 @@ export const constructCommandString = (command: string, args: string[]) => {
  */
 export const getEOL = (): string => {
   return os.EOL;
+};
+
+/**
+ * Determines if a document should be processed.
+ *
+ * @param document - The document to check.
+ * @param {string} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @returns `true` if the document should be processed, `false` otherwise.
+ */
+export const shouldProcess = (
+  document: TextDocument,
+  resourceConf: ResourceSettings,
+  toolType: string,
+): boolean => {
+  let isEnabled = false;
+  if (toolType === 'sniffer') {
+    isEnabled = resourceConf.snifferEnable;
+  } else if (toolType === 'fixer') {
+    isEnabled = resourceConf.fixerEnable;
+  }
+
+  return (
+    // Is it a PHP document?
+    document.languageId === 'php' &&
+    // Is the document scheme a file?
+    document.uri.scheme === 'file' &&
+    // Is the tool enabled in settings?
+    isEnabled
+  );
 };

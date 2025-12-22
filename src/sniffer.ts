@@ -26,7 +26,12 @@ import {
   getPhpNotFoundRegex,
 } from './utils/error-handling/error-helpers';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { constructCommandString, getArgs, parseArgs } from './utils/helpers';
+import {
+  constructCommandString,
+  getArgs,
+  parseArgs,
+  shouldProcess,
+} from './utils/helpers';
 
 const enum runConfig {
   save = 'onSave',
@@ -65,11 +70,8 @@ const validate = async (document: TextDocument) => {
   const settings = await getSettings();
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
 
-  if (
-    document.languageId !== 'php' ||
-    resourceConf.snifferEnable === false ||
-    document.uri.scheme !== 'file'
-  ) {
+  // If the document should not be processed, return early.
+  if (shouldProcess(document, resourceConf, 'sniffer') === false) {
     return;
   }
 
