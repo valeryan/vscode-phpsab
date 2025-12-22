@@ -1,3 +1,4 @@
+import { minimatch } from 'minimatch';
 import os from 'node:os';
 import { ExtensionContext, extensions, TextDocument, window } from 'vscode';
 import type {
@@ -367,6 +368,40 @@ export const shouldProcess = (
     // Is the document scheme a file?
     document.uri.scheme === 'file' &&
     // Is the tool enabled in settings?
-    isEnabled
+    isEnabled &&
+    // Check if file doesn't match any exclude glob patterns
+    !matchesExcludePatterns(
+      document,
+      resourceConf.excludeGlobs,
+      resourceConf.workspaceRoot,
+    )
   );
+};
+
+/**
+ * Check if a document matches any of the provided glob patterns.
+ * @param {TextDocument} document The document to check.
+ * @param {string[]} patterns Array of glob patterns to match against.
+ * @param {string | null} workspaceRoot The workspace root path for relative pattern matching.
+ * @returns {boolean} `true` if the document matches any pattern, `false` otherwise.
+ */
+const matchesExcludePatterns = (
+  document: TextDocument,
+  patterns: string[],
+  workspaceRoot: string | null,
+): boolean => {
+  if (!patterns || patterns.length === 0) {
+    return false;
+  }
+
+  for (const pattern of patterns) {
+    if (minimatch(document.uri.fsPath, pattern, { dot: true })) {
+      logger.info(
+        `Document "${document.fileName}" matches exclude pattern: "${pattern}", and will be ignored.`,
+      );
+      return true;
+    }
+  }
+
+  return false;
 };
