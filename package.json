@@ -149,6 +149,15 @@
           "type": "string",
           "default": "null",
           "markdownDescription": "(Optional) The path to the PHP executable. This setting will only be used if the PHP executable from VSCode's built-in PHP extension setting `php.validate.executablePath` or Devsense's PHP Tools extension `php.executablePath` are not set."
+        },
+        "phpsab.excludeGlobs": {
+          "scope": "resource",
+          "type": "array",
+          "default": [
+            "**/vendor/**",
+            "**/node_modules/**"
+          ],
+          "description": "Glob patterns to exclude PHP files from being processed."
         }
       }
     }
