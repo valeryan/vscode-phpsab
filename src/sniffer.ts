@@ -164,10 +164,6 @@ const validate = async (document: TextDocument) => {
     sniffer.on('close', (exitcode) => {
       logger.info(`SNIFFER EXIT CODE: ${exitcode}`);
 
-      if (stdout) {
-        logger.info(`SNIFFER STDOUT: ${stdout.trim()}`);
-      }
-
       if (stderr) {
         logger.error(`SNIFFER STDERR: ${stderr.trim()}`);
       }
