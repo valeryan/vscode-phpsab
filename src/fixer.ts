@@ -25,6 +25,7 @@ import {
   getArgs,
   getEOL,
   parseArgs,
+  shouldProcess,
 } from './utils/helpers';
 
 let settingsCache: Settings;
@@ -76,16 +77,19 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
 
-  if (document.languageId !== 'php') {
+  // If the document should not be processed, return early.
+  if (shouldProcess(document, resourceConf, 'fixer') === false) {
+    // Only show information dialog if fixer is disabled.
+    // (We don't want to spam users if it's not a PHP file or if it's excluded via glob patterns.)
+    if (resourceConf.fixerEnable === false) {
+      window.showInformationMessage(
+        'Fixer is disabled for this workspace or PHPCBF was not found for this workspace.',
+      );
+    }
+
     return '';
   }
 
-  if (resourceConf.fixerEnable === false) {
-    window.showInformationMessage(
-      'Fixer is disabled for this workspace or PHPCBF was not found for this workspace.',
-    );
-    return '';
-  }
   logger.startTimer('Fixer');
 
   // setup and spawn fixer process

@@ -26,7 +26,12 @@ import {
   getPhpNotFoundRegex,
 } from './utils/error-handling/error-helpers';
 import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
-import { constructCommandString, getArgs, parseArgs } from './utils/helpers';
+import {
+  constructCommandString,
+  getArgs,
+  parseArgs,
+  shouldProcess,
+} from './utils/helpers';
 
 const enum runConfig {
   save = 'onSave',
@@ -64,9 +69,12 @@ const validate = async (document: TextDocument) => {
 
   const settings = await getSettings();
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
-  if (document.languageId !== 'php' || resourceConf.snifferEnable === false) {
+
+  // If the document should not be processed, return early.
+  if (shouldProcess(document, resourceConf, 'sniffer') === false) {
     return;
   }
+
   logger.startTimer('Sniffer');
 
   const oldRunner = runnerCancellations.get(document.uri);
@@ -157,10 +165,6 @@ const validate = async (document: TextDocument) => {
   const done = new Promise<void>((resolve, reject) => {
     sniffer.on('close', (exitcode) => {
       logger.info(`SNIFFER EXIT CODE: ${exitcode}`);
-
-      if (stdout) {
-        logger.info(`SNIFFER STDOUT: ${stdout.trim()}`);
-      }
 
       if (stderr) {
         logger.error(`SNIFFER STDERR: ${stderr.trim()}`);

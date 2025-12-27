@@ -10,4 +10,5 @@ export interface ResourceSettings {
   standard: string | null;
   autoRulesetSearch: boolean;
   allowedAutoRulesets: string[];
+  excludeGlobs: string[];
 }
