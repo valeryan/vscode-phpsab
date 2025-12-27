@@ -238,13 +238,13 @@ C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\ph
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
-This setting controls the coding standard used by `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
+This setting controls the coding standard used by `phpcs` and `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
 
 > **NOTE:** While using composer dependency manager over global installation make sure you use the phpcbf commands under your project scope !
 
 The following values are applicable:
 
-1. This setting can be set to `null`, which is the default behavior and uses the `default_standard` when set in the `phpcs` configuration or fallback to the `Pear` coding standard.
+1. This setting can be set to `null`, which is the default behavior and uses the `default_standard` when set in the `phpcs` configuration or fallback to the `Pear` coding standard. `phpcs` may find a ruleset through it's own auto search, in which case that ruleset will be used instead.
 
     ```json
     {

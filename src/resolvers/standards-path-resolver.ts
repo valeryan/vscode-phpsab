@@ -22,6 +22,7 @@ export const createStandardsPathResolver = (
     extension,
     pathSeparator,
     resolve: async () => {
+      let errors: any = {};
       let configured = normalizePath(config.standard ?? '');
 
       if (!isStandardValid(configured, config.allowedAutoRulesets)) {
@@ -43,65 +44,71 @@ export const createStandardsPathResolver = (
       let resolvedPath: string | null = null;
       const resource = document.uri;
       const folder = workspace.getWorkspaceFolder(resource);
+
+      // If no workspace folder found, set error and skip auto search
       if (!folder) {
-        return '';
+        errors['NO_WORKSPACE'] = {
+          errorCodeDescription: 'No workspace folder found for the document.',
+          paths: [resource.fsPath],
+        };
       }
+      // Otherwise, perform auto ruleset search.
+      else {
+        let workspaceRoot = folder.uri.fsPath + pathSeparator;
+        let localPath = resource.fsPath.replace(workspaceRoot, '');
+        let paths = localPath
+          .split(pathSeparator)
+          .filter((path) => path.includes('.php') !== true);
 
-      let workspaceRoot = folder.uri.fsPath + pathSeparator;
-      let localPath = resource.fsPath.replace(workspaceRoot, '');
-      let paths = localPath
-        .split(pathSeparator)
-        .filter((path) => path.includes('.php') !== true);
+        let searchPaths = [];
 
-      let searchPaths = [];
+        // create search paths based on file location
+        for (let i = 0, len = paths.length; i < len; i++) {
+          searchPaths.push(
+            workspaceRoot + paths.join(pathSeparator) + pathSeparator,
+          );
+          paths.pop();
+        }
+        searchPaths.push(workspaceRoot);
 
-      // create search paths based on file location
-      for (let i = 0, len = paths.length; i < len; i++) {
-        searchPaths.push(
-          workspaceRoot + paths.join(pathSeparator) + pathSeparator,
-        );
-        paths.pop();
-      }
-      searchPaths.push(workspaceRoot);
+        // check each search path for an allowed ruleset
+        let allowed = config.allowedAutoRulesets;
 
-      // check each search path for an allowed ruleset
-      let allowed = config.allowedAutoRulesets;
+        let files: string[] = [];
 
-      let files: string[] = [];
-
-      searchPaths.map((path) => {
-        allowed.forEach((file) => {
-          files.push(path + file);
+        searchPaths.map((path) => {
+          allowed.forEach((file) => {
+            files.push(path + file);
+          });
         });
-      });
-      logger.debug('Standards Search paths: ', searchPaths);
 
-      let errors: any = {};
+        logger.debug('Standards Search paths: ', searchPaths);
 
-      for (let i = 0, len = files.length; i < len; i++) {
-        let c = files[i];
-        try {
-          await fs.access(c, fs.constants.R_OK | fs.constants.W_OK);
+        for (let i = 0, len = files.length; i < len; i++) {
+          let c = files[i];
+          try {
+            await fs.access(c, fs.constants.R_OK | fs.constants.W_OK);
 
-          logger.info(`Using the found coding standard ruleset: "${c}"`);
+            logger.info(`Using the found coding standard ruleset: "${c}"`);
 
-          return (resolvedPath = c);
-        } catch (err) {
-          const error: ConsoleError = err as ConsoleError;
-          const errorCode = error.code ?? 'UNKNOWN';
+            return (resolvedPath = c);
+          } catch (err) {
+            const error: ConsoleError = err as ConsoleError;
+            const errorCode = error.code ?? 'UNKNOWN';
 
-          // If the error code key does not exist yet,
-          // create it with an empty array as value.
-          if (!errors[errorCode]) {
-            errors[errorCode] = {
-              errorCodeDescription: getErrorCodeDescription(errorCode),
-              paths: [],
-            };
+            // If the error code key does not exist yet,
+            // create it with an empty array as value.
+            if (!errors[errorCode]) {
+              errors[errorCode] = {
+                errorCodeDescription: getErrorCodeDescription(errorCode),
+                paths: [],
+              };
+            }
+            // Store the path.
+            errors[errorCode].paths.push(error.path);
+
+            continue;
           }
-          // Store the path.
-          errors[errorCode].paths.push(error.path);
-
-          continue;
         }
       }
 
@@ -109,12 +116,11 @@ export const createStandardsPathResolver = (
 
       // If no ruleset was found, show a warning message to the user and log it.
       if (!resolvedPath) {
-        let warningTxt =
-          'Failed to automatically find a coding standard ruleset. ';
+        let warningTxt = 'Failed to automatically find a standard ruleset.\n';
 
         warningTxt += configured
           ? `Using the "phpsab.standard" setting instead: "${configured}"`
-          : 'Using PHPCS default standard instead (the "phpsab.standard" setting is not set).';
+          : 'Using a ruleset that PHPCS itself found automatically or the default standard instead (the "phpsab.standard" setting is not set).';
 
         logger.warn(warningTxt);
 
