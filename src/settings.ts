@@ -261,6 +261,10 @@ const getSettings = async (
     ]),
     snifferEnable: config.get('snifferEnable', true),
     snifferArguments: config.get('snifferArguments', []),
+    excludeGlobs: config.get('excludeGlobs', [
+      '**/vendor/**',
+      '**/node_modules/**',
+    ]),
   };
 
   settings = await resolveCBFExecutablePath(settings);
