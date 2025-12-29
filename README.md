@@ -396,6 +396,17 @@ The order of precedence for finding PHP path in the settings is as follows:
 2. Devsense's "PHP Tools" extension setting `php.executablePath`.
 3. This extension's `phpsab.phpExecutablePath` setting.
 
+### **phpsab.excludeGlobs**
+
+[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [
+"\*\*/vendor/\*\*",
+"\*\*/node_modules/\*\*"
+] ]
+
+This setting allows you to specify an array of glob patterns to exclude PHP files from being processed by the Sniffer and Fixer. By default, the `vendor` and `node_modules` directories are excluded.
+
+This is useful for excluding third-party libraries, dependencies, and intellisense stub files that you do not want to be checked or modified by phpcs/phpcbf.
+
 ## Diagnosing common errors
 
 ### **phpsab.debug**
