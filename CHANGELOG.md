@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.23] - 2025-12-29
+
+### What's Changed
+* fix: prevent running on intellisense stub files by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/194
+* fix: add proper standard error logging upon no workspace for the document by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/195
+* docs: `excludeGlobs` documentation by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/196
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.22...v0.0.23
+
+
 ## [0.0.22] - 2025-12-17
 
 ### What's Changed
