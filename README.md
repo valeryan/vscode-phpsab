@@ -418,6 +418,8 @@ Good Example:
 }
 ```
 
+> **NOTE:** Changing this setting or the external 3rd party settings after the extension has activated requires restarting VScode. It will not currently update the `php` executable in the environment `PATH` automatically until after a VScode restart.
+
 ### **phpsab.excludeGlobs**
 
 [ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [
