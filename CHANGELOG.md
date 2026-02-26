@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.24] - 2026-02-26
+
+### What's Changed
+* chore(deps): bump lodash from 4.17.21 to 4.17.23 by @dependabot[bot] in https://github.com/valeryan/vscode-phpsab/pull/197
+* Security - bump dependency versions from dependabot by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/204
+* docs: update PHP executable path docs by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/203
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.23...v0.0.24
+
+
 ## [0.0.23] - 2025-12-29
 
 ### What's Changed
