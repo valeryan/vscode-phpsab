@@ -174,8 +174,8 @@
     "ts-watch": "tsc --watch -p ./"
   },
   "dependencies": {
-    "lodash": "^4.17.21",
-    "minimatch": "^10.1.1"
+    "lodash": "^4.17.23",
+    "minimatch": "^10.2.3"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.21",
