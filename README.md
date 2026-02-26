@@ -388,13 +388,37 @@ This setting allows you to override the path to your composer.json file when it 
 
 [ *Scope:* All | Optional | *Type:* string | *Default:* null ]
 
-This setting controls the path for the `php` executable. If you don't have PHP in your system `PATH` and the extension errors that it cannot find PHP, then you may specify the absolute path to the `php` executable. This setting will only be used if PHP isn't set in VSCode's built-in PHP setting `php.validate.executablePath` or Devsense's "PHP Tools" extension setting `php.executablePath`.
+This setting controls the path for the `php` executable. If you don't have PHP in your system `PATH` and the extension errors that it cannot find PHP, then you may specify the absolute path to the directory where `php` executable can be found. This setting will only be used if PHP isn't set in VSCode's built-in PHP setting `php.validate.executablePath` or Devsense's "PHP Tools" extension setting `php.executablePath`.
 
 The order of precedence for finding PHP path in the settings is as follows:
 
 1. VSCode's built-in "PHP Language Features" extension setting `php.validate.executablePath`.
 2. Devsense's "PHP Tools" extension setting `php.executablePath`.
 3. This extension's `phpsab.phpExecutablePath` setting.
+
+The path should lead to the directory where the executable can be found, abd shouldn't include the actual executable itself.
+
+On Windows, if it detects the path has `php.exe` at the end, then it will be removed from the path. On other systems, it won't detect or remove anything.
+
+Bad Example:
+
+Where `php` is the executable.
+
+```json
+{
+    "phpsab.phpExecutablePath": "path/to/executable/directory/php"
+}
+```
+
+Good Example:
+
+```json
+{
+    "phpsab.phpExecutablePath": "path/to/executable/directory"
+}
+```
+
+> **NOTE:** Changing this setting or the external 3rd party settings after the extension has activated requires restarting VScode. It will not currently update the `php` executable in the environment `PATH` automatically until after a VScode restart.
 
 ### **phpsab.excludeGlobs**
 
