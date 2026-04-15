@@ -1,7 +1,8 @@
 # PHP Sniffer & Beautifier for VS Code
 
-![Current Version](https://img.shields.io/visual-studio-marketplace/v/ValeryanM.vscode-phpsab)
-![Installs](https://img.shields.io/visual-studio-marketplace/i/ValeryanM.vscode-phpsab)
+![Current Version](https://img.shields.io/open-vsx/v/ValeryanM/vscode-phpsab?label=version)
+![VS Marketplace Installs](https://img.shields.io/badge/VS_Marketplace_Installs-~300k-brightgreen)
+![Open VSX Registry Installs](https://img.shields.io/open-vsx/dt/ValeryanM/vscode-phpsab?label=VSX%20Installs)
 ![GitHub issues](https://img.shields.io/github/issues-raw/valeryan/vscode-phpsab)
 
 This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) provides an interface to [phpcs & phpcbf](https://github.com/PHPCSStandards/PHP_CodeSniffer). It will be used with files that have the “PHP” language mode. This extension is designed to use auto configuration search mechanism to apply rulesets to files within a workspace. This is useful for developers who work with many different projects that have different coding standards.
