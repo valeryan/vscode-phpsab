@@ -26,6 +26,8 @@
     "php",
     "phpcs",
     "phpcbf",
+    "phpcs4",
+    "php_codesniffer",
     "linter",
     "fixer"
   ],

@@ -156,11 +156,10 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   logger.info(`FIXER EXIT CODE: ${exitcode}`);
 
-  // We only log STDOUT if it starts with ERROR (3.x versions of phpcbf output "ERROR"
-  // messages to stdout), as otherwise it could be the whole file contents,
-  // which clutters the log when debugging.
-  //
-  // This will be removed once we require phpcbf 4.x, which outputs errors to STDERR.
+  // PHPCS 3.x's phpcbf writes "ERROR" status lines to stdout mixed with the
+  // fixed file content; PHPCS 4.x writes errors to stderr instead. Log stdout
+  // only when it looks like a 3.x error line to avoid dumping fixed file
+  // content into the output channel.
   if (stdout && (stdout.startsWith('ERROR') || stdout.startsWith(getEOL()))) {
     logger.info(`FIXER STDOUT: ${stdout.trim()}`);
   }
@@ -197,11 +196,22 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   }
 
   /**
-   * fixer exit codes:
-   * Exit code 0 is used to indicate that no fixable errors were found, so nothing was fixed
-   * Exit code 1 is used to indicate that all fixable errors were fixed correctly
-   * Exit code 2 is used to indicate that FIXER failed to fix some of the fixable errors it found
-   * Exit code 3 is used for general script execution errors
+   * PHPCBF exit codes:
+   *
+   * PHP_CodeSniffer 3.x:
+   * 0: no fixable errors were found, so nothing was fixed
+   * 1: all fixable errors were fixed correctly
+   * 2: PHPCBF failed to fix some of the fixable errors it found
+   * 3: processing / script execution error
+   *
+   * PHP_CodeSniffer 4.x:
+   * 0: clean / auto-fixed with no remaining issues
+   * 1: issues found/remaining, auto-fixable
+   * 2: issues found/remaining, non-auto-fixable
+   * 4: failure to fix some files / fixer conflict (phpcbf only)
+   * 5: 1 + 4 (phpcbf only)
+   * 7: 1 + 2 + 4 (phpcbf only)
+   * 16, 64: processing / requirements errors
    */
   switch (exitcode) {
     case null: {
@@ -243,6 +253,25 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     case 2: {
       // If stdout has valid fixed output (and doesn't contain error messages),
       // then this exit code indicates that some fixable errors failed to be fixed.
+      if (hasValidFixedOutput(stdout, fileText)) {
+        result = fixed;
+        message = 'FIXER failed to fix some of the fixable errors.';
+      }
+      // If Node errors.
+      else if (nodeError) {
+        // Destructure the returned object and assign to variables.
+        ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
+        error += errorMsg;
+      }
+
+      break;
+    }
+    // PHPCS 4.x: fixer conflict (4) and combinations 5=1+4, 7=1+2+4.
+    case 4:
+    case 5:
+    case 7: {
+      // If stdout has valid fixed output (and doesn't contain error messages),
+      // then apply it even though some fixable errors failed to be fixed.
       if (hasValidFixedOutput(stdout, fileText)) {
         result = fixed;
         message = 'FIXER failed to fix some of the fixable errors.';
