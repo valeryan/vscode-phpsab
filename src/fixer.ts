@@ -1,3 +1,4 @@
+import crossSpawn from 'cross-spawn';
 import { spawnSync, SpawnSyncOptions } from 'node:child_process';
 import {
   ConfigurationChangeEvent,
@@ -11,10 +12,13 @@ import {
   workspace,
 } from 'vscode';
 import { ConsoleError } from './interfaces/console-error';
+import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
+import { toContainerPath } from './resolvers/docker-path-resolver';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
+import { remapStandardForContainer } from './utils/docker-standard';
 import {
   determineNodeError,
   getPhpNotFoundRegex,
@@ -30,10 +34,14 @@ import {
 
 let settingsCache: Settings;
 
-const getSettings = async () => {
-  if (!settingsCache) {
-    settingsCache = await loadSettings();
-  }
+type FixerCommand = {
+  commandPath: string;
+  commandArgs: string[];
+  command: string;
+  runThroughShell: boolean;
+};
+
+const getSettings = () => {
   return settingsCache;
 };
 
@@ -72,7 +80,7 @@ const isFullDocumentRange = (range: Range, document: TextDocument) =>
  * @param document
  */
 const format = async (document: TextDocument, fullDocument: boolean) => {
-  const settings = await getSettings();
+  const settings = getSettings();
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
@@ -108,14 +116,32 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     return '';
   }
 
+  if (resourceConf.dockerEnabled) {
+    standard = await remapStandardForContainer(standard, resourceConf);
+  }
+
+  // Path passed to phpcbf as --stdin-path. The fixer always uses stdin mode
+  // because file mode does not return fixed content on stdout.
+  const filePath = resourceConf.dockerEnabled
+    ? toContainerPath(
+        document.fileName,
+        resourceConf.workspaceRoot ?? '',
+        resourceConf.dockerWorkspaceRoot,
+      )
+    : document.fileName;
+
   const lintArgs = getArgs(
-    document.fileName,
+    filePath,
     standard,
     resourceConf.fixerArguments,
     'fixer',
+    false,
   );
 
   let fileText = document.getText();
+
+  const { commandPath, commandArgs, command, runThroughShell } =
+    buildFixerCommand(resourceConf, lintArgs);
 
   const options: SpawnSyncOptions = {
     cwd:
@@ -128,17 +154,17 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     // Required to prevent EINVAL errors when spawning .bat files on Windows.
     // https://github.com/valeryan/vscode-phpsab/issues/128
     // https://github.com/nodejs/node/issues/52554
-    shell: true,
+    // Local execution keeps shell mode for .bat/wrapper compatibility.
+    // Docker execution uses cross-spawn without shell to avoid the extra
+    // cmd.exe layer on Windows.
+    shell: runThroughShell,
   };
-
-  const CBFExecutable = resourceConf.executablePathCBF;
-  const parsedArgs = parseArgs(lintArgs);
-
-  const command = constructCommandString(CBFExecutable, parsedArgs);
 
   logger.info(`FIXER COMMAND: ${command}`);
 
-  const fixer = spawnSync(command, options);
+  const fixer = runThroughShell
+    ? spawnSync(command, options)
+    : crossSpawn.sync(commandPath, commandArgs, options);
 
   const exitcode = fixer.status;
   const stdout = fixer.stdout.toString();
@@ -146,8 +172,8 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   // Set the original command information (not parsed) for Windows ENOENT error handling
   const originalCommand = {
-    commandPath: CBFExecutable,
-    args: lintArgs,
+    commandPath,
+    args: commandArgs,
   };
 
   const nodeError =
@@ -324,6 +350,48 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   return result;
 };
+
+/**
+ * Build the spawn command and the original (pre-quoting) command/args used
+ * for Windows ENOENT error reporting. Mirrors `buildSnifferCommand` in
+ * `sniffer.ts`.
+ */
+const buildFixerCommand = (
+  resourceConf: ResourceSettings,
+  lintArgs: string[],
+): FixerCommand => {
+  if (resourceConf.dockerEnabled) {
+    const commandArgs = [
+      'exec',
+      '-i',
+      resourceConf.dockerContainer,
+      resourceConf.dockerExecutablePathCBF,
+      ...lintArgs,
+    ];
+    return {
+      commandPath: resourceConf.dockerContainerExec,
+      commandArgs,
+      command: formatCommandForLog(
+        resourceConf.dockerContainerExec,
+        commandArgs,
+      ),
+      runThroughShell: false,
+    };
+  }
+
+  return {
+    commandPath: resourceConf.executablePathCBF,
+    commandArgs: lintArgs,
+    command: constructCommandString(
+      resourceConf.executablePathCBF,
+      parseArgs(lintArgs),
+    ),
+    runThroughShell: true,
+  };
+};
+
+const formatCommandForLog = (command: string, args: string[]): string =>
+  [command, ...args].join(' ');
 
 /**
  * Check if the fixer output represents successfully fixed code

@@ -1,8 +1,8 @@
 {
   "name": "vscode-phpsab",
   "displayName": "PHP Sniffer & Beautifier",
-  "description": "PHP Sniffer & Beautifier for Visual Studio Code",
-  "version": "0.0.25",
+  "description": "PHP Sniffer & Beautifier for Visual Studio Code, with optional Docker support",
+  "version": "0.1.0",
   "icon": "php_logo.png",
   "publisher": "valeryanm",
   "homepage": "https://github.com/valeryan/vscode-phpsab",
@@ -29,7 +29,8 @@
     "phpcs4",
     "php_codesniffer",
     "linter",
-    "fixer"
+    "fixer",
+    "docker"
   ],
   "activationEvents": [
     "onLanguage:php"
@@ -160,6 +161,48 @@
             "**/node_modules/**"
           ],
           "description": "Glob patterns to exclude PHP files from being processed."
+        },
+        "phpsab.dockerEnabled": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "description": "Run phpcs and phpcbf inside a Docker container instead of locally. When false, all other phpsab.docker* settings are ignored."
+        },
+        "phpsab.dockerContainer": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "description": "Name or ID of the running container that holds phpcs/phpcbf. Required when dockerEnabled is true."
+        },
+        "phpsab.dockerWorkspaceRoot": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "description": "Absolute path inside the container that corresponds to the host workspace root. Required when dockerEnabled is true."
+        },
+        "phpsab.dockerExecutablePathCS": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional. Absolute path to `phpcs` inside the container. If empty, the value of `phpsab.executablePathCS` is rewritten to a container path using `phpsab.dockerWorkspaceRoot`."
+        },
+        "phpsab.dockerExecutablePathCBF": {
+          "scope": "resource",
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional. Absolute path to `phpcbf` inside the container. If empty, the value of `phpsab.executablePathCBF` is rewritten to a container path using `phpsab.dockerWorkspaceRoot`."
+        },
+        "phpsab.dockerContainerExec": {
+          "scope": "resource",
+          "type": "string",
+          "default": "docker",
+          "description": "Single executable command used to enter the container (e.g. \"docker\" or \"podman\"). Compound commands such as \"docker compose\" are not supported."
+        },
+        "phpsab.dockerUseFilepath": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Sniffer-only escape hatch: pass the file path to `phpcs` instead of streaming via stdin. Disables linting of unsaved buffers; the fixer always uses stdin mode regardless of this setting."
         }
       }
     }
@@ -176,10 +219,12 @@
     "ts-watch": "tsc --watch -p ./"
   },
   "dependencies": {
+    "cross-spawn": "^7.0.6",
     "lodash": "^4.18.1",
     "minimatch": "^10.2.3"
   },
   "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
     "@types/lodash": "^4.17.21",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22",

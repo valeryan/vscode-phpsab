@@ -5,13 +5,21 @@ import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
+import {
+  isHostPathInsideWorkspace,
+  toContainerPath,
+} from './resolvers/docker-path-resolver';
 import { createPathResolver } from './resolvers/path-resolver';
 import {
   addPhpToEnvPath,
   joinPaths,
   normalizePath,
 } from './resolvers/path-resolver-utils';
-import { getExtensionInfo } from './utils/helpers';
+import {
+  constructCommandString,
+  getExtensionInfo,
+  parseArgs,
+} from './utils/helpers';
 
 /**
  * Check if the editor is in single file mode.
@@ -34,16 +42,65 @@ const resolveRootPath = (resource: Uri) => {
 };
 
 /**
+ * Whether the resource has an explicit container-side phpcbf path the
+ * extension can use directly without resolving anything on the host.
+ */
+const hasExplicitDockerCBF = (settings: ResourceSettings): boolean =>
+  settings.dockerEnabled && settings.dockerExecutablePathCBF.length > 0;
+
+/**
+ * Whether the resource has an explicit container-side phpcs path the
+ * extension can use directly without resolving anything on the host.
+ */
+const hasExplicitDockerCS = (settings: ResourceSettings): boolean =>
+  settings.dockerEnabled && settings.dockerExecutablePathCS.length > 0;
+
+const deriveDockerExecutablePath = (
+  settings: ResourceSettings,
+  hostExecutablePath: string,
+): string => {
+  if (
+    !hostExecutablePath ||
+    !settings.workspaceRoot ||
+    !settings.dockerWorkspaceRoot ||
+    !isHostPathInsideWorkspace(hostExecutablePath, settings.workspaceRoot)
+  ) {
+    return '';
+  }
+
+  return toContainerPath(
+    hostExecutablePath,
+    settings.workspaceRoot,
+    settings.dockerWorkspaceRoot,
+  );
+};
+
+/**
  * Get correct executable path from resolver
  * @param settings
  */
 const resolveCBFExecutablePath = async (
   settings: ResourceSettings,
 ): Promise<ResourceSettings> => {
+  // Docker mode with an explicit container path: don't resolve anything on the host.
+  if (hasExplicitDockerCBF(settings)) {
+    return settings;
+  }
+
   // If no path is set, try and find it via the path resolver.
   if (!settings.executablePathCBF) {
     let executablePathResolver = createPathResolver(settings, 'phpcbf');
-    settings.executablePathCBF = await executablePathResolver.resolve();
+    try {
+      settings.executablePathCBF = await executablePathResolver.resolve();
+    } catch (error) {
+      // In Docker mode without an explicit container path, an unresolved host
+      // path is fatal: we have nothing to remap into the container.
+      if (settings.dockerEnabled) {
+        settings.executablePathCBF = '';
+      } else {
+        throw error;
+      }
+    }
   }
   // If a relative path is set, resolve it against the workspace root.
   else if (
@@ -60,6 +117,15 @@ const resolveCBFExecutablePath = async (
     settings.executablePathCBF = normalizePath(settings.executablePathCBF);
   }
 
+  // In Docker mode without an explicit container path, derive one from the host
+  // path by remapping the workspace root prefix into the container.
+  if (settings.dockerEnabled && !settings.dockerExecutablePathCBF) {
+    settings.dockerExecutablePathCBF = deriveDockerExecutablePath(
+      settings,
+      settings.executablePathCBF,
+    );
+  }
+
   return settings;
 };
 
@@ -70,10 +136,22 @@ const resolveCBFExecutablePath = async (
 const resolveCSExecutablePath = async (
   settings: ResourceSettings,
 ): Promise<ResourceSettings> => {
+  if (hasExplicitDockerCS(settings)) {
+    return settings;
+  }
+
   // If no path is set, try and find it via the path resolver.
   if (!settings.executablePathCS) {
     let executablePathResolver = createPathResolver(settings, 'phpcs');
-    settings.executablePathCS = await executablePathResolver.resolve();
+    try {
+      settings.executablePathCS = await executablePathResolver.resolve();
+    } catch (error) {
+      if (settings.dockerEnabled) {
+        settings.executablePathCS = '';
+      } else {
+        throw error;
+      }
+    }
   }
   // If a relative path is set, resolve it against the workspace root.
   else if (
@@ -88,6 +166,13 @@ const resolveCSExecutablePath = async (
   // Otherwise normalize the absolute path.
   else {
     settings.executablePathCS = normalizePath(settings.executablePathCS);
+  }
+
+  if (settings.dockerEnabled && !settings.dockerExecutablePathCS) {
+    settings.dockerExecutablePathCS = deriveDockerExecutablePath(
+      settings,
+      settings.executablePathCS,
+    );
   }
 
   return settings;
@@ -142,28 +227,165 @@ const executableExist = async (path: string) => {
   }
 };
 
+/**
+ * Probe whether a given path exists as a regular file inside the configured
+ * Docker container by running `<containerExec> exec -i <container> test -f <path>`.
+ *
+ * Returns `true` only when the probe runs and `test -f` succeeds (exit 0).
+ */
+const dockerExecutableExist = (
+  containerPath: string,
+  settings: ResourceSettings,
+): boolean => {
+  if (
+    !containerPath ||
+    !settings.dockerContainer ||
+    !settings.dockerContainerExec
+  ) {
+    return false;
+  }
+
+  const command = constructCommandString(
+    settings.dockerContainerExec,
+    parseArgs([
+      'exec',
+      '-i',
+      settings.dockerContainer,
+      'test',
+      '-f',
+      containerPath,
+    ]),
+  );
+
+  try {
+    const result = spawnSync(command, {
+      cwd: settings.workspaceRoot ?? undefined,
+      env: process.env,
+      encoding: 'utf8',
+      shell: true,
+      timeout: 5000,
+    });
+
+    if (result.error) {
+      logger.debug(
+        `Docker probe for "${containerPath}" failed: ${result.error.message}`,
+      );
+      return false;
+    }
+
+    return result.status === 0;
+  } catch (error) {
+    logger.debug(
+      `Docker probe for "${containerPath}" threw: ${(error as Error).message}`,
+    );
+    return false;
+  }
+};
+
+/**
+ * Make sure the resource has the minimum Docker configuration the rest of
+ * the pipeline relies on. Disables both tools and returns a warning string
+ * (or `''`) on misconfiguration.
+ */
+const validateDockerConfig = (
+  settings: ResourceSettings,
+  resource: string,
+): string => {
+  if (!settings.dockerEnabled) {
+    return '';
+  }
+
+  const missing: string[] = [];
+  if (!settings.workspaceRoot) {
+    missing.push(
+      'a workspace folder (Docker mode is not supported in single-file mode)',
+    );
+  }
+  if (!settings.dockerContainer) {
+    missing.push('"phpsab.dockerContainer"');
+  }
+  if (!settings.dockerWorkspaceRoot) {
+    missing.push('"phpsab.dockerWorkspaceRoot"');
+  }
+  if (!settings.dockerContainerExec) {
+    missing.push('"phpsab.dockerContainerExec"');
+  }
+
+  if (missing.length === 0) {
+    return '';
+  }
+
+  settings.snifferEnable = false;
+  settings.fixerEnable = false;
+  return `Docker mode is enabled for "${resource}" but is missing required settings: ${missing.join(', ')}. Sniffer and Fixer are being disabled for this workspace.`;
+};
+
 const validate = async (
   settings: ResourceSettings,
   resource: string,
 ): Promise<ResourceSettings> => {
-  let msg = '';
-  if (
-    settings.snifferEnable &&
-    !(await executableExist(settings.executablePathCS))
-  ) {
-    msg = `The phpcs executable was not found for ${resource}. Sniffer is being disabled for this workspace.`;
-    settings.snifferEnable = false;
-  }
-  if (
-    settings.fixerEnable &&
-    !(await executableExist(settings.executablePathCBF))
-  ) {
-    msg = `The phpcbf executable was not found for ${resource}. Fixer is being disabled for this workspace.`;
-    settings.fixerEnable = false;
+  const warnings: string[] = [];
+
+  // Docker config sanity check first; if it fails the host checks would be misleading.
+  const dockerConfigWarning = validateDockerConfig(settings, resource);
+  if (dockerConfigWarning) {
+    warnings.push(dockerConfigWarning);
   }
 
-  logger.log(msg);
-  window.showWarningMessage(msg, 'OK');
+  if (settings.dockerEnabled) {
+    if (settings.snifferEnable) {
+      const csPath = settings.dockerExecutablePathCS;
+      if (!csPath) {
+        warnings.push(
+          `Could not determine a phpcs path inside container "${settings.dockerContainer}" for ${resource}. Set "phpsab.dockerExecutablePathCS" or place phpcs under the mounted workspace. Sniffer is being disabled for this workspace.`,
+        );
+        settings.snifferEnable = false;
+      } else if (!dockerExecutableExist(csPath, settings)) {
+        warnings.push(
+          `Failed to verify phpcs in container "${settings.dockerContainer}" at "${csPath}" for ${resource}. Sniffer is being disabled for this workspace.`,
+        );
+        settings.snifferEnable = false;
+      }
+    }
+    if (settings.fixerEnable) {
+      const cbfPath = settings.dockerExecutablePathCBF;
+      if (!cbfPath) {
+        warnings.push(
+          `Could not determine a phpcbf path inside container "${settings.dockerContainer}" for ${resource}. Set "phpsab.dockerExecutablePathCBF" or place phpcbf under the mounted workspace. Fixer is being disabled for this workspace.`,
+        );
+        settings.fixerEnable = false;
+      } else if (!dockerExecutableExist(cbfPath, settings)) {
+        warnings.push(
+          `Failed to verify phpcbf in container "${settings.dockerContainer}" at "${cbfPath}" for ${resource}. Fixer is being disabled for this workspace.`,
+        );
+        settings.fixerEnable = false;
+      }
+    }
+  } else {
+    if (
+      settings.snifferEnable &&
+      !(await executableExist(settings.executablePathCS))
+    ) {
+      warnings.push(
+        `The phpcs executable was not found for ${resource}. Sniffer is being disabled for this workspace.`,
+      );
+      settings.snifferEnable = false;
+    }
+    if (
+      settings.fixerEnable &&
+      !(await executableExist(settings.executablePathCBF))
+    ) {
+      warnings.push(
+        `The phpcbf executable was not found for ${resource}. Fixer is being disabled for this workspace.`,
+      );
+      settings.fixerEnable = false;
+    }
+  }
+
+  for (const msg of warnings) {
+    logger.log(msg);
+    window.showWarningMessage(msg, 'OK');
+  }
 
   return settings;
 };
@@ -265,6 +487,13 @@ const getSettings = async (
       '**/vendor/**',
       '**/node_modules/**',
     ]),
+    dockerEnabled: config.get('dockerEnabled', false),
+    dockerContainer: config.get('dockerContainer', ''),
+    dockerWorkspaceRoot: config.get('dockerWorkspaceRoot', ''),
+    dockerExecutablePathCS: config.get('dockerExecutablePathCS', ''),
+    dockerExecutablePathCBF: config.get('dockerExecutablePathCBF', ''),
+    dockerContainerExec: config.get('dockerContainerExec', 'docker'),
+    dockerUseFilepath: config.get('dockerUseFilepath', false),
   };
 
   settings = await resolveCBFExecutablePath(settings);
@@ -287,17 +516,20 @@ const checkPhpcsVersionCompatibility = async (
     let phpcbfVersion: string | null = null;
     const resourceRoot = path.basename(resourceSettings.workspaceRoot || '');
 
-    const phpcsExecutablePath = resourceSettings.executablePathCS;
-    const phpcbfExecutablePath = resourceSettings.executablePathCBF;
-
     // If sniffer is enabled and PHPCS executable found, check it's version.
-    if (resourceSettings.snifferEnable && phpcsExecutablePath) {
-      phpcsVersion = await getPhpcsVersion(phpcsExecutablePath, 'PHPCS');
+    if (resourceSettings.snifferEnable) {
+      phpcsVersion = await getPhpcsVersionForResource(
+        resourceSettings,
+        'PHPCS',
+      );
     }
 
     // If fixer is enabled and PHPCBF executable found, check it's version.
-    if (resourceSettings.fixerEnable && phpcbfExecutablePath) {
-      phpcbfVersion = await getPhpcsVersion(phpcbfExecutablePath, 'PHPCBF');
+    if (resourceSettings.fixerEnable) {
+      phpcbfVersion = await getPhpcsVersionForResource(
+        resourceSettings,
+        'PHPCBF',
+      );
     }
 
     let warningMsg = '';
@@ -335,6 +567,38 @@ const checkPhpcsVersionCompatibility = async (
 };
 
 /**
+ * Resolve and run `--version` for either tool, host- or container-side
+ * depending on the resource configuration.
+ */
+const getPhpcsVersionForResource = async (
+  resourceSettings: ResourceSettings,
+  executableName: 'PHPCS' | 'PHPCBF',
+): Promise<string | null> => {
+  if (resourceSettings.dockerEnabled) {
+    const containerExecutable =
+      executableName === 'PHPCS'
+        ? resourceSettings.dockerExecutablePathCS
+        : resourceSettings.dockerExecutablePathCBF;
+
+    if (!containerExecutable) {
+      return null;
+    }
+
+    return getDockerPhpcsVersion(
+      resourceSettings,
+      containerExecutable,
+      executableName,
+    );
+  }
+
+  const hostExecutable =
+    executableName === 'PHPCS'
+      ? resourceSettings.executablePathCS
+      : resourceSettings.executablePathCBF;
+  return getPhpcsVersion(hostExecutable, executableName);
+};
+
+/**
  * Get the version of PHPCS or PHPCBF
  * @param {string} executablePath The path to the PHPCS or PHPCBF executable
  * @param {string} executableName The name of the executable (phpcs or phpcbf) for logging
@@ -349,15 +613,52 @@ const getPhpcsVersion = async (
     return null;
   }
 
+  const command = constructCommandString(
+    executablePath,
+    parseArgs(['--version']),
+  );
+  return runVersionProbe(command, executableName);
+};
+
+/**
+ * Run `--version` against an executable inside a Docker container.
+ */
+const getDockerPhpcsVersion = async (
+  resourceSettings: ResourceSettings,
+  containerExecutable: string,
+  executableName: string,
+): Promise<string | null> => {
+  if (
+    !resourceSettings.dockerContainer ||
+    !resourceSettings.dockerContainerExec
+  ) {
+    return null;
+  }
+
+  const command = constructCommandString(
+    resourceSettings.dockerContainerExec,
+    parseArgs([
+      'exec',
+      '-i',
+      resourceSettings.dockerContainer,
+      containerExecutable,
+      '--version',
+    ]),
+  );
+  return runVersionProbe(command, executableName);
+};
+
+const runVersionProbe = (
+  command: string,
+  executableName: string,
+): string | null => {
   try {
-    // Run the executable with --version
-    const result = spawnSync(`"${executablePath}" --version`, {
+    const result = spawnSync(command, {
       encoding: 'utf8',
       shell: true,
       timeout: 5000,
     });
 
-    // If the process failed, log the error and return null.
     if (result.status !== 0 || result.error) {
       logger.debug(
         `Failed to get ${executableName} version: ${result.error?.message || result.stderr}`,
@@ -365,22 +666,14 @@ const getPhpcsVersion = async (
       return null;
     }
 
-    // Get the output.
     const output = result.stdout.toString().trim();
 
-    // Verify that the matched string contains "PHP_CodeSniffer".
-    // This ensures it's the correct executable.
     if (!output.includes('PHP_CodeSniffer')) {
-      const errorMsg = `Invalid output string for ${executableName}: ${output}`;
-      logger.debug(errorMsg);
-
-      throw new Error(errorMsg);
+      logger.debug(`Invalid output string for ${executableName}: ${output}`);
+      return null;
     }
 
-    // Match version patterns like "PHP_CodeSniffer version 3.7.2".
     const versionMatch = output.match(/(\d+)\.(\d+)\.(\d+)/);
-
-    // If no version match is found, log and return null.
     if (!versionMatch) {
       logger.debug(
         `Could not obtain ${executableName} version from output:`,
@@ -389,17 +682,12 @@ const getPhpcsVersion = async (
       return null;
     }
 
-    // Get the full version string from the match array.
     const version = versionMatch[0];
-
     logger.info(`${executableName} version: ${version}`);
-
     return version;
   } catch (error) {
-    // Log any exceptions and return null.
     const errorMsg = `Exception while getting the ${executableName} version: ${error}`;
     logger.debug(errorMsg);
-    window.showErrorMessage(errorMsg, 'OK');
     return null;
   }
 };

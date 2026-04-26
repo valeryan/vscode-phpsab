@@ -11,4 +11,11 @@ export interface ResourceSettings {
   autoRulesetSearch: boolean;
   allowedAutoRulesets: string[];
   excludeGlobs: string[];
+  dockerEnabled: boolean;
+  dockerContainer: string;
+  dockerWorkspaceRoot: string;
+  dockerExecutablePathCS: string;
+  dockerExecutablePathCBF: string;
+  dockerContainerExec: string;
+  dockerUseFilepath: boolean;
 }

@@ -34,10 +34,15 @@ export const getExtensionInfo = (): ExtensionInfo => {
 
 /**
  * Build the arguments needed to execute sniffer or fixer.
- * @param {string} filePath The file path to be linted or fixed. (Note: The path is obtained via vscode's API, so it's already normalized.)
+ * @param {string} filePath The file path to be linted or fixed. The caller is
+ *   responsible for translating to a container path when running in Docker mode.
  * @param {string} standard The coding standard to use.
  * @param {string[]} additionalArguments Any additional arguments to pass to the executable.
- * @param {string} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @param {string} toolType The type of tool being executed ('sniffer' or 'fixer').
+ * @param {boolean} useFilepath When `true`, pass `filePath` positionally and
+ *   skip stdin (`--stdin-path=` + `-`). Sniffer-only escape hatch for
+ *   container setups where stdin streaming misbehaves; the fixer must always
+ *   pass `false` because phpcbf in file mode does not return fixed content on stdout.
  * @returns {string[]} The array of arguments to pass to the sniffer or fixer executable.
  */
 export const getArgs = (
@@ -45,6 +50,7 @@ export const getArgs = (
   standard: string,
   additionalArguments: string[],
   toolType: 'sniffer' | 'fixer',
+  useFilepath: boolean = false,
 ): string[] => {
   let args = [];
 
@@ -61,8 +67,10 @@ export const getArgs = (
     args.push(`--standard=${standard}`);
   }
 
-  // Add the file path argument for stdin path resolution.
-  args.push(`--stdin-path=${filePath}`);
+  // In stdin mode, set --stdin-path so PHPCS resolves rules relative to the file.
+  if (!useFilepath) {
+    args.push(`--stdin-path=${filePath}`);
+  }
 
   // Validate additional arguments.
   additionalArguments = validateAdditionalArguments(additionalArguments);
@@ -70,9 +78,13 @@ export const getArgs = (
   // Append any additional arguments.
   args = args.concat(additionalArguments);
 
-  // Indicate we will be passing the file contents via stdin.
-  // This must be the last argument.
-  args.push('-');
+  if (useFilepath) {
+    // File mode: positional scan target must come after all options.
+    args.push(filePath);
+  } else {
+    // Stdin mode: file contents are piped via stdin; `-` must be the last argument.
+    args.push('-');
+  }
 
   return args;
 };

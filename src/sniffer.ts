@@ -1,3 +1,4 @@
+import crossSpawn from 'cross-spawn';
 import { debounce } from 'lodash';
 import { spawn, SpawnOptions } from 'node:child_process';
 import {
@@ -16,11 +17,18 @@ import {
   workspace,
 } from 'vscode';
 import { ConsoleError } from './interfaces/console-error';
-import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
+import {
+  PHPCSFileStatus,
+  PHPCSMessageType,
+  PHPCSReport,
+} from './interfaces/phpcs-report';
+import { ResourceSettings } from './interfaces/resource-settings';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
+import { toContainerPath, toHostPath } from './resolvers/docker-path-resolver';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
+import { remapStandardForContainer } from './utils/docker-standard';
 import {
   determineNodeError,
   getPhpNotFoundRegex,
@@ -42,6 +50,13 @@ let settingsCache: Settings;
 const diagnosticCollection: DiagnosticCollection =
   languages.createDiagnosticCollection('php');
 
+type SnifferCommand = {
+  commandPath: string;
+  commandArgs: string[];
+  command: string;
+  runThroughShell: boolean;
+};
+
 /**
  * The active validator listener.
  */
@@ -52,10 +67,7 @@ let validatorListener: Disposable;
  */
 const runnerCancellations: Map<Uri, CancellationTokenSource> = new Map();
 
-const getSettings = async () => {
-  if (!settingsCache) {
-    settingsCache = await loadSettings();
-  }
+const getSettings = () => {
   return settingsCache;
 };
 
@@ -67,7 +79,7 @@ const getSettings = async () => {
 const validate = async (document: TextDocument) => {
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
-  const settings = await getSettings();
+  const settings = getSettings();
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
 
   // If the document should not be processed, return early.
@@ -101,14 +113,35 @@ const validate = async (document: TextDocument) => {
     return;
   }
 
+  if (resourceConf.dockerEnabled) {
+    standard = await remapStandardForContainer(standard, resourceConf);
+  }
+
+  // Path passed to phpcs as --stdin-path (or as the positional file in file mode).
+  const filePath = resourceConf.dockerEnabled
+    ? toContainerPath(
+        document.fileName,
+        resourceConf.workspaceRoot ?? '',
+        resourceConf.dockerWorkspaceRoot,
+      )
+    : document.fileName;
+
+  // dockerUseFilepath is sniffer-only; the fixer ignores it.
+  const useFilepath =
+    resourceConf.dockerEnabled && resourceConf.dockerUseFilepath;
+
   const lintArgs = getArgs(
-    document.fileName,
+    filePath,
     standard,
     resourceConf.snifferArguments,
     'sniffer',
+    useFilepath,
   );
 
   let fileText = document.getText();
+
+  const { commandPath, commandArgs, command, runThroughShell } =
+    buildSnifferCommand(resourceConf, lintArgs);
 
   const options: SpawnOptions = {
     cwd:
@@ -119,28 +152,30 @@ const validate = async (document: TextDocument) => {
     // Required to prevent EINVAL errors when spawning .bat files on Windows.
     // https://github.com/valeryan/vscode-phpsab/issues/128
     // https://github.com/nodejs/node/issues/52554
-    shell: true,
+    // Local execution keeps shell mode for .bat/wrapper compatibility.
+    // Docker execution uses cross-spawn without shell to avoid the extra
+    // cmd.exe layer on Windows.
+    shell: runThroughShell,
   };
-
-  const CSExecutable = resourceConf.executablePathCS;
-  const parsedArgs = parseArgs(lintArgs);
-
-  const command = constructCommandString(CSExecutable, parsedArgs);
 
   logger.info(`SNIFFER COMMAND: ${command}`);
 
-  const sniffer = spawn(command, options);
+  const sniffer = runThroughShell
+    ? spawn(command, options)
+    : crossSpawn(commandPath, commandArgs, options);
 
   // Set the original command information (not parsed) for Windows ENOENT error handling
   const originalCommand = {
-    commandPath: CSExecutable,
-    args: lintArgs,
+    commandPath,
+    args: commandArgs,
   };
 
   addWindowsEnoentError(sniffer, originalCommand, 'spawn');
 
   if (sniffer.stdin) {
-    sniffer.stdin.write(fileText);
+    if (!useFilepath) {
+      sniffer.stdin.write(fileText);
+    }
     sniffer.stdin.end();
   } else {
     // Kill the process if we can't write to its `stdin`. We use `SIGKILL` to forcefully
@@ -205,7 +240,24 @@ const validate = async (document: TextDocument) => {
       const diagnostics: Diagnostic[] = [];
       // try-catch to handle JSON parse errors
       try {
-        const { files }: PHPCSReport = JSON.parse(stdout);
+        let { files }: PHPCSReport = JSON.parse(stdout);
+
+        // Remap container-side report keys back to host paths so any
+        // multi-file report iteration lines up with VS Code documents.
+        if (resourceConf.dockerEnabled) {
+          files = Object.entries(files).reduce<{
+            [key: string]: PHPCSFileStatus;
+          }>((carry, [reportPath, status]) => {
+            const hostKey = toHostPath(
+              reportPath,
+              resourceConf.workspaceRoot ?? '',
+              resourceConf.dockerWorkspaceRoot,
+            );
+            carry[hostKey] = status;
+            return carry;
+          }, {});
+        }
+
         for (const file in files) {
           files[file].messages.forEach(
             ({ message, line, column, type, source, fixable }) => {
@@ -264,6 +316,50 @@ const validate = async (document: TextDocument) => {
 };
 
 /**
+ * Build the spawn command and the original (pre-quoting) command/args used
+ * for Windows ENOENT error reporting.
+ *
+ * In Docker mode the command is `<dockerContainerExec> exec -i <container>
+ * <dockerExecutablePathCS> …lintArgs`; in local mode it's `<executablePathCS> …lintArgs`.
+ */
+const buildSnifferCommand = (
+  resourceConf: ResourceSettings,
+  lintArgs: string[],
+): SnifferCommand => {
+  if (resourceConf.dockerEnabled) {
+    const commandArgs = [
+      'exec',
+      '-i',
+      resourceConf.dockerContainer,
+      resourceConf.dockerExecutablePathCS,
+      ...lintArgs,
+    ];
+    return {
+      commandPath: resourceConf.dockerContainerExec,
+      commandArgs,
+      command: formatCommandForLog(
+        resourceConf.dockerContainerExec,
+        commandArgs,
+      ),
+      runThroughShell: false,
+    };
+  }
+
+  return {
+    commandPath: resourceConf.executablePathCS,
+    commandArgs: lintArgs,
+    command: constructCommandString(
+      resourceConf.executablePathCS,
+      parseArgs(lintArgs),
+    ),
+    runThroughShell: true,
+  };
+};
+
+const formatCommandForLog = (command: string, args: string[]): string =>
+  [command, ...args].join(' ');
+
+/**
  * Refreshes validation on any open documents.
  */
 const refresh = (): void => {
@@ -288,7 +384,7 @@ const setValidatorListener = async (): Promise<void> => {
   if (validatorListener) {
     validatorListener.dispose();
   }
-  const settings = await getSettings();
+  const settings = getSettings();
   const run: runConfig = settings.snifferMode as runConfig;
   const delay: number = settings.snifferTypeDelay;
 
