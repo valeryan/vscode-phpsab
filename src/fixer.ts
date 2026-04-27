@@ -176,9 +176,14 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
     args: commandArgs,
   };
 
+  // The hand-rolled ENOENT heuristic only applies when CMD is in the loop
+  // (shell: true) — CMD swallows ENOENT and exits 1. On the cross-spawn /
+  // no-shell path Node populates `fixer.error` with a real ENOENT directly.
   const nodeError =
     (fixer.error as ConsoleError) ||
-    addWindowsEnoentError(fixer, originalCommand, 'spawnSync');
+    (runThroughShell
+      ? addWindowsEnoentError(fixer, originalCommand, 'spawnSync')
+      : null);
 
   logger.info(`FIXER EXIT CODE: ${exitcode}`);
 

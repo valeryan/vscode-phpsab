@@ -170,7 +170,11 @@ const validate = async (document: TextDocument) => {
     args: commandArgs,
   };
 
-  addWindowsEnoentError(sniffer, originalCommand, 'spawn');
+  // Only needed when CMD is in the loop (shell: true) — CMD swallows ENOENT
+  // and exits 1. cross-spawn emits a real ENOENT 'error' event on its own.
+  if (runThroughShell) {
+    addWindowsEnoentError(sniffer, originalCommand, 'spawn');
+  }
 
   if (sniffer.stdin) {
     if (!useFilepath) {
