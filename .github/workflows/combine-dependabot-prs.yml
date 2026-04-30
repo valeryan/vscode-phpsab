@@ -73,9 +73,18 @@ jobs:
 
             const BRANCH_NAME = 'security/bump-dependency-versions-from-dependabot';
 
-            // Fetch all remote refs and reset the security branch to main
+            // Fetch all remote refs
             exec('git fetch origin');
-            exec(`git checkout -B ${BRANCH_NAME} origin/main`);
+
+            // Resume existing security branch, or create it fresh from main
+            const branchExists = tryExec(`git ls-remote --exit-code origin refs/heads/${BRANCH_NAME}`);
+            if (branchExists.success) {
+              exec(`git checkout -B ${BRANCH_NAME} origin/${BRANCH_NAME}`);
+              core.info(`Resuming existing branch ${BRANCH_NAME}`);
+            } else {
+              exec(`git checkout -B ${BRANCH_NAME} origin/main`);
+              core.info(`Creating new branch ${BRANCH_NAME} from main`);
+            }
 
             const merged = [];
             const failed = [];
@@ -84,6 +93,14 @@ jobs:
               core.info(`\nAttempting to merge PR #${pr.number}: ${pr.title}`);
 
               exec(`git fetch origin ${pr.head.ref}`);
+
+              // Skip PRs already incorporated into the branch
+              const alreadyIn = tryExec(`git merge-base --is-ancestor origin/${pr.head.ref} HEAD`);
+              if (alreadyIn.success) {
+                core.info(`PR #${pr.number} is already incorporated — skipping.`);
+                merged.push(pr);
+                continue;
+              }
 
               const mergeResult = tryExec(`git merge --no-edit origin/${pr.head.ref}`);
 
