@@ -1,0 +1,220 @@
+name: Combine Dependabot PRs
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  combine-dependabot-prs:
+    name: Combine Dependabot PRs into one security branch
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Combine Dependabot PRs
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { execSync } = require('child_process');
+
+            function exec(cmd) {
+              core.info(`$ ${cmd}`);
+              return execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+            }
+
+            function tryExec(cmd) {
+              try {
+                const output = exec(cmd);
+                return { success: true, output };
+              } catch (e) {
+                return { success: false, error: e.stderr || e.message };
+              }
+            }
+
+            // Setup git identity
+            exec('git config user.name "github-actions[bot]"');
+            exec('git config user.email "41898282+github-actions[bot]@users.noreply.github.com"');
+
+            // Get all open dependabot PRs targeting main
+            const allPRs = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              base: 'main',
+            });
+
+            const dependabotPRs = allPRs.filter(pr => pr.user.login === 'dependabot[bot]');
+
+            if (dependabotPRs.length === 0) {
+              core.info('No open Dependabot PRs found — nothing to combine.');
+              return;
+            }
+
+            core.info(`Found ${dependabotPRs.length} open Dependabot PR(s): ${dependabotPRs.map(p => `#${p.number}`).join(', ')}`);
+
+            const BRANCH_NAME = 'security/bump-dependency-versions-from-dependabot';
+
+            // Fetch all remote refs and reset the security branch to main
+            exec('git fetch origin');
+            exec(`git checkout -B ${BRANCH_NAME} origin/main`);
+
+            const merged = [];
+            const failed = [];
+
+            for (const pr of dependabotPRs) {
+              core.info(`\nAttempting to merge PR #${pr.number}: ${pr.title}`);
+
+              exec(`git fetch origin ${pr.head.ref}`);
+
+              const mergeResult = tryExec(`git merge --no-edit origin/${pr.head.ref}`);
+
+              if (mergeResult.success) {
+                merged.push(pr);
+                core.info(`✅ Merged PR #${pr.number}`);
+                continue;
+              }
+
+              core.warning(`Merge conflict on PR #${pr.number}. Attempting npm-based resolution.`);
+
+              // Identify conflicting files
+              const statusLines = exec('git status --porcelain')
+                .split('\n')
+                .filter(Boolean);
+              const conflicted = statusLines
+                .filter(l => l.startsWith('UU') || l.startsWith('AA') || l.startsWith('DD'))
+                .map(l => l.slice(3).trim());
+
+              core.info(`Conflicting files: ${conflicted.join(', ')}`);
+
+              const resolvableByNpm = conflicted.every(f => f === 'package-lock.json');
+
+              if (resolvableByNpm) {
+                const resolveResult = tryExec('git checkout --ours package-lock.json');
+                if (!resolveResult.success) {
+                  core.warning(`Could not checkout --ours for package-lock.json on PR #${pr.number}: ${resolveResult.error}`);
+                  exec('git merge --abort');
+                  failed.push(pr);
+                  continue;
+                }
+
+                try {
+                  exec('npm install');
+                  exec('git add package-lock.json');
+                  exec('git commit --no-edit');
+                  merged.push(pr);
+                  core.info(`✅ Resolved lockfile conflict and merged PR #${pr.number}`);
+                } catch (e) {
+                  core.warning(`npm install failed for PR #${pr.number}: ${e.message}`);
+                  tryExec('git merge --abort');
+                  failed.push(pr);
+                }
+              } else {
+                core.warning(`Unresolvable conflicts in [${conflicted.join(', ')}] for PR #${pr.number} — skipping.`);
+                exec('git merge --abort');
+                failed.push(pr);
+              }
+            }
+
+            if (merged.length === 0) {
+              core.setFailed('No Dependabot PRs could be merged into the security branch.');
+              return;
+            }
+
+            // Ensure package-lock.json is consistent after all merges
+            try {
+              exec('npm install');
+              const lockChanged = exec('git status --porcelain package-lock.json').trim();
+              if (lockChanged) {
+                exec('git add package-lock.json');
+                exec('git commit -m "chore: regenerate package-lock.json after combining dependabot updates"');
+              }
+            } catch (e) {
+              core.warning(`Final npm install step failed: ${e.message}`);
+            }
+
+            // Force-push the security branch
+            exec(`git push origin ${BRANCH_NAME} --force`);
+            core.info(`✅ Pushed branch ${BRANCH_NAME}`);
+
+            // Build PR body
+            const updateLines = merged.map(pr => `* ${pr.title} (#${pr.number})`).join('\n');
+            const failedNote = failed.length > 0
+              ? `\n\n> ⚠️ The following PRs could not be automatically combined and require manual attention:\n${failed.map(pr => `> * #${pr.number} — ${pr.title}`).join('\n')}`
+              : '';
+            const body = `This pull request updates dependency versions to ensure compatibility and address potential bug fixes and security vulnerabilities.\n\nDependency updates:\n\n${updateLines}${failedNote}`;
+
+            // Check for an existing open combined PR
+            const existingPRs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${BRANCH_NAME}`,
+            });
+
+            if (existingPRs.data.length > 0) {
+              const existing = existingPRs.data[0];
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: existing.number,
+                title: 'Security - bump dependency versions from dependabot',
+                body,
+              });
+              core.info(`✅ Updated existing combined PR #${existing.number}`);
+            } else {
+              const newPR = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Security - bump dependency versions from dependabot',
+                body,
+                head: BRANCH_NAME,
+                base: 'main',
+              });
+
+              // Ensure the required labels exist, then apply them
+              const labels = ['dependencies', 'javascript', 'security'];
+              for (const label of labels) {
+                try {
+                  await github.rest.issues.getLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                  });
+                } catch {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                    color: 'ededed',
+                  });
+                }
+              }
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: newPR.data.number,
+                labels,
+              });
+
+              core.info(`✅ Created new combined PR #${newPR.data.number}`);
+            }
