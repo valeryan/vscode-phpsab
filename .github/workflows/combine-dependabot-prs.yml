@@ -187,6 +187,8 @@ jobs:
               head: `${context.repo.owner}:${BRANCH_NAME}`,
             });
 
+            const ASSIGNEES = ['yCodeTech'];
+
             if (existingPRs.data.length > 0) {
               const existing = existingPRs.data[0];
               await github.rest.pulls.update({
@@ -196,6 +198,14 @@ jobs:
                 title: 'Security - bump dependency versions from dependabot',
                 body,
               });
+
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                assignees: ASSIGNEES,
+              });
+
               core.info(`✅ Updated existing combined PR #${existing.number}`);
             } else {
               const newPR = await github.rest.pulls.create({
@@ -231,6 +241,13 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: newPR.data.number,
                 labels,
+              });
+
+              await github.rest.issues.addAssignees({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: newPR.data.number,
+                assignees: ASSIGNEES,
               });
 
               core.info(`✅ Created new combined PR #${newPR.data.number}`);
