@@ -41,7 +41,6 @@ jobs:
         run: |
           MERGED_ITEMS=()
           FAILED_ITEMS=()
-          LABEL_COLOR=ededed
 
           mapfile -t PR_ENTRIES < <(gh pr list \
             --base main \
@@ -65,7 +64,7 @@ jobs:
             # Retarget this PR's base to the security branch
             if ! gh pr edit "$number" --base "$BRANCH_NAME"; then
               echo "❌ Failed to retarget PR #${number} to ${BRANCH_NAME} — skipping"
-              FAILED_ITEMS+=("* ${title} (#${number})")
+              FAILED_ITEMS+=("> * ${title} (#${number})")
               continue
             fi
 
@@ -76,13 +75,46 @@ jobs:
             else
               echo "❌ Failed to merge PR #${number} — retargeting back to main"
               gh pr edit "$number" --base main || echo "::warning::Could not retarget PR #${number} back to main"
-              FAILED_ITEMS+=("* ${title} (#${number})")
+              FAILED_ITEMS+=("> * ${title} (#${number})")
             fi
           done
 
           if [ ${#MERGED_ITEMS[@]} -eq 0 ]; then
             echo "::error::No Dependabot PRs could be merged into the security branch."
             exit 1
+          fi
+
+          # Sort lines by the trailing (#NNN) PR number, ascending.
+          # Works for both "* title (#N)" and "> * title (#N)" formats.
+          sort_by_pr_number() {
+            awk 'match($0, /\(#([0-9]+)\)$/, a) { printf "%09d\t%s\n", a[1], $0 }' \
+              | sort -k1,1 | cut -f2-
+          }
+
+          # Check for an existing open combined PR
+          EXISTING=$(gh pr list \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          # When a combined PR already exists, read its body and append new items
+          # to each list so older entries are preserved. Deduplicate by exact line
+          # (same PR always produces the same line) then sort ascending by PR number.
+          if [ -n "$EXISTING" ]; then
+            EXISTING_BODY=$(gh pr view "$EXISTING" --json body --jq '.body')
+
+            mapfile -t EXISTING_MERGED < <(echo "$EXISTING_BODY" | grep -E '^\* .+\(#[0-9]+\)$')
+            mapfile -t EXISTING_FAILED < <(echo "$EXISTING_BODY" | grep -E '^> \* .+\(#[0-9]+\)$')
+
+            ALL_MERGED=$(printf '%s\n' "${EXISTING_MERGED[@]}" "${MERGED_ITEMS[@]}" \
+              | grep -v '^[[:space:]]*$' | sort_by_pr_number | uniq)
+            ALL_FAILED=$(printf '%s\n' "${EXISTING_FAILED[@]}" "${FAILED_ITEMS[@]}" \
+              | grep -v '^[[:space:]]*$' | sort_by_pr_number | uniq)
+          else
+            ALL_MERGED=$(printf '%s\n' "${MERGED_ITEMS[@]}" | sort_by_pr_number)
+            ALL_FAILED=$(printf '%s\n' "${FAILED_ITEMS[@]}" | sort_by_pr_number)
           fi
 
           # Build the combined PR body
@@ -92,26 +124,13 @@ jobs:
             echo ""
             echo "Dependency updates:"
             echo ""
-            printf '%s\n' "${MERGED_ITEMS[@]}"
-            if [ ${#FAILED_ITEMS[@]} -gt 0 ]; then
+            echo "$ALL_MERGED"
+            if [ -n "$ALL_FAILED" ]; then
               echo ""
               echo "> ⚠️ The following PRs could not be automatically combined and require manual attention:"
-              printf '> %s\n' "${FAILED_ITEMS[@]}"
+              echo "$ALL_FAILED"
             fi
           } > "$BODY_FILE"
-
-          # Ensure labels exist (--force updates without error if they already do)
-          for label in dependencies javascript security; do
-            gh label create "$label" --color "$LABEL_COLOR" --force
-          done
-
-          # Check for an existing open combined PR
-          EXISTING=$(gh pr list \
-            --head "$BRANCH_NAME" \
-            --base main \
-            --state open \
-            --json number \
-            --jq '.[0].number // empty')
 
           if [ -n "$EXISTING" ]; then
             gh pr edit "$EXISTING" \
