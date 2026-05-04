@@ -252,3 +252,52 @@ jobs:
 
               core.info(`✅ Created new combined PR #${newPR.data.number}`);
             }
+
+            // Determine the combined PR number for use in close comments
+            const combinedPRs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${BRANCH_NAME}`,
+            });
+            const combinedPRNumber = combinedPRs.data.length > 0 ? combinedPRs.data[0].number : null;
+
+            // Close each successfully incorporated dependabot PR
+            for (const pr of merged) {
+              // Skip PRs that were already incorporated before this run
+              // (we still close them if they're still open, to catch any that slipped through)
+              try {
+                const prState = await github.rest.pulls.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                });
+
+                if (prState.data.state !== 'open') {
+                  core.info(`PR #${pr.number} is already closed — skipping.`);
+                  continue;
+                }
+
+                const commentBody = combinedPRNumber
+                  ? `This PR has been incorporated into the combined security update PR #${combinedPRNumber} and is being closed.`
+                  : `This PR has been incorporated into the combined security update branch \`${BRANCH_NAME}\` and is being closed.`;
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: commentBody,
+                });
+
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: 'closed',
+                });
+
+                core.info(`✅ Closed dependabot PR #${pr.number}`);
+              } catch (e) {
+                core.warning(`Failed to close PR #${pr.number}: ${e.message}`);
+              }
+            }
