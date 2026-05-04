@@ -16,6 +16,9 @@ jobs:
     name: Combine Dependabot PRs into one security branch
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]' || github.event_name == 'workflow_dispatch'
+    env:
+      BRANCH_NAME: security/bump-dependency-versions-from-dependabot
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,281 +26,109 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: 'npm'
+      - name: Create security branch if it does not exist
+        run: |
+          git fetch origin
+          if git ls-remote --exit-code origin "refs/heads/$BRANCH_NAME"; then
+            echo "Branch $BRANCH_NAME already exists — resuming."
+          else
+            git checkout -B "$BRANCH_NAME" origin/main
+            git push origin "$BRANCH_NAME"
+            echo "Created branch $BRANCH_NAME from main."
+          fi
 
-      - name: Combine Dependabot PRs
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { execSync } = require('child_process');
+      - name: Retarget and merge dependabot PRs
+        run: |
+          MERGED_ITEMS=()
+          FAILED_ITEMS=()
 
-            function exec(cmd) {
-              core.info(`$ ${cmd}`);
-              return execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
-            }
+          mapfile -t PR_ENTRIES < <(gh pr list \
+            --base main \
+            --state open \
+            --limit 100 \
+            --json number,title,author \
+            --jq '.[] | select(.author.login == "dependabot[bot]") | "\(.number)\t\(.title)"')
 
-            function tryExec(cmd) {
-              try {
-                const output = exec(cmd);
-                return { success: true, output };
-              } catch (e) {
-                return { success: false, error: e.stderr || e.message };
-              }
-            }
+          if [ ${#PR_ENTRIES[@]} -eq 0 ]; then
+            echo "No open Dependabot PRs found — nothing to combine."
+            exit 0
+          fi
 
-            // Setup git identity
-            exec('git config user.name "github-actions[bot]"');
-            exec('git config user.email "41898282+github-actions[bot]@users.noreply.github.com"');
+          echo "Found ${#PR_ENTRIES[@]} open Dependabot PR(s)."
 
-            // Get all open dependabot PRs targeting main
-            const allPRs = await github.paginate(github.rest.pulls.list, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              base: 'main',
-            });
+          for entry in "${PR_ENTRIES[@]}"; do
+            IFS=$'\t' read -r number title <<< "$entry"
+            echo ""
+            echo "Processing PR #${number}: ${title}"
 
-            const dependabotPRs = allPRs.filter(pr => pr.user.login === 'dependabot[bot]');
+            # Retarget this PR's base to the security branch
+            if ! gh pr edit "$number" --base "$BRANCH_NAME"; then
+              echo "❌ Failed to retarget PR #${number} to ${BRANCH_NAME} — skipping"
+              FAILED_ITEMS+=("* ${title} (#${number})")
+              continue
+            fi
 
-            if (dependabotPRs.length === 0) {
-              core.info('No open Dependabot PRs found — nothing to combine.');
-              return;
-            }
+            # Merge into the security branch via GitHub's server-side merge
+            if gh pr merge "$number" --merge; then
+              echo "✅ Merged PR #${number}"
+              MERGED_ITEMS+=("* ${title} (#${number})")
+            else
+              echo "❌ Failed to merge PR #${number} — retargeting back to main"
+              gh pr edit "$number" --base main || echo "⚠️  Could not retarget PR #${number} back to main"
+              FAILED_ITEMS+=("* ${title} (#${number})")
+            fi
+          done
 
-            core.info(`Found ${dependabotPRs.length} open Dependabot PR(s): ${dependabotPRs.map(p => `#${p.number}`).join(', ')}`);
+          if [ ${#MERGED_ITEMS[@]} -eq 0 ]; then
+            echo "::error::No Dependabot PRs could be merged into the security branch."
+            exit 1
+          fi
 
-            const BRANCH_NAME = 'security/bump-dependency-versions-from-dependabot';
+          # Build the combined PR body
+          BODY_FILE=$(mktemp)
+          {
+            echo "This pull request updates dependency versions to ensure compatibility and address potential bug fixes and security vulnerabilities."
+            echo ""
+            echo "Dependency updates:"
+            echo ""
+            printf '%s\n' "${MERGED_ITEMS[@]}"
+            if [ ${#FAILED_ITEMS[@]} -gt 0 ]; then
+              echo ""
+              echo "> ⚠️ The following PRs could not be automatically combined and require manual attention:"
+              printf '> %s\n' "${FAILED_ITEMS[@]}"
+            fi
+          } > "$BODY_FILE"
 
-            // Fetch all remote refs
-            exec('git fetch origin');
+          # Ensure labels exist (--force updates without error if they already do)
+          for label in dependencies javascript security; do
+            gh label create "$label" --color ededed --force
+          done
 
-            // Resume existing security branch, or create it fresh from main
-            const branchExists = tryExec(`git ls-remote --exit-code origin refs/heads/${BRANCH_NAME}`);
-            if (branchExists.success) {
-              exec(`git checkout ${BRANCH_NAME}`);
-              core.info(`Resuming existing branch ${BRANCH_NAME}`);
-            } else {
-              exec(`git checkout -B ${BRANCH_NAME} origin/main`);
-              core.info(`Creating new branch ${BRANCH_NAME} from main`);
-            }
+          # Check for an existing open combined PR
+          EXISTING=$(gh pr list \
+            --head "$BRANCH_NAME" \
+            --base main \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
 
-            const merged = [];
-            const failed = [];
+          if [ -n "$EXISTING" ]; then
+            gh pr edit "$EXISTING" \
+              --title "Security - bump dependency versions from dependabot" \
+              --body-file "$BODY_FILE" \
+              --add-assignee yCodeTech
+            echo "✅ Updated existing combined PR #${EXISTING}"
+          else
+            gh pr create \
+              --head "$BRANCH_NAME" \
+              --base main \
+              --title "Security - bump dependency versions from dependabot" \
+              --body-file "$BODY_FILE" \
+              --assignee yCodeTech \
+              --label dependencies \
+              --label javascript \
+              --label security
+            echo "✅ Created new combined PR"
+          fi
 
-            for (const pr of dependabotPRs) {
-              core.info(`\nAttempting to merge PR #${pr.number}: ${pr.title}`);
-
-              exec(`git fetch origin ${pr.head.ref}`);
-
-              // Skip PRs already incorporated into the branch
-              const alreadyIn = tryExec(`git merge-base --is-ancestor origin/${pr.head.ref} HEAD`);
-              if (alreadyIn.success) {
-                core.info(`PR #${pr.number} is already incorporated — skipping.`);
-                merged.push(pr);
-                continue;
-              }
-
-              const mergeResult = tryExec(`git merge --no-edit origin/${pr.head.ref}`);
-
-              if (mergeResult.success) {
-                merged.push(pr);
-                core.info(`✅ Merged PR #${pr.number}`);
-                continue;
-              }
-
-              core.warning(`Merge conflict on PR #${pr.number}. Attempting npm-based resolution.`);
-
-              // Identify conflicting files
-              const statusLines = exec('git status --porcelain')
-                .split('\n')
-                .filter(Boolean);
-              const conflicted = statusLines
-                .filter(l => l.startsWith('UU') || l.startsWith('AA') || l.startsWith('DD'))
-                .map(l => l.slice(3).trim());
-
-              core.info(`Conflicting files: ${conflicted.join(', ')}`);
-
-              const resolvableByNpm = conflicted.every(f => f === 'package-lock.json');
-
-              if (resolvableByNpm) {
-                const resolveResult = tryExec('git checkout --ours package-lock.json');
-                if (!resolveResult.success) {
-                  core.warning(`Could not checkout --ours for package-lock.json on PR #${pr.number}: ${resolveResult.error}`);
-                  exec('git merge --abort');
-                  failed.push(pr);
-                  continue;
-                }
-
-                try {
-                  exec('npm install');
-                  exec('git add package-lock.json');
-                  exec('git commit --no-edit');
-                  merged.push(pr);
-                  core.info(`✅ Resolved lockfile conflict and merged PR #${pr.number}`);
-                } catch (e) {
-                  core.warning(`npm install failed for PR #${pr.number}: ${e.message}`);
-                  tryExec('git merge --abort');
-                  failed.push(pr);
-                }
-              } else {
-                core.warning(`Unresolvable conflicts in [${conflicted.join(', ')}] for PR #${pr.number} — skipping.`);
-                exec('git merge --abort');
-                failed.push(pr);
-              }
-            }
-
-            if (merged.length === 0) {
-              core.setFailed('No Dependabot PRs could be merged into the security branch.');
-              return;
-            }
-
-            // Ensure package-lock.json is consistent after all merges
-            try {
-              exec('npm install');
-              const lockChanged = exec('git status --porcelain package-lock.json').trim();
-              if (lockChanged) {
-                exec('git add package-lock.json');
-                exec('git commit -m "chore: regenerate package-lock.json after combining dependabot updates"');
-              }
-            } catch (e) {
-              core.warning(`Final npm install step failed: ${e.message}`);
-            }
-
-            // Force-push the security branch
-            exec(`git push origin ${BRANCH_NAME} --force`);
-            core.info(`✅ Pushed branch ${BRANCH_NAME}`);
-
-            // Build PR body
-            const updateLines = merged.map(pr => `* ${pr.title} (#${pr.number})`).join('\n');
-            const failedNote = failed.length > 0
-              ? `\n\n> ⚠️ The following PRs could not be automatically combined and require manual attention:\n${failed.map(pr => `> * #${pr.number} — ${pr.title}`).join('\n')}`
-              : '';
-            const body = `This pull request updates dependency versions to ensure compatibility and address potential bug fixes and security vulnerabilities.\n\nDependency updates:\n\n${updateLines}${failedNote}`;
-
-            // Check for an existing open combined PR
-            const existingPRs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              head: `${context.repo.owner}:${BRANCH_NAME}`,
-            });
-
-            const ASSIGNEES = ['yCodeTech'];
-
-            if (existingPRs.data.length > 0) {
-              const existing = existingPRs.data[0];
-              await github.rest.pulls.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: existing.number,
-                title: 'Security - bump dependency versions from dependabot',
-                body,
-              });
-
-              await github.rest.issues.addAssignees({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: existing.number,
-                assignees: ASSIGNEES,
-              });
-
-              core.info(`✅ Updated existing combined PR #${existing.number}`);
-            } else {
-              const newPR = await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: 'Security - bump dependency versions from dependabot',
-                body,
-                head: BRANCH_NAME,
-                base: 'main',
-              });
-
-              // Ensure the required labels exist, then apply them
-              const labels = ['dependencies', 'javascript', 'security'];
-              for (const label of labels) {
-                try {
-                  await github.rest.issues.getLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label,
-                  });
-                } catch {
-                  await github.rest.issues.createLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label,
-                    color: 'ededed',
-                  });
-                }
-              }
-
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: newPR.data.number,
-                labels,
-              });
-
-              await github.rest.issues.addAssignees({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: newPR.data.number,
-                assignees: ASSIGNEES,
-              });
-
-              core.info(`✅ Created new combined PR #${newPR.data.number}`);
-            }
-
-            // Determine the combined PR number for use in close comments
-            const combinedPRs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              head: `${context.repo.owner}:${BRANCH_NAME}`,
-            });
-            const combinedPRNumber = combinedPRs.data.length > 0 ? combinedPRs.data[0].number : null;
-
-            // Close each successfully incorporated dependabot PR
-            for (const pr of merged) {
-              // Skip PRs that were already incorporated before this run
-              // (we still close them if they're still open, to catch any that slipped through)
-              try {
-                const prState = await github.rest.pulls.get({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  pull_number: pr.number,
-                });
-
-                if (prState.data.state !== 'open') {
-                  core.info(`PR #${pr.number} is already closed — skipping.`);
-                  continue;
-                }
-
-                const commentBody = combinedPRNumber
-                  ? `This PR has been incorporated into the combined security update PR #${combinedPRNumber} and is being closed.`
-                  : `This PR has been incorporated into the combined security update branch \`${BRANCH_NAME}\` and is being closed.`;
-
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: pr.number,
-                  body: commentBody,
-                });
-
-                await github.rest.pulls.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  pull_number: pr.number,
-                  state: 'closed',
-                });
-
-                core.info(`✅ Closed dependabot PR #${pr.number}`);
-              } catch (e) {
-                core.warning(`Failed to close PR #${pr.number}: ${e.message}`);
-              }
-            }
+          rm -f "$BODY_FILE"
