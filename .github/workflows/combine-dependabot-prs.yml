@@ -41,6 +41,7 @@ jobs:
         run: |
           MERGED_ITEMS=()
           FAILED_ITEMS=()
+          LABEL_COLOR=ededed
 
           mapfile -t PR_ENTRIES < <(gh pr list \
             --base main \
@@ -69,12 +70,12 @@ jobs:
             fi
 
             # Merge into the security branch via GitHub's server-side merge
-            if gh pr merge "$number" --merge; then
+            if gh pr merge "$number" --merge 2>&1; then
               echo "✅ Merged PR #${number}"
               MERGED_ITEMS+=("* ${title} (#${number})")
             else
               echo "❌ Failed to merge PR #${number} — retargeting back to main"
-              gh pr edit "$number" --base main || echo "⚠️  Could not retarget PR #${number} back to main"
+              gh pr edit "$number" --base main || echo "::warning::Could not retarget PR #${number} back to main"
               FAILED_ITEMS+=("* ${title} (#${number})")
             fi
           done
@@ -101,7 +102,7 @@ jobs:
 
           # Ensure labels exist (--force updates without error if they already do)
           for label in dependencies javascript security; do
-            gh label create "$label" --color ededed --force
+            gh label create "$label" --color "$LABEL_COLOR" --force
           done
 
           # Check for an existing open combined PR
