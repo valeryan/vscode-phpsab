@@ -105,13 +105,15 @@ jobs:
           if [ -n "$EXISTING" ]; then
             EXISTING_BODY=$(gh pr view "$EXISTING" --json body --jq '.body')
 
-            mapfile -t EXISTING_MERGED < <(echo "$EXISTING_BODY" | grep -E '^\* .+\(#[0-9]+\)$')
-            mapfile -t EXISTING_FAILED < <(echo "$EXISTING_BODY" | grep -E '^> \* .+\(#[0-9]+\)$')
+            mapfile -t EXISTING_MERGED < <(echo "$EXISTING_BODY" | grep -E '^\* .+\(#[0-9]+\)$' || true)
+            mapfile -t EXISTING_FAILED < <(echo "$EXISTING_BODY" | grep -E '^> \* .+\(#[0-9]+\)$' || true)
 
             ALL_MERGED=$(printf '%s\n' "${EXISTING_MERGED[@]}" "${MERGED_ITEMS[@]}" \
               | grep -v '^[[:space:]]*$' | sort_by_pr_number | uniq)
-            ALL_FAILED=$(printf '%s\n' "${EXISTING_FAILED[@]}" "${FAILED_ITEMS[@]}" \
-              | grep -v '^[[:space:]]*$' | sort_by_pr_number | uniq)
+            if [ ${#EXISTING_FAILED[@]} -gt 0 ] || [ ${#FAILED_ITEMS[@]} -gt 0 ]; then
+              ALL_FAILED=$(printf '%s\n' "${EXISTING_FAILED[@]}" "${FAILED_ITEMS[@]}" \
+                | grep -v '^[[:space:]]*$' | sort_by_pr_number | uniq)
+            fi
           else
             ALL_MERGED=$(printf '%s\n' "${MERGED_ITEMS[@]}" | sort_by_pr_number)
             ALL_FAILED=$(printf '%s\n' "${FAILED_ITEMS[@]}" | sort_by_pr_number)
