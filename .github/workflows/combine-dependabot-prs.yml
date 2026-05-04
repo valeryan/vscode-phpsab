@@ -79,7 +79,7 @@ jobs:
             // Resume existing security branch, or create it fresh from main
             const branchExists = tryExec(`git ls-remote --exit-code origin refs/heads/${BRANCH_NAME}`);
             if (branchExists.success) {
-              exec(`git checkout --track -b ${BRANCH_NAME} origin/${BRANCH_NAME}`);
+              exec(`git checkout ${BRANCH_NAME}`);
               core.info(`Resuming existing branch ${BRANCH_NAME}`);
             } else {
               exec(`git checkout -B ${BRANCH_NAME} origin/main`);
