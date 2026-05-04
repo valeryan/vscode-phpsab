@@ -195,6 +195,6 @@
     "rimraf": "^6.1.2",
     "sinon": "^21.0.0",
     "ts-loader": "^9.5.4",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   }
 }
