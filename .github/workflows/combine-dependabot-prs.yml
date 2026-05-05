@@ -43,10 +43,11 @@ jobs:
           FAILED_ITEMS=()
 
           mapfile -t PR_ENTRIES < <(gh pr list \
+            --author "app/dependabot" \
             --state open \
             --limit 100 \
-            --json number,title,author \
-            --jq '.[] | select(.author.login == "dependabot[bot]") | "\(.number)\t\(.title)"')
+            --json number,title \
+            --jq '.[] | "\(.number)\t\(.title)"')
 
           if [ ${#PR_ENTRIES[@]} -eq 0 ]; then
             echo "No open Dependabot PRs found — nothing to combine."
