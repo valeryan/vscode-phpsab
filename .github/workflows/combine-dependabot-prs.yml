@@ -69,7 +69,7 @@ jobs:
             fi
 
             # Merge into the security branch via GitHub's server-side merge
-            if gh pr merge "$number" --merge 2>&1; then
+            if gh pr merge "$number" --squash 2>&1; then
               echo "✅ Merged PR #${number}"
               MERGED_ITEMS+=("* ${title} (#${number})")
             else
