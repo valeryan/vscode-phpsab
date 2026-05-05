@@ -43,7 +43,6 @@ jobs:
           FAILED_ITEMS=()
 
           mapfile -t PR_ENTRIES < <(gh pr list \
-            --base main \
             --state open \
             --limit 100 \
             --json number,title,author \
