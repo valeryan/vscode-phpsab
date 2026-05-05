@@ -84,13 +84,6 @@ jobs:
             exit 1
           fi
 
-          # Sort lines by the trailing (#NNN) PR number, ascending.
-          # Works for both "* title (#N)" and "> * title (#N)" formats.
-          sort_by_pr_number() {
-            awk 'match($0, /\(#([0-9]+)\)$/, a) { printf "%09d\t%s\n", a[1], $0 }' \
-              | sort -k1,1 | cut -f2-
-          }
-
           # Check for an existing open combined PR
           EXISTING=$(gh pr list \
             --head "$BRANCH_NAME" \
@@ -101,7 +94,7 @@ jobs:
 
           # When a combined PR already exists, read its body and append new items
           # to each list so older entries are preserved. Deduplicate by exact line
-          # (same PR always produces the same line) then sort ascending by PR number.
+          # (same PR always produces the same line) while preserving processing order.
           if [ -n "$EXISTING" ]; then
             EXISTING_BODY=$(gh pr view "$EXISTING" --json body --jq '.body')
 
@@ -109,14 +102,14 @@ jobs:
             mapfile -t EXISTING_FAILED < <(echo "$EXISTING_BODY" | grep -E '^> \* .+\(#[0-9]+\)$' || true)
 
             ALL_MERGED=$(printf '%s\n' "${EXISTING_MERGED[@]}" "${MERGED_ITEMS[@]}" \
-              | grep -v '^[[:space:]]*$' | sort_by_pr_number | uniq)
+              | grep -v '^[[:space:]]*$' | awk '!seen[$0]++')
             if [ ${#EXISTING_FAILED[@]} -gt 0 ] || [ ${#FAILED_ITEMS[@]} -gt 0 ]; then
               ALL_FAILED=$(printf '%s\n' "${EXISTING_FAILED[@]}" "${FAILED_ITEMS[@]}" \
-                | grep -v '^[[:space:]]*$' | sort_by_pr_number | uniq)
+                | grep -v '^[[:space:]]*$' | awk '!seen[$0]++')
             fi
           else
-            ALL_MERGED=$(printf '%s\n' "${MERGED_ITEMS[@]}" | sort_by_pr_number)
-            ALL_FAILED=$(printf '%s\n' "${FAILED_ITEMS[@]}" | sort_by_pr_number)
+            ALL_MERGED=$(printf '%s\n' "${MERGED_ITEMS[@]}")
+            ALL_FAILED=$(printf '%s\n' "${FAILED_ITEMS[@]}")
           fi
 
           # Build the combined PR body
