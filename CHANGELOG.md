@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.0.25] - 2026-05-09
+
+### What's Changed
+* docs(readme): fix broken vs marketplace badges by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/209
+* ci: auto merge new dependabot PRs into 1 security PR by @Copilot in https://github.com/valeryan/vscode-phpsab/pull/213
+* Remove dependabot config for normal version bumps and only use dependabot for security vulnerability PRs by @Copilot in https://github.com/valeryan/vscode-phpsab/pull/221
+* refactor(combine-dependabot-prs): retarget + server-side merge via gh, append-only sorted PR body by @Copilot in https://github.com/valeryan/vscode-phpsab/pull/222
+* fix: use `--author app/dependabot` to reliably filter Dependabot PRs by @Copilot in https://github.com/valeryan/vscode-phpsab/pull/223
+* fix: use squash merge in combine-dependabot-prs workflow by @Copilot in https://github.com/valeryan/vscode-phpsab/pull/224
+* List merged/failed dependabot PRs in processing order by @Copilot in https://github.com/valeryan/vscode-phpsab/pull/226
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/225
+
+### New Contributors
+* @Copilot made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/213
+* @github-actions[bot] made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/225
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.24...v0.0.25
+
+
 ## [0.0.24] - 2026-02-26
 
 ### What's Changed
