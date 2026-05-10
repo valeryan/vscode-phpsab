@@ -9,6 +9,48 @@ This linter plugin for [Visual Studio Code](https://code.visualstudio.com/) prov
 
 This extension is available on both [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab) and [Open VSX Registry](https://open-vsx.org/extension/ValeryanM/vscode-phpsab).
 
+<details open>
+<summary><b>Table of Contents</b></summary>
+
+- [PHPCS Version Support](#phpcs-version-support)
+- [Maintenance Status](#maintenance-status)
+    - [Active Maintainers](#active-maintainers)
+- [Installation](#installation)
+- [Usage](#usage)
+    - [Format on save](#format-on-save)
+- [Multi-Root Workspace Support](#multi-root-workspace-support)
+- [Single File Mode Support](#single-file-mode-support)
+- [Linter Installation](#linter-installation)
+    - [System-wide Installation](#system-wide-installation)
+    - [Project-wide Installation](#project-wide-installation)
+    - [Plugin Installation](#plugin-installation)
+    - [Docker support](#docker-support)
+- [Basic Configuration](#basic-configuration)
+    - [**phpsab.fixerEnable**](#phpsabfixerenable)
+    - [**phpsab.fixerArguments**](#phpsabfixerarguments)
+    - [**phpsab.snifferEnable**](#phpsabsnifferenable)
+    - [**phpsab.snifferArguments**](#phpsabsnifferarguments)
+    - [**phpsab.executablePathCS**](#phpsabexecutablepathcs)
+    - [**phpsab.executablePathCBF**](#phpsabexecutablepathcbf)
+    - [**phpsab.standard**](#phpsabstandard)
+    - [**phpsab.autoRulesetSearch**](#phpsabautorulesetsearch)
+    - [**phpsab.allowedAutoRulesets**](#phpsaballowedautorulesets)
+    - [**phpsab.snifferMode**](#phpsabsniffermode)
+    - [**phpsab.snifferTypeDelay**](#phpsabsniffertypedelay)
+    - [**phpsab.snifferShowSources**](#phpsabsniffershowsources)
+    - [**phpsab.snifferShowFixabilityIcons**](#phpsabsniffershowfixabilityicons)
+- [Advanced Configuration](#advanced-configuration)
+    - [**phpsab.composerJsonPath**](#phpsabcomposerjsonpath)
+    - [**phpsab.phpExecutablePath**](#phpsabphpexecutablepath)
+    - [**phpsab.excludeGlobs**](#phpsabexcludeglobs)
+- [Diagnosing common errors](#diagnosing-common-errors)
+    - [**phpsab.debug**](#phpsabdebug)
+    - [The phpcs report contains invalid json](#the-phpcs-report-contains-invalid-json)
+- [Acknowledgements](#acknowledgements)
+- [Contributing and Licensing](#contributing-and-licensing)
+
+</details>
+
 ## PHPCS Version Support
 
 This extension supports the [latest stable version of PHPCS 3.x](https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/). If you are using an older version of PHPCS, please upgrade to the latest 3.x version.
