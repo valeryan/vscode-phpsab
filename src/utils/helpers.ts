@@ -16,7 +16,11 @@ import { ResourceSettings } from '../interfaces/resource-settings';
 import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
 
-const extensionInfo: ExtensionInfo = {} as ExtensionInfo;
+const extensionInfo: ExtensionInfo = {
+  id: '',
+  displayName: '',
+  version: '',
+};
 
 export const setExtensionInfo = (context: ExtensionContext) => {
   // Get extension unique identifier from context
@@ -37,7 +41,7 @@ export const getExtensionInfo = (): ExtensionInfo => {
  * @param {string} filePath The file path to be linted or fixed. (Note: The path is obtained via vscode's API, so it's already normalized.)
  * @param {string} standard The coding standard to use.
  * @param {string[]} additionalArguments Any additional arguments to pass to the executable.
- * @param {string} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @param {'sniffer' | 'fixer'} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
  * @returns {string[]} The array of arguments to pass to the sniffer or fixer executable.
  */
 export const getArgs = (
@@ -46,7 +50,7 @@ export const getArgs = (
   additionalArguments: string[],
   toolType: 'sniffer' | 'fixer',
 ): string[] => {
-  let args = [];
+  let args: string[] = [];
 
   // If sniffer, we need to add the JSON report argument.
   if (toolType === 'sniffer') {
@@ -347,13 +351,13 @@ export const getEOL = (): string => {
  * Determines if a document should be processed.
  *
  * @param document - The document to check.
- * @param {string} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @param {'sniffer' | 'fixer'} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
  * @returns `true` if the document should be processed, `false` otherwise.
  */
 export const shouldProcess = (
   document: TextDocument,
   resourceConf: ResourceSettings,
-  toolType: string,
+  toolType: 'sniffer' | 'fixer',
 ): boolean => {
   let isEnabled = false;
   if (toolType === 'sniffer') {
