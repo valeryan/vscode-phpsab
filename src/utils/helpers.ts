@@ -69,10 +69,11 @@ export const getArgs = (
   args.push(`--stdin-path=${filePath}`);
 
   // Validate additional arguments.
-  additionalArguments = validateAdditionalArguments(additionalArguments);
+  const validatedAdditionalArguments =
+    validateAdditionalArguments(additionalArguments);
 
   // Append any additional arguments.
-  args = args.concat(additionalArguments);
+  args = args.concat(validatedAdditionalArguments);
 
   // Indicate we will be passing the file contents via stdin.
   // This must be the last argument.
@@ -163,7 +164,7 @@ const validateAdditionalArguments = (
   }
 
   // Return the filtered array or an empty array.
-  return filteredArguments ?? [];
+  return filteredArguments;
 };
 
 /**
