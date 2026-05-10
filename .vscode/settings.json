@@ -5,6 +5,7 @@
   "search.exclude": {
     "out": true
   },
-  "typescript.tsc.autoDetect": "off",
-  "typescript.preferences.importModuleSpecifier": "relative"
+  "js/ts.tsc.autoDetect": "off",
+  "js/ts.preferences.importModuleSpecifier": "relative",
+  "markdown.extension.toc.levels": "2..6"
 }
