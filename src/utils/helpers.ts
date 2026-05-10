@@ -107,7 +107,7 @@ const validateAdditionalArguments = (
   // Filter the arguments.
   const filteredArguments = additionalArguments.filter((arg) => {
     // If the argument is an internally added argument, filter it out.
-    if (validInternalArguments.includes(getArgumentKey(arg))) {
+    if (isInternalArgumentKey(getArgumentKey(arg))) {
       isArgValid = false;
       return false;
     }
@@ -308,14 +308,23 @@ const validateFilterValue = (value: string): boolean => {
 /**
  * Extracts the argument key from a command line key-value argument.
  * @param {string} arg The argument (e.g., "--standard=PSR12" or "-q")
- * @returns {PHPCSInternalArgumentKey} The key part (e.g., "--standard" or "-q")
+ * @returns {string} The key part (e.g., "--standard" or "-q")
  */
-const getArgumentKey = (arg: string): PHPCSInternalArgumentKey => {
+const getArgumentKey = (arg: string): string => {
   // If the argument contains an '=', split and return the key part.
   // Otherwise, return the argument as is.
-  return (
-    arg.includes('=') ? arg.split('=', 2)[0] : arg
-  ) as PHPCSInternalArgumentKey;
+  return arg.includes('=') ? arg.split('=', 2)[0] : arg;
+};
+
+/**
+ * Determines whether an argument key is part of the internally-added argument set.
+ * @param {string} key The argument key to test.
+ * @returns {boolean} `true` when the key is an internal argument key.
+ */
+const isInternalArgumentKey = (
+  key: string,
+): key is PHPCSInternalArgumentKey => {
+  return (validInternalArguments as readonly string[]).includes(key);
 };
 
 /**
