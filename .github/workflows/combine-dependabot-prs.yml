@@ -30,15 +30,20 @@ jobs:
         run: |
           git fetch origin
           if git ls-remote --exit-code origin "refs/heads/$BRANCH_NAME"; then
-            echo "Branch $BRANCH_NAME already exists — updating from main."
+            echo "Branch $BRANCH_NAME already exists — checking whether it needs updates from main."
             git checkout -b "$BRANCH_NAME" "origin/$BRANCH_NAME"
-            if ! git merge origin/main --no-edit; then
-              echo "::error::Merge conflict between $BRANCH_NAME and main — manual intervention required."
-              git merge --abort
-              exit 1
+            if git merge-base --is-ancestor origin/main HEAD; then
+              echo "Branch $BRANCH_NAME already includes origin/main — no update needed."
+            else
+              echo "Branch $BRANCH_NAME is behind origin/main — merging updates."
+              if ! git merge origin/main --no-edit; then
+                echo "::error::Merge conflict between $BRANCH_NAME and main — manual intervention required."
+                git merge --abort
+                exit 1
+              fi
+              git push origin "$BRANCH_NAME"
+              echo "Updated branch $BRANCH_NAME from main."
             fi
-            git push origin "$BRANCH_NAME"
-            echo "Updated branch $BRANCH_NAME from main."
           else
             git checkout -B "$BRANCH_NAME" origin/main
             git push origin "$BRANCH_NAME"
