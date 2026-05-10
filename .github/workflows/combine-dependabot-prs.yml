@@ -26,11 +26,24 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Create security branch if it does not exist
+      - name: Create or update security branch
         run: |
           git fetch origin
           if git ls-remote --exit-code origin "refs/heads/$BRANCH_NAME"; then
-            echo "Branch $BRANCH_NAME already exists — resuming."
+            echo "Branch $BRANCH_NAME already exists — checking whether it needs updates from main."
+            git checkout -b "$BRANCH_NAME" "origin/$BRANCH_NAME"
+            if git merge-base --is-ancestor origin/main HEAD; then
+              echo "Branch $BRANCH_NAME already includes origin/main — no update needed."
+            else
+              echo "Branch $BRANCH_NAME is behind origin/main — merging updates."
+              if ! git merge origin/main --no-edit; then
+                echo "::error::Merge conflict between $BRANCH_NAME and main — manual intervention required."
+                git merge --abort
+                exit 1
+              fi
+              git push origin "$BRANCH_NAME"
+              echo "Updated branch $BRANCH_NAME from main."
+            fi
           else
             git checkout -B "$BRANCH_NAME" origin/main
             git push origin "$BRANCH_NAME"
@@ -38,6 +51,7 @@ jobs:
           fi
 
       - name: Retarget and merge dependabot PRs
+        id: merge-prs
         run: |
           MERGED_ITEMS=()
           FAILED_ITEMS=()
@@ -51,6 +65,7 @@ jobs:
 
           if [ ${#PR_ENTRIES[@]} -eq 0 ]; then
             echo "No open Dependabot PRs found — nothing to combine."
+            echo "has_merges=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -84,6 +99,17 @@ jobs:
             exit 1
           fi
 
+          # Write merged/failed items to temp files for use in the next step
+          printf '%s\n' "${MERGED_ITEMS[@]}" > "$RUNNER_TEMP/merged_items.txt"
+          printf '%s\n' "${FAILED_ITEMS[@]}" > "$RUNNER_TEMP/failed_items.txt"
+          echo "has_merges=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build and update security PR description
+        if: steps.merge-prs.outputs.has_merges == 'true'
+        run: |
+          mapfile -t MERGED_ITEMS < "$RUNNER_TEMP/merged_items.txt"
+          mapfile -t FAILED_ITEMS < "$RUNNER_TEMP/failed_items.txt"
+
           # Check for an existing open combined PR
           EXISTING=$(gh pr list \
             --head "$BRANCH_NAME" \
@@ -96,7 +122,9 @@ jobs:
           # to each list so older entries are preserved. Deduplicate by exact line
           # (same PR always produces the same line) while preserving processing order.
           if [ -n "$EXISTING" ]; then
-            EXISTING_BODY=$(gh pr view "$EXISTING" --json body --jq '.body')
+            # Strip carriage returns so grep patterns match correctly regardless of
+            # the line endings returned by the GitHub API.
+            EXISTING_BODY=$(gh pr view "$EXISTING" --json body --jq '.body' | tr -d '\r')
 
             mapfile -t EXISTING_MERGED < <(echo "$EXISTING_BODY" | grep -E '^\* .+\(#[0-9]+\)$' || true)
             mapfile -t EXISTING_FAILED < <(echo "$EXISTING_BODY" | grep -E '^> \* .+\(#[0-9]+\)$' || true)
