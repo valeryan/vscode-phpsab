@@ -3,14 +3,34 @@ import { logger } from '../logger';
 
 /**
  * Is the current platform Windows?
+ *
  * @returns boolean
  */
 export const isWin = (): boolean => /^win/.test(process.platform);
 
+/**
+ * Get the executable script extension for the current platform.
+ * Windows executable scripts typically have a '.bat' extension,
+ * while POSIX systems have no extension.
+ *
+ * @returns The executable script extension for the current platform.
+ */
 export const getPlatformExtension = (): string => (isWin() ? '.bat' : '');
 
+/**
+ * Get the appropriate path separator for the current platform.
+ * Windows uses '\' while POSIX systems use '/'.
+ *
+ * @returns The path separator for the current platform.
+ */
 export const getPlatformPathSeparator = (): string => (isWin() ? '\\' : '/');
 
+/**
+ * Get the appropriate PATH separator for the current platform to use when modifying
+ * the PATH environment variable. Windows uses ';' while POSIX systems use ':'.
+ *
+ * @returns The PATH separator for the current platform.
+ */
 export const getEnvPathSeparator = (): string => (isWin() ? ';' : ':');
 
 /**
@@ -32,7 +52,13 @@ export const addPhpToEnvPath = (phpExecutablePath: string) => {
     );
   }
 };
-// Create passthrough methods for path, allows for easier replacement in test
+
+/**
+ * Join multiple path segments into a single path string, normalizing separators for the current OS.
+ *
+ * @param args The path segments to join.
+ * @returns The joined path string.
+ */
 export const joinPaths = (...args: string[]): string => path.join(...args);
 
 /**
