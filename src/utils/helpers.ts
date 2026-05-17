@@ -16,7 +16,11 @@ import { ResourceSettings } from '../interfaces/resource-settings';
 import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
 
-const extensionInfo: ExtensionInfo = {} as ExtensionInfo;
+const extensionInfo: ExtensionInfo = {
+  id: '',
+  displayName: '',
+  version: '',
+};
 
 export const setExtensionInfo = (context: ExtensionContext) => {
   // Get extension unique identifier from context
@@ -37,7 +41,7 @@ export const getExtensionInfo = (): ExtensionInfo => {
  * @param {string} filePath The file path to be linted or fixed. (Note: The path is obtained via vscode's API, so it's already normalized.)
  * @param {string} standard The coding standard to use.
  * @param {string[]} additionalArguments Any additional arguments to pass to the executable.
- * @param {string} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @param {'sniffer' | 'fixer'} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
  * @returns {string[]} The array of arguments to pass to the sniffer or fixer executable.
  */
 export const getArgs = (
@@ -46,7 +50,7 @@ export const getArgs = (
   additionalArguments: string[],
   toolType: 'sniffer' | 'fixer',
 ): string[] => {
-  let args = [];
+  let args: string[] = [];
 
   // If sniffer, we need to add the JSON report argument.
   if (toolType === 'sniffer') {
@@ -65,10 +69,11 @@ export const getArgs = (
   args.push(`--stdin-path=${filePath}`);
 
   // Validate additional arguments.
-  additionalArguments = validateAdditionalArguments(additionalArguments);
+  const validatedAdditionalArguments =
+    validateAdditionalArguments(additionalArguments);
 
   // Append any additional arguments.
-  args = args.concat(additionalArguments);
+  args = args.concat(validatedAdditionalArguments);
 
   // Indicate we will be passing the file contents via stdin.
   // This must be the last argument.
@@ -103,7 +108,7 @@ const validateAdditionalArguments = (
   // Filter the arguments.
   const filteredArguments = additionalArguments.filter((arg) => {
     // If the argument is an internally added argument, filter it out.
-    if (validInternalArguments.includes(getArgumentKey(arg))) {
+    if (isInternalArgumentKey(getArgumentKey(arg))) {
       isArgValid = false;
       return false;
     }
@@ -159,7 +164,7 @@ const validateAdditionalArguments = (
   }
 
   // Return the filtered array or an empty array.
-  return filteredArguments ?? [];
+  return filteredArguments;
 };
 
 /**
@@ -304,14 +309,23 @@ const validateFilterValue = (value: string): boolean => {
 /**
  * Extracts the argument key from a command line key-value argument.
  * @param {string} arg The argument (e.g., "--standard=PSR12" or "-q")
- * @returns {PHPCSInternalArgumentKey} The key part (e.g., "--standard" or "-q")
+ * @returns {string} The key part (e.g., "--standard" or "-q")
  */
-const getArgumentKey = (arg: string): PHPCSInternalArgumentKey => {
+const getArgumentKey = (arg: string): string => {
   // If the argument contains an '=', split and return the key part.
   // Otherwise, return the argument as is.
-  return (
-    arg.includes('=') ? arg.split('=', 2)[0] : arg
-  ) as PHPCSInternalArgumentKey;
+  return arg.includes('=') ? arg.split('=', 2)[0] : arg;
+};
+
+/**
+ * Determines whether an argument key is part of the internally-added argument set.
+ * @param {string} key The argument key to test.
+ * @returns {boolean} `true` when the key is an internal argument key.
+ */
+const isInternalArgumentKey = (
+  key: string,
+): key is PHPCSInternalArgumentKey => {
+  return (validInternalArguments as readonly string[]).includes(key);
 };
 
 /**
@@ -347,13 +361,13 @@ export const getEOL = (): string => {
  * Determines if a document should be processed.
  *
  * @param document - The document to check.
- * @param {string} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @param {'sniffer' | 'fixer'} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
  * @returns `true` if the document should be processed, `false` otherwise.
  */
 export const shouldProcess = (
   document: TextDocument,
   resourceConf: ResourceSettings,
-  toolType: string,
+  toolType: 'sniffer' | 'fixer',
 ): boolean => {
   let isEnabled = false;
   if (toolType === 'sniffer') {
