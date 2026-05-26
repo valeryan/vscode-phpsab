@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.0] - 2026-05-26
+
+### What's Changed
+
+* **PHP_CodeSniffer 4.x support** (backwards compatible with 3.x).
+  - Handle new PHPCBF exit codes (`4` no fixable errors, `5` fixer conflict, `7` combinations of the above) so v4 runs no longer surface as failures.
+  - Replace the "4.x not supported" warning with version-mismatch detection only.
+  - Clarify 3.x vs 4.x stdout/stderr behaviour in the fixer.
+* **Composer-based phpcs/phpcbf auto-detection.** When `phpsab.executablePathCS`/`CBF` are unset, the extension now uses the workspace `composer.json` (override path via `phpsab.composerJsonPath`) to locate the project-local binaries before falling back to the global PATH.
+* **Optional Docker support.** Run `phpcs` and `phpcbf` inside a container per workspace folder via the new settings (off by default):
+  - `phpsab.dockerEnabled`
+  - `phpsab.dockerContainer`
+  - `phpsab.dockerWorkspaceRoot`
+  - `phpsab.dockerExecutablePathCS` / `phpsab.dockerExecutablePathCBF`
+  - `phpsab.dockerContainerExec` (e.g. `docker` or `podman`)
+  - `phpsab.dockerUseFilepath` (sniffer-only stdin escape hatch)
+
+### Fixed
+
+* Use `cross-spawn` so phpcs/phpcbf invocations no longer fail with `ENOENT` on Windows when the executable path contains spaces or special characters.
+* Fixer error handling for both v3 and v4 — only treat real failures as errors, and stop swallowing diffs returned alongside non-zero exit codes.
+
+
 ## [0.0.25] - 2026-05-09
 
 ### What's Changed

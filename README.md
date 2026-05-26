@@ -43,6 +43,11 @@ This extension is available on both [VS Code Marketplace](https://marketplace.vi
     - [**phpsab.composerJsonPath**](#phpsabcomposerjsonpath)
     - [**phpsab.phpExecutablePath**](#phpsabphpexecutablepath)
     - [**phpsab.excludeGlobs**](#phpsabexcludeglobs)
+- [Docker support](#docker-support-1)
+    - [Quick start](#quick-start)
+    - [Settings reference](#settings-reference)
+    - [Auto-deriving the container executable paths](#auto-deriving-the-container-executable-paths)
+    - [Notes](#notes)
 - [Diagnosing common errors](#diagnosing-common-errors)
     - [**phpsab.debug**](#phpsabdebug)
     - [The phpcs report contains invalid json](#the-phpcs-report-contains-invalid-json)
@@ -53,11 +58,9 @@ This extension is available on both [VS Code Marketplace](https://marketplace.vi
 
 ## PHPCS Version Support
 
-This extension supports the [latest stable version of PHPCS 3.x](https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/). If you are using an older version of PHPCS, please upgrade to the latest 3.x version.
+This extension supports both [PHP_CodeSniffer 3.x](https://github.com/PHPCSStandards/PHP_CodeSniffer/releases/) and 4.x. If you are using an older version of PHPCS, please upgrade to a supported 3.x or 4.x release.
 
-> **NOTE:** PHPCS 4.x is not currently supported.
->
-> As of v0.0.22, the extension will detect if PHPCS/PHPCBF version 4.x is being used and will display a warning message to the user. Some features may not work as expected when using version 4.x. Please consider downgrading to the latest 3.x version.
+> **NOTE:** As of v0.1.0, PHPCS 4.x is fully supported. The extension handles the new PHPCBF exit codes (`4`, `5`, `7`) and will only warn when the detected `phpcs`/`phpcbf` binaries are at mismatched major versions.
 
 ## Maintenance Status
 
@@ -154,7 +157,7 @@ This extension is available on both [VS Code Marketplace](https://marketplace.vi
 
 ### Docker support
 
-If you would like to run phpcs in your docker containers using this extension, a [fork exists](https://github.com/mtbdata711/vscode-phpsab-docker) that will provide you with Docker support.
+This extension can run `phpcs` and `phpcbf` inside a running Docker container instead of on the host. Docker mode is opt-in per workspace folder — see the [Docker support](#docker-support-1) section below for the full reference.
 
 ## Basic Configuration
 
@@ -473,6 +476,61 @@ Good Example:
 This setting allows you to specify an array of glob patterns to exclude PHP files from being processed by the Sniffer and Fixer. By default, the `vendor` and `node_modules` directories are excluded.
 
 This is useful for excluding third-party libraries, dependencies, and intellisense stub files that you do not want to be checked or modified by phpcs/phpcbf.
+
+## Docker support
+
+This extension can run `phpcs` and `phpcbf` inside a running Docker container instead of (or alongside) a locally installed binary. Docker mode is opt-in and applies per workspace folder, so a multi-root workspace can mix Docker-enabled folders and local-binary folders freely.
+
+### Quick start
+
+Add the following to your workspace's `.vscode/settings.json`:
+
+```json
+{
+    "phpsab.dockerEnabled": true,
+    "phpsab.dockerContainer": "<container name or ID>",
+    "phpsab.dockerWorkspaceRoot": "<absolute container path matching the host workspace root>"
+}
+```
+
+#### Worked example
+
+If you develop a WordPress plugin at `/home/me/Projects/MyPlugin` on your host, mounted at `/var/www/html/wp-content/plugins/MyPlugin` inside a container named `wordpress`:
+
+```json
+{
+    "phpsab.dockerEnabled": true,
+    "phpsab.dockerContainer": "wordpress",
+    "phpsab.dockerWorkspaceRoot": "/var/www/html/wp-content/plugins/MyPlugin"
+}
+```
+
+The extension will translate the host file path into the container path before invoking `phpcs`, then translate any container paths in the report back to host paths.
+
+### Settings reference
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `phpsab.dockerEnabled` | `false` | Run `phpcs` and `phpcbf` inside a container. When `false`, all other `phpsab.docker*` settings are ignored. |
+| `phpsab.dockerContainer` | `""` | Name or ID of the running container. Required when `dockerEnabled` is `true`. |
+| `phpsab.dockerWorkspaceRoot` | `""` | Absolute container path that corresponds to the host workspace root. Required when `dockerEnabled` is `true`. |
+| `phpsab.dockerExecutablePathCS` | `""` | Optional. Absolute container path to `phpcs`. If empty, derived from `phpsab.executablePathCS` by replacing the workspace prefix. |
+| `phpsab.dockerExecutablePathCBF` | `""` | Optional. Absolute container path to `phpcbf`. If empty, derived from `phpsab.executablePathCBF`. |
+| `phpsab.dockerContainerExec` | `"docker"` | Single executable used to enter the container. Set to `"podman"` (or an absolute path) for drop-in replacements. Compound commands such as `"docker compose"` are not supported. |
+| `phpsab.dockerUseFilepath` | `false` | Sniffer-only. Pass the file path positionally to `phpcs` instead of streaming via stdin. Disables linting of unsaved buffers; the fixer ignores this setting and always uses stdin mode. |
+
+### Auto-deriving the container executable paths
+
+When `phpsab.dockerExecutablePathCS`/`CBF` is left empty, the extension takes the resolved host executable path (typically a project-local `vendor/bin/phpcs`) and replaces the host workspace prefix with `phpsab.dockerWorkspaceRoot`. This works only when the executable lives under the mounted workspace.
+
+For container-only installations (e.g. `phpcs` at `/usr/local/bin/phpcs` inside the container, with no host counterpart), set `phpsab.dockerExecutablePathCS` and `phpsab.dockerExecutablePathCBF` explicitly.
+
+### Notes
+
+- Docker mode requires an open workspace folder. It is not supported in single-file mode because there is no host workspace root to map.
+- `phpsab.dockerContainer` must be a literal container name or ID. Docker Compose service names are not supported (use `docker exec <container>` semantics).
+- `docker exec` adds noticeable latency. Keeping `phpsab.snifferMode` at the default `"onSave"` is recommended for Docker workspaces.
+- If the container is not running or `phpsab.dockerContainerExec` is not on `PATH`, the extension will warn once and disable the affected tools for that workspace; the rest of the editor remains usable.
 
 ## Diagnosing common errors
 

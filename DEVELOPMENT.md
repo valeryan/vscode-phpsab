@@ -35,6 +35,34 @@ To install a development version of this extension for testing you will need to 
 -   Find the option that is `Install from VSIX...` and follow the prompts.
 -   After installing, you may need to reload VSCode.
 
+## Testing Docker mode locally
+
+To exercise the optional Docker support during development, spin up a throwaway container that mounts your test project and has `phpcs`/`phpcbf` installed:
+
+```sh
+# from the test project root
+docker run -d --name phpcs-test -v "$PWD":/app -w /app composer:latest tail -f /dev/null
+docker exec phpcs-test composer global require "squizlabs/php_codesniffer:^3.7"
+# or for PHPCS 4.x:
+# docker exec phpcs-test composer global require "phpcsstandards/php_codesniffer:^4.0"
+```
+
+Then in the test project's `.vscode/settings.json`:
+
+```json
+{
+  "phpsab.dockerEnabled": true,
+  "phpsab.dockerContainer": "phpcs-test",
+  "phpsab.dockerWorkspaceRoot": "/app",
+  "phpsab.dockerExecutablePathCS": "/root/.composer/vendor/bin/phpcs",
+  "phpsab.dockerExecutablePathCBF": "/root/.composer/vendor/bin/phpcbf"
+}
+```
+
+Reload the Extension Development Host. Sniffer/Fixer commands should appear in the output channel as `docker exec -i phpcs-test …`. Stop the container to exercise the "container not running" warning path.
+
+For Podman, set `"phpsab.dockerContainerExec": "podman"` and use `podman run`/`podman exec` in place of `docker`.
+
 ## Publishing Releases
 
 Using the Release system on Github, draft a new release with the desired version tag. The github workflow should handle updating the package.json version and publishing the release to both Vs Marketplace and the Open VSX Registry. These both require a PAT to be set in the security section on github.com and will occasionally need to be updated or rotated if the publishing workflow fails.
