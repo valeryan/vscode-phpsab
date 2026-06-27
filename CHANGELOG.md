@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.0] - 2026-06-27
+
+### What's Changed
+
+* **PHP_CodeSniffer 4.x support** (backwards compatible with 3.x).
+  - Handle the new PHPCBF exit codes (`4` failure to fix some files / fixer conflict, `5` = `1 + 4`, `7` = `1 + 2 + 4`) so v4 runs no longer surface as failures.
+  - Treat exit code `2` correctly for both versions (3.x: some fixes failed; 4.x: non-auto-fixable issues remain) and still apply any valid fixed output returned alongside it.
+  - Replace the "4.x not supported" warning with version-mismatch detection only.
+  - Clarify 3.x vs 4.x stdout/stderr behaviour in the fixer and the exit-code labels.
+
+### Fixed
+
+* Fixer error handling for both v3 and v4 — only treat real failures as errors, stop swallowing diffs returned alongside non-zero exit codes, and no longer show an empty information message on error paths.
+
 ## [0.0.25] - 2026-05-09
 
 ### What's Changed
