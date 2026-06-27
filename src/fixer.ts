@@ -144,7 +144,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const stdout = fixer.stdout.toString();
   const stderr = fixer.stderr.toString();
 
-  // Set the original command information (not parsed) for Windows ENOENT error handling
+  // Set the original (unquoted) command information for Windows ENOENT error handling. With shell: true,
+  // cmd.exe swallows a missing-executable ENOENT and exits 1 instead of surfacing it, so
+  // addWindowsEnoentError reconstructs it; on *nix Node already populates fixer.error directly.
   const originalCommand = {
     commandPath: CBFExecutable,
     args: lintArgs,
@@ -156,11 +158,9 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   logger.info(`FIXER EXIT CODE: ${exitcode}`);
 
-  // We only log STDOUT if it starts with ERROR (3.x versions of phpcbf output "ERROR"
-  // messages to stdout), as otherwise it could be the whole file contents,
-  // which clutters the log when debugging.
-  //
-  // This will be removed once we require phpcbf 4.x, which outputs errors to STDERR.
+  // PHPCS 3.x's phpcbf writes "ERROR" status lines to stdout mixed with the fixed file content; PHPCS 4.x
+  // writes errors to stderr instead. Log stdout only when it looks like a 3.x error line to avoid dumping
+  // fixed file content into the output channel.
   if (stdout && (stdout.startsWith('ERROR') || stdout.startsWith(getEOL()))) {
     logger.info(`FIXER STDOUT: ${stdout.trim()}`);
   }
@@ -171,12 +171,13 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
   let fixed = stdout;
 
-  let errors: { [key: number]: string } = {
-    3: 'FIXER: A general script execution error occurred.',
-    16: 'FIXER: Configuration error of the application.',
-    32: 'FIXER: Configuration error of a Fixer.',
-    64: 'FIXER: Exception raised within the application.',
-    255: 'FIXER: A Fatal execution error occurred.',
+  // PHPCS-specific exit-code labels. (Earlier versions of this map used PHP-CS-Fixer
+  // labels by mistake - different tool, different codes.)
+  const errors: { [key: number]: string } = {
+    3: 'FIXER: Processing / script execution error (PHPCS 3.x).',
+    16: 'FIXER: Processing error — invalid CLI options or ruleset (PHPCS 4.x).',
+    64: 'FIXER: Requirements not met — PHP version or missing extensions (PHPCS 4.x).',
+    255: 'FIXER: A fatal execution error occurred.',
   };
 
   let error: string = '';
@@ -197,11 +198,22 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   }
 
   /**
-   * fixer exit codes:
-   * Exit code 0 is used to indicate that no fixable errors were found, so nothing was fixed
-   * Exit code 1 is used to indicate that all fixable errors were fixed correctly
-   * Exit code 2 is used to indicate that FIXER failed to fix some of the fixable errors it found
-   * Exit code 3 is used for general script execution errors
+   * PHPCBF exit codes:
+   *
+   * PHP_CodeSniffer 3.x:
+   * 0: no fixable errors were found, so nothing was fixed
+   * 1: all fixable errors were fixed correctly
+   * 2: PHPCBF failed to fix some of the fixable errors it found
+   * 3: processing / script execution error
+   *
+   * PHP_CodeSniffer 4.x:
+   * 0: clean / auto-fixed with no remaining issues
+   * 1: issues found/remaining, auto-fixable
+   * 2: issues found/remaining, non-auto-fixable
+   * 4: failure to fix some files / fixer conflict (phpcbf only)
+   * 5: 1 + 4 (phpcbf only)
+   * 7: 1 + 2 + 4 (phpcbf only)
+   * 16, 64: processing / requirements errors
    */
   switch (exitcode) {
     case null: {
@@ -240,56 +252,52 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
 
       break;
     }
-    case 2: {
-      // If stdout has valid fixed output (and doesn't contain error messages),
-      // then this exit code indicates that some fixable errors failed to be fixed.
+    // 2 has different meanings between versions:
+    //  - PHPCS 3.x phpcbf: some fixable errors failed to fix.
+    //  - PHPCS 4.x phpcbf (NON_FIXABLE): auto-fixable were fixed, but non-auto-fixable issues remain.
+    // 4 / 5 / 7 are PHPCS 4.x bitmask combinations involving FAILED_TO_FIX. In every case, stdout (when
+    // valid) contains the partially / fully fixed file and should be applied. The user-facing message is
+    // unified — neutral wording that's accurate for both versions.
+    case 2:
+    case 4:
+    case 5:
+    case 7: {
       if (hasValidFixedOutput(stdout, fileText)) {
         result = fixed;
-        message = 'FIXER failed to fix some of the fixable errors.';
-      }
-      // If Node errors.
-      else if (nodeError) {
-        // Destructure the returned object and assign to variables.
+        message =
+          'FIXER applied auto-fixes; some issues could not be auto-fixed.';
+      } else if (nodeError) {
         ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
         error += errorMsg;
+      } else {
+        // No fixes applied (e.g. PHPCS 4.x exit 2 with only non-fixable issues, or 3.x exit 2
+        // where every fix attempt failed). Inform without error.
+        message =
+          'No auto-fixable issues were applied; non-auto-fixable issues remain.';
       }
 
       break;
     }
     default:
-      // A PHPCBF error occurred.
+      // A PHPCBF error occurred. stdout has already been logged above; don't splat it into the user's error dialog.
       error =
         errors[exitcode] ||
         `FIXER: An unknown error occurred with exit code ${exitcode}.`;
-      if (fixed.length > 0) {
-        error += '\n' + fixed + '\n';
-      }
-      // Other errors.
-      else {
-        // If Node errors.
-        if (nodeError) {
-          // Destructure the returned object and assign to variables.
-          ({ errorMsg, extraLoggerMsg } = determineNodeError(
-            nodeError,
-            'fixer',
-          ));
-          error += errorMsg;
-        }
-        // If no specific error is found, return a generic fatal error.
-        else {
-          error += 'FATAL: Unknown error occurred.';
-        }
+      if (nodeError) {
+        ({ errorMsg, extraLoggerMsg } = determineNodeError(nodeError, 'fixer'));
+        error += ` ${errorMsg}`;
       }
   }
 
   logger.endTimer('Fixer');
 
-  window.showInformationMessage(message);
-
   if (error !== '') {
     logger.error(`${error}${extraLoggerMsg}`);
     return Promise.reject(error);
-  } else {
+  }
+
+  if (message !== '') {
+    window.showInformationMessage(message);
     logger.info(`FIXER MESSAGE: ${message}`);
   }
 

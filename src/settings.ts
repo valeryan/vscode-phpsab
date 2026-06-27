@@ -274,7 +274,7 @@ const getSettings = async (
 };
 
 /**
- * Check PHPCS version compatibility and warn on 4.x versions.
+ * Check PHPCS version compatibility.
  * @param {Settings} settings The extension settings
  * @return {Promise<void>}
  */
@@ -324,14 +324,6 @@ const checkPhpcsVersionCompatibility = async (
     // Check for version mismatches when both versions are available
     else if (phpcsVersion && phpcbfVersion && phpcsVersion !== phpcbfVersion) {
       warningMsg = `Version mismatch detected: PHPCS version ${phpcsVersion} and PHPCBF version ${phpcbfVersion} from "${resourceRoot}". This may lead to unexpected behavior. Please ensure both are from the same installation directory.`;
-    }
-    // Check for unsupported 4.x versions
-    else if (
-      (phpcsVersion && phpcsVersion.startsWith('4.')) ||
-      (phpcbfVersion && phpcbfVersion.startsWith('4.'))
-    ) {
-      const version = phpcsVersion || phpcbfVersion;
-      warningMsg = `Version ${version} detected in "${resourceRoot}". Version 4.x is not supported yet. Some features may not work as expected. Please consider downgrading to the latest 3.x version.`;
     }
 
     // Only show warning if there's a message to display.
