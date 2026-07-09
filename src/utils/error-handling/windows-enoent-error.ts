@@ -24,7 +24,7 @@ import { isWin } from '../../resolvers/path-resolver-utils';
 /**
  * Add ENOENT error handling for Windows spawned processes using spawn or spawnSync.
  * @param {ChildProcess| SpawnSyncReturns<string | Buffer>} cp The ChildProcess instance or SpawnSyncReturns object
- * @param {any} originalCommand The original command information
+ * @param {OriginalCommand} originalCommand The original command information
  * @returns {Error | null | void} For spawnSync returns the `Error` object if ENOENT detected, `null` otherwise. For spawn and non-Windows systems returns `void`.
  */
 export function addWindowsEnoentError(
@@ -81,7 +81,7 @@ function hookIntoEmit(cp: ChildProcess, originalCommand: OriginalCommand) {
 /**
  * Verify if the error is an ENOENT error.
  * @param {number | null} status Exit status code
- * @param {any} originalCommand The original command information
+ * @param {OriginalCommand} originalCommand The original command information
  * @param {'spawn' | 'spawnSync'} syscall The syscall type, either `'spawn'` or `'spawnSync'`
  * @returns {Error | null} The ENOENT error or null
  */
@@ -106,7 +106,7 @@ function verifyEnoentError(
 
 /**
  * Create the ENOENT error for the specified command.
- * @param {any} originalCommand The original command information
+ * @param {OriginalCommand} originalCommand The original command information
  * @param {'spawn' | 'spawnSync'} syscall The syscall type, either `'spawn'` or `'spawnSync'`
  * @returns {Error} The ENOENT error
  */
