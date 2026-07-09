@@ -1,5 +1,6 @@
 import { minimatch } from 'minimatch';
 import os from 'node:os';
+import path from 'node:path';
 import { ExtensionContext, extensions, TextDocument, window } from 'vscode';
 import type {
   PHPCSArgumentKey,
@@ -393,9 +394,16 @@ const matchesExcludePatterns = (
   if (!patterns || patterns.length === 0) {
     return false;
   }
+  const absolutePath = document.uri.fsPath;
+  const relativePath = workspaceRoot
+    ? path.relative(workspaceRoot, document.uri.fsPath)
+    : null;
 
   for (const pattern of patterns) {
-    if (minimatch(document.uri.fsPath, pattern, { dot: true })) {
+    if (
+      minimatch(absolutePath, pattern, { dot: true }) ||
+      (relativePath !== null && minimatch(relativePath, pattern, { dot: true }))
+    ) {
       logger.info(
         `Document "${document.fileName}" matches exclude pattern: "${pattern}", and will be ignored.`,
       );
