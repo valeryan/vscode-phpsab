@@ -17,6 +17,7 @@
 
 import { ChildProcess, SpawnSyncReturns } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { OriginalCommand } from '../../interfaces/common';
 import { logger } from '../../logger';
 import { isWin } from '../../resolvers/path-resolver-utils';
 
@@ -28,7 +29,7 @@ import { isWin } from '../../resolvers/path-resolver-utils';
  */
 export function addWindowsEnoentError(
   cp: ChildProcess | SpawnSyncReturns<string | Buffer>,
-  originalCommand: any,
+  originalCommand: OriginalCommand,
   syscall: 'spawn' | 'spawnSync',
 ): Error | null | void {
   // If not on Windows, don't do anything
@@ -54,7 +55,7 @@ export function addWindowsEnoentError(
  * @param {ChildProcess} cp The ChildProcess instance
  * @param {any} originalCommand The original command information
  */
-function hookIntoEmit(cp: ChildProcess, originalCommand: any) {
+function hookIntoEmit(cp: ChildProcess, originalCommand: OriginalCommand) {
   // Store original emit method
   const originalEmit = cp.emit.bind(cp);
 
@@ -86,7 +87,7 @@ function hookIntoEmit(cp: ChildProcess, originalCommand: any) {
  */
 function verifyEnoentError(
   status: number | null,
-  originalCommand: any,
+  originalCommand: OriginalCommand,
   syscall: 'spawn' | 'spawnSync',
 ) {
   // If the exit code is `1` AND no file was found (the command) OR
@@ -110,7 +111,7 @@ function verifyEnoentError(
  * @returns {Error} The ENOENT error
  */
 function createEnoentError(
-  originalCommand: any,
+  originalCommand: OriginalCommand,
   syscall: 'spawn' | 'spawnSync',
 ) {
   return Object.assign(

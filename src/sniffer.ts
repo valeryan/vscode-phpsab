@@ -15,6 +15,7 @@ import {
   window,
   workspace,
 } from 'vscode';
+import { OriginalCommand } from './interfaces/common';
 import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
 import { Settings } from './interfaces/settings';
@@ -132,7 +133,7 @@ const validate = async (document: TextDocument) => {
   const sniffer = spawn(command, options);
 
   // Set the original command information (not parsed) for Windows ENOENT error handling
-  const originalCommand = {
+  const originalCommand: OriginalCommand = {
     commandPath: CSExecutable,
     args: lintArgs,
   };

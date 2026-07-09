@@ -10,6 +10,7 @@ import {
   window,
   workspace,
 } from 'vscode';
+import { OriginalCommand } from './interfaces/common';
 import { ConsoleError } from './interfaces/console-error';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
@@ -145,7 +146,7 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
   const stderr = fixer.stderr.toString();
 
   // Set the original command information (not parsed) for Windows ENOENT error handling
-  const originalCommand = {
+  const originalCommand: OriginalCommand = {
     commandPath: CBFExecutable,
     args: lintArgs,
   };
