@@ -1,4 +1,4 @@
-export const enum PHPCSMessageType {
+export enum PHPCSMessageType {
   ERROR = 'ERROR',
   WARNING = 'WARNING',
 }
