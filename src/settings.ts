@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { ResourceSettings } from './interfaces/resource-settings';
-import { Settings } from './interfaces/settings';
+import { Settings, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
 import {
@@ -211,14 +211,14 @@ export const loadSettings = async () => {
   // update settings from config
   let settings: Settings = {
     resources: resourcesSettings,
-    snifferMode: globalConfig.get('snifferMode', 'onSave'),
-    snifferShowSources: globalConfig.get('snifferShowSources', false),
-    snifferShowFixabilityIcons: globalConfig.get(
+    snifferMode: globalConfig.get<SnifferMode>('snifferMode', 'onSave'),
+    snifferShowSources: globalConfig.get<boolean>('snifferShowSources', false),
+    snifferShowFixabilityIcons: globalConfig.get<boolean>(
       'snifferShowFixabilityIcons',
       true,
     ),
-    snifferTypeDelay: globalConfig.get('snifferTypeDelay', 250),
-    debug: globalConfig.get('debug', false),
+    snifferTypeDelay: globalConfig.get<number>('snifferTypeDelay', 250),
+    debug: globalConfig.get<boolean>('debug', false),
     phpExecutablePath: await resolvePhpExecutablePath(globalConfig, PHPconfig),
   };
 
@@ -245,23 +245,23 @@ const getSettings = async (
   rootPath: string | null = null,
 ) => {
   let settings: ResourceSettings = {
-    fixerEnable: config.get('fixerEnable', true),
-    fixerArguments: config.get('fixerArguments', []),
+    fixerEnable: config.get<boolean>('fixerEnable', true),
+    fixerArguments: config.get<string[]>('fixerArguments', []),
     workspaceRoot: rootPath,
-    executablePathCBF: config.get('executablePathCBF', ''),
-    executablePathCS: config.get('executablePathCS', ''),
-    composerJsonPath: config.get('composerJsonPath', 'composer.json'),
-    standard: config.get('standard', ''),
-    autoRulesetSearch: config.get('autoRulesetSearch', true),
-    allowedAutoRulesets: config.get('allowedAutoRulesets', [
+    executablePathCBF: config.get<string>('executablePathCBF', ''),
+    executablePathCS: config.get<string>('executablePathCS', ''),
+    composerJsonPath: config.get<string>('composerJsonPath', 'composer.json'),
+    standard: config.get<string | null>('standard', ''),
+    autoRulesetSearch: config.get<boolean>('autoRulesetSearch', true),
+    allowedAutoRulesets: config.get<string[]>('allowedAutoRulesets', [
       '.phpcs.xml',
       'phpcs.xml',
       'phpcs.dist.xml',
       'ruleset.xml',
     ]),
-    snifferEnable: config.get('snifferEnable', true),
-    snifferArguments: config.get('snifferArguments', []),
-    excludeGlobs: config.get('excludeGlobs', [
+    snifferEnable: config.get<boolean>('snifferEnable', true),
+    snifferArguments: config.get<string[]>('snifferArguments', []),
+    excludeGlobs: config.get<string[]>('excludeGlobs', [
       '**/vendor/**',
       '**/node_modules/**',
     ]),

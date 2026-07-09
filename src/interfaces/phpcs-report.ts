@@ -1,4 +1,4 @@
-export const enum PHPCSMessageType {
+export enum PHPCSMessageType {
   ERROR = 'ERROR',
   WARNING = 'WARNING',
 }
@@ -15,7 +15,7 @@ export interface PHPCSMessage {
 
 export interface PHPCSCounts {
   errors: number;
-  warning: number;
+  warnings: number;
   fixable?: number;
 }
 
