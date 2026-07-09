@@ -28,8 +28,8 @@ export const setExtensionInfo = (context: ExtensionContext) => {
   const packageJSON = extensions.getExtension(id)?.packageJSON;
 
   extensionInfo.id = id;
-  extensionInfo.displayName = packageJSON?.displayName;
-  extensionInfo.version = packageJSON?.version;
+  extensionInfo.displayName = String(packageJSON?.displayName ?? id);
+  extensionInfo.version = String(packageJSON?.version ?? 'unknown');
 };
 
 export const getExtensionInfo = (): ExtensionInfo => {
