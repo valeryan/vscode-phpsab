@@ -53,7 +53,7 @@ export function addWindowsEnoentError(
 /**
  * Hook into the `emit` method of the spawn ChildProcess instance to handle ENOENT errors.
  * @param {ChildProcess} cp The ChildProcess instance
- * @param {any} originalCommand The original command information
+ * @param {OriginalCommand} originalCommand The original command information
  */
 function hookIntoEmit(cp: ChildProcess, originalCommand: OriginalCommand) {
   // Store original emit method
