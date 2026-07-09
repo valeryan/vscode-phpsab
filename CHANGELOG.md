@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.26] - 2026-07-09
+
+### What's Changed
+* Refactor logic for security PR description into a separate step by @yCodeTech with @Copilot in https://github.com/valeryan/vscode-phpsab/pull/229
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/233
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/236
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/239
+* Fix Typings by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/230
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.25...v0.0.26
+
+
 ## [0.0.25] - 2026-05-09
 
 ### What's Changed
