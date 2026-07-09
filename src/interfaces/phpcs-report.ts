@@ -15,7 +15,7 @@ export interface PHPCSMessage {
 
 export interface PHPCSCounts {
   errors: number;
-  warning: number;
+  warnings: number;
   fixable?: number;
 }
 
