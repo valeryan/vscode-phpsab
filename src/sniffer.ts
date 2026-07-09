@@ -18,7 +18,7 @@ import {
 import { OriginalCommand } from './interfaces/common';
 import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
-import { Settings } from './interfaces/settings';
+import { Settings, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
 import { loadSettings } from './settings';
@@ -33,11 +33,6 @@ import {
   parseArgs,
   shouldProcess,
 } from './utils/helpers';
-
-const enum runConfig {
-  save = 'onSave',
-  type = 'onType',
-}
 
 let settingsCache: Settings;
 const diagnosticCollection: DiagnosticCollection =
@@ -291,10 +286,10 @@ const setValidatorListener = async (): Promise<void> => {
     validatorListener.dispose();
   }
   const settings = await getSettings();
-  const run: runConfig = settings.snifferMode as runConfig;
+  const run: SnifferMode = settings.snifferMode;
   const delay: number = settings.snifferTypeDelay;
 
-  if (run === (runConfig.type as string)) {
+  if (run === 'onType') {
     const validator = debounce(
       ({ document }: TextDocumentChangeEvent): void => {
         validate(document);
