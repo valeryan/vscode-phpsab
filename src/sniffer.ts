@@ -95,9 +95,10 @@ const validate = async (document: TextDocument) => {
       document,
       resourceConf,
     ).resolve();
-  } catch (error: any) {
-    window.showErrorMessage(error.message, 'OK');
-    logger.error(error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    window.showErrorMessage(errorMessage, 'OK');
+    logger.error(errorMessage);
 
     return;
   }
