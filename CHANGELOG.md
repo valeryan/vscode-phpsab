@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.27] - 2026-08-11
+
+### What's Changed
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/245
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.26...v0.0.27
+
+
 ## [0.0.26] - 2026-07-09
 
 ### What's Changed
