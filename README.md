@@ -258,6 +258,8 @@ If omitted, the plugin will try to locate `phpcs` using you local composer.json,
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
 ```
 
+> **NOTE:** A leading `~` is expanded to your home directory, e.g. `~/.composer/vendor/bin/phpcs`.
+
 ### **phpsab.executablePathCBF**
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
@@ -276,6 +278,8 @@ If omitted, the extension will try to locate `phpcbf` using you local composer.j
 ```
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
 ```
+
+> **NOTE:** A leading `~` is expanded to your home directory, e.g. `~/.composer/vendor/bin/phpcbf`.
 
 ### **phpsab.standard**
 
@@ -348,6 +352,14 @@ The following values are applicable:
     ```json
     {
         "phpsab.standard": "/path/to/project/phpcs.xml"
+    }
+    ```
+
+    A leading `~` is also expanded to your home directory:
+
+    ```json
+    {
+        "phpsab.standard": "~/rulesets/custom-standard.xml"
     }
     ```
 
@@ -425,7 +437,7 @@ By default, the icons will be shown, but can be disabled by setting this option 
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
 
-This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file.
+This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file. A leading `~` is expanded to your home directory, e.g. `~/projects/my-app/composer.json`.
 
 ### **phpsab.phpExecutablePath**
 
@@ -439,7 +451,7 @@ The order of precedence for finding PHP path in the settings is as follows:
 2. Devsense's "PHP Tools" extension setting `php.executablePath`.
 3. This extension's `phpsab.phpExecutablePath` setting.
 
-The path should lead to the directory where the executable can be found, abd shouldn't include the actual executable itself.
+The path should lead to the directory where the executable can be found, abd shouldn't include the actual executable itself. A leading `~` is expanded to your home directory as well.
 
 On Windows, if it detects the path has `php.exe` at the end, then it will be removed from the path. On other systems, it won't detect or remove anything.
 

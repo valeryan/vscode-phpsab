@@ -7,6 +7,7 @@ import { logger } from '../logger';
 import { isSingleFileMode } from '../settings';
 import { getErrorCodeDescription } from '../utils/error-handling/error-helpers';
 import {
+  expandHomeDir,
   getPlatformExtension,
   getPlatformPathSeparator,
   normalizePath,
@@ -23,7 +24,10 @@ export const createStandardsPathResolver = (
     pathSeparator,
     resolve: async () => {
       let errors: any = {};
-      let configured = normalizePath(config.standard ?? '');
+      // `standard` may be a comma-separated list, so expand `~` in each entry individually.
+      let configured = normalizePath(
+        (config.standard ?? '').split(',').map(expandHomeDir).join(','),
+      );
 
       if (!isStandardValid(configured, config.allowedAutoRulesets)) {
         throw new Error(`Invalid coding standard:\n"${configured}".`);
