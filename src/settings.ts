@@ -258,7 +258,9 @@ const getSettings = async (
     workspaceRoot: rootPath,
     executablePathCBF: config.get<string>('executablePathCBF', ''),
     executablePathCS: config.get<string>('executablePathCS', ''),
-    composerJsonPath: config.get<string>('composerJsonPath', 'composer.json'),
+    composerJsonPath: expandHomeDir(
+      config.get<string>('composerJsonPath', 'composer.json'),
+    ),
     standard: config.get<string | null>('standard', ''),
     autoRulesetSearch: config.get<boolean>('autoRulesetSearch', true),
     allowedAutoRulesets: config.get<string[]>('allowedAutoRulesets', [
