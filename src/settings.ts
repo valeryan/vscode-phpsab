@@ -8,6 +8,7 @@ import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
 import {
   addPhpToEnvPath,
+  expandHomeDir,
   joinPaths,
   normalizePath,
 } from './resolvers/path-resolver-utils';
@@ -44,20 +45,23 @@ const resolveCBFExecutablePath = async (
   if (!settings.executablePathCBF) {
     let executablePathResolver = createPathResolver(settings, 'phpcbf');
     settings.executablePathCBF = await executablePathResolver.resolve();
-  }
-  // If a relative path is set, resolve it against the workspace root.
-  else if (
-    !path.isAbsolute(settings.executablePathCBF) &&
-    settings.workspaceRoot !== null
-  ) {
-    settings.executablePathCBF = joinPaths(
-      settings.workspaceRoot,
-      settings.executablePathCBF,
-    );
-  }
-  // Otherwise normalize the absolute path.
-  else {
-    settings.executablePathCBF = normalizePath(settings.executablePathCBF);
+  } else {
+    settings.executablePathCBF = expandHomeDir(settings.executablePathCBF);
+
+    // If a relative path is set, resolve it against the workspace root.
+    if (
+      !path.isAbsolute(settings.executablePathCBF) &&
+      settings.workspaceRoot !== null
+    ) {
+      settings.executablePathCBF = joinPaths(
+        settings.workspaceRoot,
+        settings.executablePathCBF,
+      );
+    }
+    // Otherwise normalize the absolute path.
+    else {
+      settings.executablePathCBF = normalizePath(settings.executablePathCBF);
+    }
   }
 
   return settings;
@@ -74,20 +78,23 @@ const resolveCSExecutablePath = async (
   if (!settings.executablePathCS) {
     let executablePathResolver = createPathResolver(settings, 'phpcs');
     settings.executablePathCS = await executablePathResolver.resolve();
-  }
-  // If a relative path is set, resolve it against the workspace root.
-  else if (
-    !path.isAbsolute(settings.executablePathCS) &&
-    settings.workspaceRoot !== null
-  ) {
-    settings.executablePathCS = joinPaths(
-      settings.workspaceRoot,
-      settings.executablePathCS,
-    );
-  }
-  // Otherwise normalize the absolute path.
-  else {
-    settings.executablePathCS = normalizePath(settings.executablePathCS);
+  } else {
+    settings.executablePathCS = expandHomeDir(settings.executablePathCS);
+
+    // If a relative path is set, resolve it against the workspace root.
+    if (
+      !path.isAbsolute(settings.executablePathCS) &&
+      settings.workspaceRoot !== null
+    ) {
+      settings.executablePathCS = joinPaths(
+        settings.workspaceRoot,
+        settings.executablePathCS,
+      );
+    }
+    // Otherwise normalize the absolute path.
+    else {
+      settings.executablePathCS = normalizePath(settings.executablePathCS);
+    }
   }
 
   return settings;
@@ -119,10 +126,11 @@ const resolvePhpExecutablePath = async (
   ];
 
   for (const source of phpExecutableSources) {
+    const expandedPath = source.path ? expandHomeDir(source.path) : source.path;
     // Return the first valid (non-empty) existing executable path found
-    if (source.path && (await executableExist(source.path))) {
-      logger.debug(`Using PHP executable from ${source.name}: ${source.path}`);
-      return source.path;
+    if (expandedPath && (await executableExist(expandedPath))) {
+      logger.debug(`Using PHP executable from ${source.name}: ${expandedPath}`);
+      return expandedPath;
     }
   }
 

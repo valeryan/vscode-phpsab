@@ -1,3 +1,4 @@
+import os from 'node:os';
 import path from 'node:path';
 import { logger } from '../logger';
 
@@ -70,4 +71,21 @@ export const joinPaths = (...args: string[]): string => path.join(...args);
 export const normalizePath = (string: string): string => {
   if (string === '') return '';
   return path.normalize(string);
+};
+
+/**
+ * Expand a leading `~` in a path to the current user's home directory.
+ * `path.isAbsolute()` treats `~/...` as a relative path, so this must run
+ * before any absolute/relative branching on user-provided paths.
+ *
+ * @param inputPath The path to expand.
+ * @returns The path with a leading `~` expanded to the home directory.
+ */
+export const expandHomeDir = (inputPath: string): string => {
+  if (!inputPath) return inputPath;
+  if (inputPath === '~') return os.homedir();
+  if (inputPath.startsWith('~/') || (isWin() && inputPath.startsWith('~\\'))) {
+    return path.join(os.homedir(), inputPath.slice(2));
+  }
+  return inputPath;
 };
