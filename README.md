@@ -258,7 +258,11 @@ If omitted, the plugin will try to locate `phpcs` using you local composer.json,
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
 ```
 
-> **NOTE:** A leading `~` is expanded to your home directory, e.g. `~/.composer/vendor/bin/phpcs`.
+> **NOTE:** A leading `~` is automatically expanded to your home directory.
+
+```
+~/.composer/vendor/bin/phpcs
+```
 
 ### **phpsab.executablePathCBF**
 
@@ -279,7 +283,11 @@ If omitted, the extension will try to locate `phpcbf` using you local composer.j
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
 ```
 
-> **NOTE:** A leading `~` is expanded to your home directory, e.g. `~/.composer/vendor/bin/phpcbf`.
+> **NOTE:** A leading `~` is automatically expanded to your home directory.
+
+```
+~/.composer/vendor/bin/phpcbf
+```
 
 ### **phpsab.standard**
 
@@ -287,7 +295,7 @@ C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\ph
 
 This setting controls the coding standard used by `phpcs` and `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use; and also multiple standards separated by commas (as supported by PHPCS), eg. `"PSR2,WordPress,/path/to/project/phpcs.xml"`.
 
-> **NOTE:** While using composer dependency manager over global installation make sure you use the phpcbf commands under your project scope !
+> **NOTE:** While using composer dependency manager over global installation make sure you use the phpcbf commands under your project scope!
 
 The following values are applicable:
 
@@ -355,7 +363,7 @@ The following values are applicable:
     }
     ```
 
-    A leading `~` is also expanded to your home directory:
+    A leading `~` will be expanded to your home directory:
 
     ```json
     {
@@ -437,7 +445,13 @@ By default, the icons will be shown, but can be disabled by setting this option 
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
 
-This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file. A leading `~` is expanded to your home directory, e.g. `~/projects/my-app/composer.json`.
+This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file. A leading `~` is automatically expanded to your home directory.
+
+```json
+{
+    "phpsab.composerJsonPath": "~/projects/my-app/composer.json"
+}
+```
 
 ### **phpsab.phpExecutablePath**
 
