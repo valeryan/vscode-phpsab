@@ -281,7 +281,7 @@ C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\ph
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
-This setting controls the coding standard used by `phpcs` and `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
+This setting controls the coding standard used by `phpcs` and `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use; and also multiple standards separated by commas (as supported by PHPCS), eg. `"PSR2,WordPress,/path/to/project/phpcs.xml"`.
 
 > **NOTE:** While using composer dependency manager over global installation make sure you use the phpcbf commands under your project scope !
 
@@ -439,7 +439,7 @@ The order of precedence for finding PHP path in the settings is as follows:
 2. Devsense's "PHP Tools" extension setting `php.executablePath`.
 3. This extension's `phpsab.phpExecutablePath` setting.
 
-The path should lead to the directory where the executable can be found, abd shouldn't include the actual executable itself.
+The path should lead to the directory where the executable can be found, and shouldn't include the actual executable itself.
 
 On Windows, if it detects the path has `php.exe` at the end, then it will be removed from the path. On other systems, it won't detect or remove anything.
 
