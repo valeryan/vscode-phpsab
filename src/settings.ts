@@ -3,11 +3,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { ResourceSettings } from './interfaces/resource-settings';
-import { Settings } from './interfaces/settings';
+import { Settings, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
 import {
   addPhpToEnvPath,
+  expandHomeDir,
   joinPaths,
   normalizePath,
 } from './resolvers/path-resolver-utils';
@@ -44,20 +45,23 @@ const resolveCBFExecutablePath = async (
   if (!settings.executablePathCBF) {
     let executablePathResolver = createPathResolver(settings, 'phpcbf');
     settings.executablePathCBF = await executablePathResolver.resolve();
-  }
-  // If a relative path is set, resolve it against the workspace root.
-  else if (
-    !path.isAbsolute(settings.executablePathCBF) &&
-    settings.workspaceRoot !== null
-  ) {
-    settings.executablePathCBF = joinPaths(
-      settings.workspaceRoot,
-      settings.executablePathCBF,
-    );
-  }
-  // Otherwise normalize the absolute path.
-  else {
-    settings.executablePathCBF = normalizePath(settings.executablePathCBF);
+  } else {
+    settings.executablePathCBF = expandHomeDir(settings.executablePathCBF);
+
+    // If a relative path is set, resolve it against the workspace root.
+    if (
+      !path.isAbsolute(settings.executablePathCBF) &&
+      settings.workspaceRoot !== null
+    ) {
+      settings.executablePathCBF = joinPaths(
+        settings.workspaceRoot,
+        settings.executablePathCBF,
+      );
+    }
+    // Otherwise normalize the absolute path.
+    else {
+      settings.executablePathCBF = normalizePath(settings.executablePathCBF);
+    }
   }
 
   return settings;
@@ -74,20 +78,23 @@ const resolveCSExecutablePath = async (
   if (!settings.executablePathCS) {
     let executablePathResolver = createPathResolver(settings, 'phpcs');
     settings.executablePathCS = await executablePathResolver.resolve();
-  }
-  // If a relative path is set, resolve it against the workspace root.
-  else if (
-    !path.isAbsolute(settings.executablePathCS) &&
-    settings.workspaceRoot !== null
-  ) {
-    settings.executablePathCS = joinPaths(
-      settings.workspaceRoot,
-      settings.executablePathCS,
-    );
-  }
-  // Otherwise normalize the absolute path.
-  else {
-    settings.executablePathCS = normalizePath(settings.executablePathCS);
+  } else {
+    settings.executablePathCS = expandHomeDir(settings.executablePathCS);
+
+    // If a relative path is set, resolve it against the workspace root.
+    if (
+      !path.isAbsolute(settings.executablePathCS) &&
+      settings.workspaceRoot !== null
+    ) {
+      settings.executablePathCS = joinPaths(
+        settings.workspaceRoot,
+        settings.executablePathCS,
+      );
+    }
+    // Otherwise normalize the absolute path.
+    else {
+      settings.executablePathCS = normalizePath(settings.executablePathCS);
+    }
   }
 
   return settings;
@@ -119,10 +126,11 @@ const resolvePhpExecutablePath = async (
   ];
 
   for (const source of phpExecutableSources) {
+    const expandedPath = source.path ? expandHomeDir(source.path) : source.path;
     // Return the first valid (non-empty) existing executable path found
-    if (source.path && (await executableExist(source.path))) {
-      logger.debug(`Using PHP executable from ${source.name}: ${source.path}`);
-      return source.path;
+    if (expandedPath && (await executableExist(expandedPath))) {
+      logger.debug(`Using PHP executable from ${source.name}: ${expandedPath}`);
+      return expandedPath;
     }
   }
 
@@ -211,14 +219,14 @@ export const loadSettings = async () => {
   // update settings from config
   let settings: Settings = {
     resources: resourcesSettings,
-    snifferMode: globalConfig.get('snifferMode', 'onSave'),
-    snifferShowSources: globalConfig.get('snifferShowSources', false),
-    snifferShowFixabilityIcons: globalConfig.get(
+    snifferMode: globalConfig.get<SnifferMode>('snifferMode', 'onSave'),
+    snifferShowSources: globalConfig.get<boolean>('snifferShowSources', false),
+    snifferShowFixabilityIcons: globalConfig.get<boolean>(
       'snifferShowFixabilityIcons',
       true,
     ),
-    snifferTypeDelay: globalConfig.get('snifferTypeDelay', 250),
-    debug: globalConfig.get('debug', false),
+    snifferTypeDelay: globalConfig.get<number>('snifferTypeDelay', 250),
+    debug: globalConfig.get<boolean>('debug', false),
     phpExecutablePath: await resolvePhpExecutablePath(globalConfig, PHPconfig),
   };
 
@@ -245,23 +253,23 @@ const getSettings = async (
   rootPath: string | null = null,
 ) => {
   let settings: ResourceSettings = {
-    fixerEnable: config.get('fixerEnable', true),
-    fixerArguments: config.get('fixerArguments', []),
+    fixerEnable: config.get<boolean>('fixerEnable', true),
+    fixerArguments: config.get<string[]>('fixerArguments', []),
     workspaceRoot: rootPath,
-    executablePathCBF: config.get('executablePathCBF', ''),
-    executablePathCS: config.get('executablePathCS', ''),
-    composerJsonPath: config.get('composerJsonPath', 'composer.json'),
-    standard: config.get('standard', ''),
-    autoRulesetSearch: config.get('autoRulesetSearch', true),
-    allowedAutoRulesets: config.get('allowedAutoRulesets', [
+    executablePathCBF: config.get<string>('executablePathCBF', ''),
+    executablePathCS: config.get<string>('executablePathCS', ''),
+    composerJsonPath: config.get<string>('composerJsonPath', 'composer.json'),
+    standard: config.get<string | null>('standard', ''),
+    autoRulesetSearch: config.get<boolean>('autoRulesetSearch', true),
+    allowedAutoRulesets: config.get<string[]>('allowedAutoRulesets', [
       '.phpcs.xml',
       'phpcs.xml',
       'phpcs.dist.xml',
       'ruleset.xml',
     ]),
-    snifferEnable: config.get('snifferEnable', true),
-    snifferArguments: config.get('snifferArguments', []),
-    excludeGlobs: config.get('excludeGlobs', [
+    snifferEnable: config.get<boolean>('snifferEnable', true),
+    snifferArguments: config.get<string[]>('snifferArguments', []),
+    excludeGlobs: config.get<string[]>('excludeGlobs', [
       '**/vendor/**',
       '**/node_modules/**',
     ]),

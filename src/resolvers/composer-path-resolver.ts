@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { PathResolver } from '../interfaces/path-resolver';
 import {
+  expandHomeDir,
   getPlatformExtension,
   getPlatformPathSeparator,
   joinPaths,
@@ -79,9 +80,13 @@ export const createComposerPathResolver = (
     pathSeparator: getPlatformPathSeparator(),
     resolve: async () => {
       let resolvedPath: string = '';
-      const fullWorkingPath = path.isAbsolute(workingPath)
-        ? workingPath
-        : joinPaths(workspaceRoot, workingPath).replace(/composer.json$/, '');
+      const expandedWorkingPath = expandHomeDir(workingPath);
+      const fullWorkingPath = path.isAbsolute(expandedWorkingPath)
+        ? expandedWorkingPath
+        : joinPaths(workspaceRoot, expandedWorkingPath).replace(
+            /composer.json$/,
+            '',
+          );
 
       let composerJsonPath = '';
       let composerLockPath = '';

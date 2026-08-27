@@ -17,18 +17,19 @@
 
 import { ChildProcess, SpawnSyncReturns } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { OriginalCommand } from '../../interfaces/common';
 import { logger } from '../../logger';
 import { isWin } from '../../resolvers/path-resolver-utils';
 
 /**
  * Add ENOENT error handling for Windows spawned processes using spawn or spawnSync.
  * @param {ChildProcess| SpawnSyncReturns<string | Buffer>} cp The ChildProcess instance or SpawnSyncReturns object
- * @param {any} originalCommand The original command information
+ * @param {OriginalCommand} originalCommand The original command information
  * @returns {Error | null | void} For spawnSync returns the `Error` object if ENOENT detected, `null` otherwise. For spawn and non-Windows systems returns `void`.
  */
 export function addWindowsEnoentError(
   cp: ChildProcess | SpawnSyncReturns<string | Buffer>,
-  originalCommand: any,
+  originalCommand: OriginalCommand,
   syscall: 'spawn' | 'spawnSync',
 ): Error | null | void {
   // If not on Windows, don't do anything
@@ -52,9 +53,9 @@ export function addWindowsEnoentError(
 /**
  * Hook into the `emit` method of the spawn ChildProcess instance to handle ENOENT errors.
  * @param {ChildProcess} cp The ChildProcess instance
- * @param {any} originalCommand The original command information
+ * @param {OriginalCommand} originalCommand The original command information
  */
-function hookIntoEmit(cp: ChildProcess, originalCommand: any) {
+function hookIntoEmit(cp: ChildProcess, originalCommand: OriginalCommand) {
   // Store original emit method
   const originalEmit = cp.emit.bind(cp);
 
@@ -80,13 +81,13 @@ function hookIntoEmit(cp: ChildProcess, originalCommand: any) {
 /**
  * Verify if the error is an ENOENT error.
  * @param {number | null} status Exit status code
- * @param {any} originalCommand The original command information
+ * @param {OriginalCommand} originalCommand The original command information
  * @param {'spawn' | 'spawnSync'} syscall The syscall type, either `'spawn'` or `'spawnSync'`
  * @returns {Error | null} The ENOENT error or null
  */
 function verifyEnoentError(
   status: number | null,
-  originalCommand: any,
+  originalCommand: OriginalCommand,
   syscall: 'spawn' | 'spawnSync',
 ) {
   // If the exit code is `1` AND no file was found (the command) OR
@@ -105,12 +106,12 @@ function verifyEnoentError(
 
 /**
  * Create the ENOENT error for the specified command.
- * @param {any} originalCommand The original command information
+ * @param {OriginalCommand} originalCommand The original command information
  * @param {'spawn' | 'spawnSync'} syscall The syscall type, either `'spawn'` or `'spawnSync'`
  * @returns {Error} The ENOENT error
  */
 function createEnoentError(
-  originalCommand: any,
+  originalCommand: OriginalCommand,
   syscall: 'spawn' | 'spawnSync',
 ) {
   return Object.assign(
