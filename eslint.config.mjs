@@ -31,6 +31,14 @@ export default defineConfig([
       sourceType: 'module',
     },
 
-    rules: {},
+    rules: {
+      'prettier/prettier': [
+        'error',
+        {},
+        {
+          usePrettierrc: true,
+        },
+      ],
+    },
   },
 ]);
