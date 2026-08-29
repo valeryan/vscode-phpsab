@@ -73,7 +73,7 @@ In January 2024 [seebeen](https://github.com/seebeen) signed on to be a maintain
 
 ## Installation
 
-Visual Studio Code must be installed in order to use this plugin. If Visual Studio Code is not installed, please follow the instructions [here](https://code.visualstudio.com/Docs/editor/setup).
+Visual Studio Code (VS Code) must be installed in order to use this plugin. If VS Code is not installed, please follow [VS Code's instructions](https://code.visualstudio.com/Docs/editor/setup).
 
 ## Usage
 
