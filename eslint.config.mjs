@@ -17,7 +17,11 @@ const compat = new FlatCompat({
 
 export default defineConfig([
   globalIgnores(['**/out', '**/dist', '**/*.d.ts']),
+  // TypeScript and Module JavaScript files
   {
+    files: ['**/*.ts', '**/*.mjs'],
+    // prettier/recommended also uses eslint-config-prettier under the hood to
+    // turn off all rules that might conflict with Prettier
     extends: compat.extends('plugin:prettier/recommended'),
 
     plugins: {
