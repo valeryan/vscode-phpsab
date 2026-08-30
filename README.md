@@ -73,7 +73,7 @@ In January 2024 [seebeen](https://github.com/seebeen) signed on to be a maintain
 
 ## Installation
 
-Visual Studio Code must be installed in order to use this plugin. If Visual Studio Code is not installed, please follow the instructions [here](https://code.visualstudio.com/Docs/editor/setup).
+Visual Studio Code (VS Code) must be installed in order to use this plugin. If VS Code is not installed, please follow [VS Code's instructions](https://code.visualstudio.com/Docs/editor/setup).
 
 ## Usage
 
@@ -104,7 +104,7 @@ When in single file mode:
 
 A global composer setup is required:
 
-- The `phpsab.executablePathCS` and `phpsab.executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, _OR_ set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
+- The `phpsab.executablePathCS` and `phpsab.executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, *OR* set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
 
 - If the `phpsab.standard` setting is used for a ruleset file then it **must** be the full absolute path.
 
@@ -123,20 +123,20 @@ Once phpcs is installed, you can proceed to install the vscode-phpsab plugin if 
 The `phpcs` linter can be installed globally using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-1. Require `phpcs` package by typing the following in a terminal:
+2. Require `phpcs` package by typing the following in a terminal:
 
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
 
-1. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
+3. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
 
 ### Project-wide Installation
 
 The `phpcs` linter can be installed in your project using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-1. Require `phpcs` package by typing the following at the root of your project in a terminal:
+2. Require `phpcs` package by typing the following at the root of your project in a terminal:
 
     ```bash
     composer require --dev squizlabs/php_codesniffer
@@ -145,10 +145,10 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 ### Plugin Installation
 
 1. Open Visual Studio Code.
-1. Press <kbd>Ctrl + P</kbd> on Windows or <kbd>Cmd + P</kbd> on Mac to open the Quick Open dialog.
-1. Type `ext install phpsab` to find the extension.
-1. Press <kbd>Enter</kbd> or click the cloud icon to install it.
-1. Restart Visual Studio Code!
+2. Press <kbd>Ctrl + P</kbd> on Windows or <kbd>Cmd + P</kbd> on Mac to open the Quick Open dialog.
+3. Type `ext install phpsab` to find the extension.
+4. Press <kbd>Enter</kbd> or click the cloud icon to install it.
+5. Restart Visual Studio Code!
 
 This extension is available on both [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab) and [Open VSX Registry](https://open-vsx.org/extension/ValeryanM/vscode-phpsab).
 
@@ -169,7 +169,7 @@ This setting controls whether `phpcbf` fixer is enabled.
 
 ### **phpsab.fixerArguments**
 
-[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
+[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
 
 Passes additional arguments to `phpcbf` runner.
 
@@ -188,7 +188,7 @@ Passes additional arguments to `phpcbf` runner.
 
 > **NOTE:** All arguments passed will be surrounded in double quotes automatically.
 
-_Example_
+*Example*
 
 ```bash
 {
@@ -207,7 +207,7 @@ This setting controls whether `phpcs` sniffer is enabled.
 
 ### **phpsab.snifferArguments**
 
-[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
+[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
 
 Passes additional arguments to `phpcs` runner.
 
@@ -226,7 +226,7 @@ Passes additional arguments to `phpcs` runner.
 
 > **NOTE:** All arguments passed will be surrounded in double quotes automatically.
 
-_Example_
+*Example*
 
 ```bash
 {
@@ -258,7 +258,11 @@ If omitted, the plugin will try to locate `phpcs` using you local composer.json,
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcs.bat
 ```
 
-> **NOTE:** A leading `~` is expanded to your home directory, e.g. `~/.composer/vendor/bin/phpcs`.
+> **NOTE:** A leading `~` is automatically expanded to your home directory.
+
+```
+~/.composer/vendor/bin/phpcs
+```
 
 ### **phpsab.executablePathCBF**
 
@@ -279,15 +283,19 @@ If omitted, the extension will try to locate `phpcbf` using you local composer.j
 C:\\Users\\enter-your-username-here\\AppData\\Roaming\\Composer\\vendor\\bin\\phpcbf.bat
 ```
 
-> **NOTE:** A leading `~` is expanded to your home directory, e.g. `~/.composer/vendor/bin/phpcbf`.
+> **NOTE:** A leading `~` is automatically expanded to your home directory.
+
+```
+~/.composer/vendor/bin/phpcbf
+```
 
 ### **phpsab.standard**
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* null ]
 
-This setting controls the coding standard used by `phpcs` and `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use.
+This setting controls the coding standard used by `phpcs` and `phpcbf`. You may specify the name, absolute path or workspace relative path of the coding standard to use; and also multiple standards separated by commas (as supported by PHPCS), eg. `"PSR2,WordPress,/path/to/project/phpcs.xml"`.
 
-> **NOTE:** While using composer dependency manager over global installation make sure you use the phpcbf commands under your project scope !
+> **NOTE:** While using composer dependency manager over global installation make sure you use the phpcbf commands under your project scope!
 
 The following values are applicable:
 
@@ -355,7 +363,7 @@ The following values are applicable:
     }
     ```
 
-    A leading `~` is also expanded to your home directory:
+    A leading `~` will be expanded to your home directory:
 
     ```json
     {
@@ -389,7 +397,7 @@ Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpc
 
 ### **phpsab.allowedAutoRulesets**
 
-[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [] ]
+[ *Scope:* Resource | Optional | *Type:* array | *Default:* [] ]
 
 An array of filenames that could contain a valid phpcs ruleset.
 
@@ -407,7 +415,7 @@ Enum dropdown options to set Sniffer Mode to `onSave` or `onType`.
 
 1. `onSave`: The Sniffer will only update diagnostics when the document is saved.
 
-1. `onType`: The Sniffer will update diagnostics as you type in a document.
+2. `onType`: The Sniffer will update diagnostics as you type in a document.
 
 ### **phpsab.snifferTypeDelay**
 
@@ -437,7 +445,13 @@ By default, the icons will be shown, but can be disabled by setting this option 
 
 [ *Scope:* Resource | Optional | *Type:* string | *Default:* composer.json ]
 
-This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file. A leading `~` is expanded to your home directory, e.g. `~/projects/my-app/composer.json`.
+This setting allows you to override the path to your composer.json file when it does not reside at the workspace root. You may specify the absolute path or workspace relative path to the `composer.json` file. A leading `~` is automatically expanded to your home directory.
+
+```json
+{
+    "phpsab.composerJsonPath": "~/projects/my-app/composer.json"
+}
+```
 
 ### **phpsab.phpExecutablePath**
 
@@ -451,7 +465,7 @@ The order of precedence for finding PHP path in the settings is as follows:
 2. Devsense's "PHP Tools" extension setting `php.executablePath`.
 3. This extension's `phpsab.phpExecutablePath` setting.
 
-The path should lead to the directory where the executable can be found, abd shouldn't include the actual executable itself. A leading `~` is expanded to your home directory as well.
+The path should lead to the directory where the executable can be found, and shouldn't include the actual executable itself. A leading `~` is expanded to your home directory as well.
 
 On Windows, if it detects the path has `php.exe` at the end, then it will be removed from the path. On other systems, it won't detect or remove anything.
 
@@ -477,7 +491,7 @@ Good Example:
 
 ### **phpsab.excludeGlobs**
 
-[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [
+[ *Scope:* Resource | Optional | *Type:* array | *Default:* [
 "\*\*/vendor/\*\*",
 "\*\*/node_modules/\*\*"
 ] ]
