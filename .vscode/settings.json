@@ -7,5 +7,27 @@
   },
   "js/ts.tsc.autoDetect": "off",
   "js/ts.preferences.importModuleSpecifier": "relative",
-  "markdown.extension.toc.levels": "2..6"
+  "markdown.extension.toc.levels": "2..6",
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+
+  "eslint.enable": true,
+  "eslint.format.enable": true,
+  "eslint.run": "onType"
 }
