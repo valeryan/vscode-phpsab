@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.28] - 2026-08-30
+
+### What's Changed
+* fix: expand ~ in executablePathCS/CBF settings by @jmwerk in https://github.com/valeryan/vscode-phpsab/pull/253
+* fix: relative paths for exclude glob patterns by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/231
+* chore: update eslint and dependencies by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/255
+* docs: add a note that specifying multiple standards is supported. by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/254
+
+### New Contributors
+* @jmwerk made their first contribution in https://github.com/valeryan/vscode-phpsab/pull/253
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.27...v0.0.28
+
+
 ## [0.0.27] - 2026-08-11
 
 ### What's Changed
