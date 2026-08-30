@@ -15,7 +15,7 @@
     "url": "https://github.com/valeryan/vscode-phpsab/issues"
   },
   "engines": {
-    "vscode": "^1.106.1"
+    "vscode": "^1.134.0"
   },
   "categories": [
     "Formatters",
@@ -175,27 +175,27 @@
   },
   "dependencies": {
     "lodash": "^4.18.1",
-    "minimatch": "^10.2.3"
+    "minimatch": "^10.2.6"
   },
   "devDependencies": {
-    "@types/lodash": "^4.17.21",
+    "@types/lodash": "^4.17.25",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22",
-    "@types/sinon": "^21.0.0",
-    "@types/vscode": "^1.106.1",
-    "@typescript-eslint/eslint-plugin": "^8.48.0",
-    "@typescript-eslint/parser": "^8.48.0",
+    "@types/sinon": "^21.0.1",
+    "@types/vscode": "^1.134.0",
+    "@typescript-eslint/eslint-plugin": "^8.68.0",
+    "@typescript-eslint/parser": "^8.68.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
-    "esbuild": "^0.28.1",
-    "eslint": "^9.39.1",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-markdownlint": "^0.10.1",
-    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-prettier": "^5.5.6",
     "prettier-plugin-organize-imports": "^4.3.0",
-    "rimraf": "^6.1.2",
-    "sinon": "^21.0.0",
-    "ts-loader": "^9.5.4",
+    "rimraf": "^6.1.3",
+    "sinon": "^21.1.2",
+    "ts-loader": "^9.6.2",
     "typescript": "^5.9.3"
   }
 }
