@@ -104,7 +104,7 @@ When in single file mode:
 
 A global composer setup is required:
 
-- The `phpsab.executablePathCS` and `phpsab.executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, _OR_ set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
+- The `phpsab.executablePathCS` and `phpsab.executablePathCBF` settings **must** be set to the full absolute path of phpcs and phpcbf respectively, *OR* set them to empty strings to allow the extension to automatically find the global composer installation and resolve the paths to the globally installed phpcs/phpcbf.
 
 - If the `phpsab.standard` setting is used for a ruleset file then it **must** be the full absolute path.
 
@@ -123,20 +123,20 @@ Once phpcs is installed, you can proceed to install the vscode-phpsab plugin if 
 The `phpcs` linter can be installed globally using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-1. Require `phpcs` package by typing the following in a terminal:
+2. Require `phpcs` package by typing the following in a terminal:
 
     ```bash
     composer global require squizlabs/php_codesniffer
     ```
 
-1. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
+3. You must specifically add the phpcs and phpcbf that you want to used to the global PATH on your system for the extension to auto detect them or set the executablePath for phpcs and phpcbf manually.
 
 ### Project-wide Installation
 
 The `phpcs` linter can be installed in your project using the Composer Dependency Manager for PHP.
 
 1. Install [composer](https://getcomposer.org/doc/00-intro.md).
-1. Require `phpcs` package by typing the following at the root of your project in a terminal:
+2. Require `phpcs` package by typing the following at the root of your project in a terminal:
 
     ```bash
     composer require --dev squizlabs/php_codesniffer
@@ -145,10 +145,10 @@ The `phpcs` linter can be installed in your project using the Composer Dependenc
 ### Plugin Installation
 
 1. Open Visual Studio Code.
-1. Press <kbd>Ctrl + P</kbd> on Windows or <kbd>Cmd + P</kbd> on Mac to open the Quick Open dialog.
-1. Type `ext install phpsab` to find the extension.
-1. Press <kbd>Enter</kbd> or click the cloud icon to install it.
-1. Restart Visual Studio Code!
+2. Press <kbd>Ctrl + P</kbd> on Windows or <kbd>Cmd + P</kbd> on Mac to open the Quick Open dialog.
+3. Type `ext install phpsab` to find the extension.
+4. Press <kbd>Enter</kbd> or click the cloud icon to install it.
+5. Restart Visual Studio Code!
 
 This extension is available on both [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=ValeryanM.vscode-phpsab) and [Open VSX Registry](https://open-vsx.org/extension/ValeryanM/vscode-phpsab).
 
@@ -169,7 +169,7 @@ This setting controls whether `phpcbf` fixer is enabled.
 
 ### **phpsab.fixerArguments**
 
-[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
+[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
 
 Passes additional arguments to `phpcbf` runner.
 
@@ -188,7 +188,7 @@ Passes additional arguments to `phpcbf` runner.
 
 > **NOTE:** All arguments passed will be surrounded in double quotes automatically.
 
-_Example_
+*Example*
 
 ```bash
 {
@@ -207,7 +207,7 @@ This setting controls whether `phpcs` sniffer is enabled.
 
 ### **phpsab.snifferArguments**
 
-[ _Scope:_ Resource | Optional | _Type:_ string[] | _Default:_ [] ]
+[ *Scope:* Resource | Optional | *Type:* string[] | *Default:* [] ]
 
 Passes additional arguments to `phpcs` runner.
 
@@ -226,7 +226,7 @@ Passes additional arguments to `phpcs` runner.
 
 > **NOTE:** All arguments passed will be surrounded in double quotes automatically.
 
-_Example_
+*Example*
 
 ```bash
 {
@@ -397,7 +397,7 @@ Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpc
 
 ### **phpsab.allowedAutoRulesets**
 
-[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [] ]
+[ *Scope:* Resource | Optional | *Type:* array | *Default:* [] ]
 
 An array of filenames that could contain a valid phpcs ruleset.
 
@@ -415,7 +415,7 @@ Enum dropdown options to set Sniffer Mode to `onSave` or `onType`.
 
 1. `onSave`: The Sniffer will only update diagnostics when the document is saved.
 
-1. `onType`: The Sniffer will update diagnostics as you type in a document.
+2. `onType`: The Sniffer will update diagnostics as you type in a document.
 
 ### **phpsab.snifferTypeDelay**
 
@@ -491,7 +491,7 @@ Good Example:
 
 ### **phpsab.excludeGlobs**
 
-[ _Scope:_ Resource | Optional | _Type:_ array | _Default:_ [
+[ *Scope:* Resource | Optional | *Type:* array | *Default:* [
 "\*\*/vendor/\*\*",
 "\*\*/node_modules/\*\*"
 ] ]

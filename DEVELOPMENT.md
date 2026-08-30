@@ -10,19 +10,19 @@ This extension is designed to use an auto config search functionality. When it f
 
 ## Setup Development Version
 
--   install the [Visual Studio Code](https://code.visualstudio.com/) [npm extension](https://marketplace.visualstudio.com/items?itemName=eg2.vscode-npm-script)
--   install the VS Code [ESLint extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) (for linting and auto-fixing code)
--   clone this repository and checkout `develop` branch
--   open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
--   run VS Code task `npm install`
+- install the [Visual Studio Code](https://code.visualstudio.com/) [npm extension](https://marketplace.visualstudio.com/items?itemName=eg2.vscode-npm-script)
+- install the VS Code [ESLint extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) (for linting and auto-fixing code)
+- clone this repository and checkout `develop` branch
+- open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
+- run VS Code task `npm install`
 
 ## Run/Debug Development Version
 
 To run the development version of the `vscode-phpsab` extension:
 
--   open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
--   select sidebar option `Debug`
--   press `Start Debugging` button or hit F5
+- open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
+- select sidebar option `Debug`
+- press `Start Debugging` button or hit F5
 
 This will launch a new VS Code window named `Extension Development Host`, automatically using the development version of the `vscode-phpsab` extension.
 
@@ -30,11 +30,11 @@ This will launch a new VS Code window named `Extension Development Host`, automa
 
 To install a development version of this extension for testing you will need to install the vsce package and package the project into a `.vsix` file.
 
--   Install vsce: `npm install -g @vscode/vsce`
--   In the root of the project run: `vsce package`
--   From the VSCode main menu, select "Extensions", click the `...` on the Extensions tab.
--   Find the option that is `Install from VSIX...` and follow the prompts.
--   After installing, you may need to reload VSCode.
+- Install vsce: `npm install -g @vscode/vsce`
+- In the root of the project run: `vsce package`
+- From the VSCode main menu, select "Extensions", click the `...` on the Extensions tab.
+- Find the option that is `Install from VSIX...` and follow the prompts.
+- After installing, you may need to reload VSCode.
 
 ## Publishing Releases
 
