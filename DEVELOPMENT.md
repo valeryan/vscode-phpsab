@@ -11,6 +11,7 @@ This extension is designed to use an auto config search functionality. When it f
 ## Setup Development Version
 
 -   install the [Visual Studio Code](https://code.visualstudio.com/) [npm extension](https://marketplace.visualstudio.com/items?itemName=eg2.vscode-npm-script)
+-   install the VS Code [ESLint extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) (for linting and auto-fixing code)
 -   clone this repository and checkout `develop` branch
 -   open the cloned repository folder using [Visual Studio Code](https://code.visualstudio.com/)
 -   run VS Code task `npm install`
