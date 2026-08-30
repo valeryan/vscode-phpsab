@@ -190,6 +190,7 @@
     "esbuild": "^0.28.1",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-markdownlint": "^0.10.1",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier-plugin-organize-imports": "^4.3.0",
     "rimraf": "^6.1.2",
