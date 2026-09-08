@@ -308,7 +308,10 @@ const setValidatorListener = async (): Promise<void> => {
  * @param event - The configuration change event.
  */
 const onConfigChange = async (event: ConfigurationChangeEvent) => {
-  if (!event.affectsConfiguration('phpsab')) {
+  if (
+    !event.affectsConfiguration('phpsab') &&
+    !event.affectsConfiguration('php')
+  ) {
     return;
   }
   settingsCache = await loadSettings();
