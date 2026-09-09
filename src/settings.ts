@@ -170,8 +170,10 @@ const validate = async (
     settings.fixerEnable = false;
   }
 
-  logger.log(msg);
-  window.showWarningMessage(msg, 'OK');
+  if (msg) {
+    logger.log(msg);
+    window.showWarningMessage(msg, 'OK');
+  }
 
   return settings;
 };

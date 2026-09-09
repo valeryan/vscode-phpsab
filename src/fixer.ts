@@ -42,7 +42,10 @@ const getSettings = async () => {
  * Load Configuration from editor
  */
 const reloadSettings = async (event: ConfigurationChangeEvent) => {
-  if (!event.affectsConfiguration('phpsab')) {
+  if (
+    !event.affectsConfiguration('phpsab') &&
+    !event.affectsConfiguration('php')
+  ) {
     return;
   }
   settingsCache = await loadSettings();
