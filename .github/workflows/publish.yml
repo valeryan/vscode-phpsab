@@ -29,7 +29,7 @@ jobs:
       is-valid: ${{ steps.parse-version.outputs.is-valid }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -52,7 +52,7 @@ jobs:
           fi
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20.x
           cache: "npm"
@@ -83,7 +83,7 @@ jobs:
     if: needs.validate-and-build.outputs.is-valid == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -94,7 +94,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20.x
           cache: "npm"
@@ -116,7 +116,7 @@ jobs:
           fi
 
       - name: Get Release Notes and Update Changelog
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const updateChangelog = await import('${{ github.workspace }}/.github/scripts/update-changelog.mjs');
@@ -165,13 +165,13 @@ jobs:
     if: github.event_name == 'release' && github.event.release.prerelease == false
     steps:
       - name: Checkout Updated Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ env.TARGET_BRANCH }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20.x
           cache: "npm"
@@ -180,12 +180,12 @@ jobs:
         run: npm ci
 
       - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
 
       - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
@@ -201,10 +201,10 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 20.x
           cache: "npm"
@@ -225,7 +225,7 @@ jobs:
 
       - name: Publish to Open VSX Registry
         if: ${{ inputs.skip_open_vsx != true }}
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
 
@@ -234,7 +234,7 @@ jobs:
         run: echo "⏭️  Skipping Open VSX publish (skip_open_vsx input is true)"
 
       - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
