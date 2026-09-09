@@ -3,6 +3,13 @@ name: Deploy Extension
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      skip_open_vsx:
+        description: "Skip publishing to Open VSX Registry entirely (useful for when Open VSX has been published but VS Code Marketplace failed to publish)."
+        type: boolean
+        required: false
+        default: false
 
 env:
   TAG_NAME: ${{ github.ref_name }}
@@ -48,7 +55,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Dependencies
         run: npm ci
@@ -90,7 +97,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Dependencies
         run: npm ci
@@ -155,7 +162,7 @@ jobs:
     needs: [validate-and-build, update-version-and-changelog]
     runs-on: ubuntu-latest
     environment: production
-    if: github.event.release.prerelease == false
+    if: github.event_name == 'release' && github.event.release.prerelease == false
     steps:
       - name: Checkout Updated Repository
         uses: actions/checkout@v4
@@ -167,7 +174,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Dependencies
         run: npm ci
@@ -186,3 +193,52 @@ jobs:
       - name: Report Success
         run: |
           echo "✅ Successfully published to both marketplaces"
+
+  manual-deploy:
+    name: Manual Deploy to Marketplaces
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Extension
+        run: npm run vscode:prepublish
+
+      - name: Verify Build Output
+        run: |
+          if [ ! -f "out/main.js" ]; then
+            echo "❌ Build failed: out/main.js not found"
+            exit 1
+          fi
+          echo "✅ Build successful"
+
+      - name: Publish to Open VSX Registry
+        if: ${{ inputs.skip_open_vsx != true }}
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+
+      - name: Skip Open VSX Publishing
+        if: ${{ inputs.skip_open_vsx == true }}
+        run: echo "⏭️  Skipping Open VSX publish (skip_open_vsx input is true)"
+
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v1
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+          registryUrl: https://marketplace.visualstudio.com
+
+      - name: Report Success
+        run: |
+          echo "✅ Successfully published extension (manual trigger)"
