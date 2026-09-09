@@ -188,7 +188,7 @@ jobs:
           # The token input isn't actually used in the action.
           token: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           token-name: "VS Marketplace Token"
-          warn-days: 30
+          warn-days: 1
           error-early: true
 
       - name: Install Dependencies
@@ -233,7 +233,7 @@ jobs:
           # The token input isn't actually used in the action.
           token: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           token-name: "VS Marketplace Token"
-          warn-days: 30
+          warn-days: 1
           error-early: true
 
       - name: Install Dependencies
