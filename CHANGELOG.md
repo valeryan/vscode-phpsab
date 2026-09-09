@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.29] - 2026-09-09
+
+### What's Changed
+* fix: on change of external extension php settings by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/256
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.28...v0.0.29
+
+
 ## [0.0.28] - 2026-08-30
 
 ### What's Changed
