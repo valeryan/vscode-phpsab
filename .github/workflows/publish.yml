@@ -219,7 +219,7 @@ jobs:
           # Check if the date is within the warning period (30 days before expiration),
           # and prints a warning message if it is, but still allows publishing.
           if [[ "$TODAY" > "$WARNING_DATE" || "$TODAY" == "$WARNING_DATE" ]]; then
-            echo "VS Marketplace token expires on $EXPIRATION_DATE. Please renew it and update the expiration date in this workflow."
+            echo "::warning title=VS Marketplace token expiration::VS Marketplace token expires on $EXPIRATION_DATE. Please renew it and update the expiration date in this workflow."
           fi
 
       - name: Install Dependencies
