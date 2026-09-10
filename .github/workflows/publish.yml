@@ -189,6 +189,12 @@ jobs:
         run: |
           EXPIRATION_DATE="${{ env.VS_MARKETPLACE_TOKEN_EXPIRATION_DATE }}"
 
+          # Enforce ISO 8601 (YYYY-MM-DD) since the string comparisons below rely on it.
+          if [[ ! "$EXPIRATION_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "VS Marketplace token expiration date must be in YYYY-MM-DD format: $EXPIRATION_DATE"
+            exit 1
+          fi
+
           # Check if the expiration date is valid and calculates the
           # warning date (30 days before expiration). The GNU date
           # command returns a non-zero status for malformed dates,
