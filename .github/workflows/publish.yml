@@ -14,6 +14,9 @@ on:
 env:
   TAG_NAME: ${{ github.ref_name }}
   TARGET_BRANCH: ${{ github.event.release.target_commitish }}
+  # The current expiration date of the VS Marketplace token.
+  # Update this date if the token is renewed.
+  VS_MARKETPLACE_TOKEN_EXPIRATION_DATE: "2027-09-09"
 
 permissions:
   contents: write
@@ -162,12 +165,18 @@ jobs:
     needs: [validate-and-build, update-version-and-changelog]
     runs-on: ubuntu-latest
     environment: production
-    if: github.event_name == 'release' && github.event.release.prerelease == false
+    # Runs for published, non-prerelease releases (after version bump/changelog jobs succeed) or manual dispatch.
+    if: >-
+      always() &&
+      (
+        (github.event_name == 'release' && github.event.release.prerelease == false && needs.validate-and-build.result == 'success' && needs.update-version-and-changelog.result == 'success') ||
+        github.event_name == 'workflow_dispatch'
+      )
     steps:
-      - name: Checkout Updated Repository
+      - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.TARGET_BRANCH }}
+          ref: ${{ github.event_name == 'release' && env.TARGET_BRANCH || github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
@@ -176,46 +185,59 @@ jobs:
           node-version: 22.x
           cache: "npm"
 
-      - name: Install Dependencies
-        run: npm ci
-
-      - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v2
-        with:
-          pat: ${{ secrets.OPEN_VSX_TOKEN }}
-
-      - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v2
-        with:
-          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          registryUrl: https://marketplace.visualstudio.com
-
-      - name: Report Success
+      - name: Check VS Marketplace Token Expiration Date
         run: |
-          echo "✅ Successfully published to both marketplaces"
+          EXPIRATION_DATE="${{ env.VS_MARKETPLACE_TOKEN_EXPIRATION_DATE }}"
 
-  manual-deploy:
-    name: Manual Deploy to Marketplaces
-    runs-on: ubuntu-latest
-    environment: production
-    if: github.event_name == 'workflow_dispatch'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+          # Enforce ISO 8601 (YYYY-MM-DD) since the string comparisons below rely on it.
+          if [[ ! "$EXPIRATION_DATE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "VS Marketplace token expiration date must be in YYYY-MM-DD format: $EXPIRATION_DATE"
+            exit 1
+          fi
 
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22.x
-          cache: "npm"
+          # Check if the expiration date is valid and calculates the
+          # warning date (30 days before expiration). The GNU date
+          # command returns a non-zero status for malformed dates,
+          # so the script will exit with an error.
+          WARNING_DATE=$(date -u -d "$EXPIRATION_DATE - 30 days" +%F) || {
+            echo "Invalid VS Marketplace token expiration date: $EXPIRATION_DATE"
+            exit 1
+          }
+
+          TODAY=$(date -u +%F)
+          BLOCKING_DATE=$(date -u -d "$TODAY + 1 day" +%F)
+
+          # Check if the date is in the past, i.e., if the token has expired.
+          # YYYY-MM-DD strings sort chronologically, so Bash string comparison is sufficient.
+          # If the token has expired, the script will exit with an error.
+          if [[ "$TODAY" > "$EXPIRATION_DATE" ]]; then
+            echo "VS Marketplace token expired on $EXPIRATION_DATE. Please renew it before publishing, and also update the expiration date in this workflow."
+            exit 1
+          fi
+
+          # Check if the expiration date is within the blocking period
+          # (today or tomorrow), and exits with an error if it is.
+          if [[ "$EXPIRATION_DATE" < "$BLOCKING_DATE" || "$EXPIRATION_DATE" == "$BLOCKING_DATE" ]]; then
+            echo "VS Marketplace token expires on $EXPIRATION_DATE. Please renew it before publishing, and also update the expiration date in this workflow."
+            exit 1
+          fi
+
+          # Check if the date is within the warning period (30 days before expiration),
+          # and prints a warning message if it is, but still allows publishing.
+          if [[ "$TODAY" > "$WARNING_DATE" || "$TODAY" == "$WARNING_DATE" ]]; then
+            echo "::warning title=VS Marketplace token expiration::VS Marketplace token expires on $EXPIRATION_DATE. Please renew it and update the expiration date in this workflow."
+          fi
 
       - name: Install Dependencies
         run: npm ci
 
+      # Release builds are already validated/built in validate-and-build; manual dispatch skips that job.
       - name: Build Extension
+        if: github.event_name == 'workflow_dispatch'
         run: npm run vscode:prepublish
 
       - name: Verify Build Output
+        if: github.event_name == 'workflow_dispatch'
         run: |
           if [ ! -f "out/main.js" ]; then
             echo "❌ Build failed: out/main.js not found"
@@ -224,13 +246,13 @@ jobs:
           echo "✅ Build successful"
 
       - name: Publish to Open VSX Registry
-        if: ${{ inputs.skip_open_vsx != true }}
+        if: github.event_name == 'release' || inputs.skip_open_vsx != true
         uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
 
       - name: Skip Open VSX Publishing
-        if: ${{ inputs.skip_open_vsx == true }}
+        if: github.event_name == 'workflow_dispatch' && inputs.skip_open_vsx == true
         run: echo "⏭️  Skipping Open VSX publish (skip_open_vsx input is true)"
 
       - name: Publish to Visual Studio Marketplace
@@ -241,4 +263,4 @@ jobs:
 
       - name: Report Success
         run: |
-          echo "✅ Successfully published extension (manual trigger)"
+          echo "✅ Successfully published extension"
