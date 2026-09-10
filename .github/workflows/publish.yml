@@ -185,17 +185,42 @@ jobs:
           node-version: 22.x
           cache: "npm"
 
-      - name: Check VS Marketplace Token Expiration
-        uses: jazzsequence/action-token-expiration@v1
-        with:
-          # The current expiration date of the VS Marketplace token.
-          # Update this date if the token is renewed.
-          expiration: ${{ env.VS_MARKETPLACE_TOKEN_EXPIRATION_DATE }}
-          # The token input isn't actually used in the action.
-          token: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          token-name: "VS Marketplace Token"
-          warn-days: 1
-          error-early: true
+      - name: Check VS Marketplace Token Expiration Date
+        run: |
+          EXPIRATION_DATE="${{ env.VS_MARKETPLACE_TOKEN_EXPIRATION_DATE }}"
+
+          # Check if the expiration date is valid and calculates the
+          # warning date (30 days before expiration). The GNU date
+          # command returns a non-zero status for malformed dates,
+          # so the script will exit with an error.
+          WARNING_DATE=$(date -u -d "$EXPIRATION_DATE - 30 days" +%F) || {
+            echo "Invalid VS Marketplace token expiration date: $EXPIRATION_DATE"
+            exit 1
+          }
+
+          TODAY=$(date -u +%F)
+          BLOCKING_DATE=$(date -u -d "$TODAY + 1 day" +%F)
+
+          # Check if the date is in the past, i.e., if the token has expired.
+          # YYYY-MM-DD strings sort chronologically, so Bash string comparison is sufficient.
+          # If the token has expired, the script will exit with an error.
+          if [[ "$TODAY" > "$EXPIRATION_DATE" ]]; then
+            echo "VS Marketplace token expired on $EXPIRATION_DATE. Please renew it before publishing, and also update the expiration date in this workflow."
+            exit 1
+          fi
+
+          # Check if the expiration date is within the blocking period
+          # (today or tomorrow), and exits with an error if it is.
+          if [[ "$EXPIRATION_DATE" < "$BLOCKING_DATE" || "$EXPIRATION_DATE" == "$BLOCKING_DATE" ]]; then
+            echo "VS Marketplace token expires on $EXPIRATION_DATE. Please renew it before publishing, and also update the expiration date in this workflow."
+            exit 1
+          fi
+
+          # Check if the date is within the warning period (30 days before expiration),
+          # and prints a warning message if it is, but still allows publishing.
+          if [[ "$TODAY" > "$WARNING_DATE" || "$TODAY" == "$WARNING_DATE" ]]; then
+            echo "VS Marketplace token expires on $EXPIRATION_DATE. Please renew it and update the expiration date in this workflow."
+          fi
 
       - name: Install Dependencies
         run: npm ci
