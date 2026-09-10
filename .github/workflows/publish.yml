@@ -165,12 +165,18 @@ jobs:
     needs: [validate-and-build, update-version-and-changelog]
     runs-on: ubuntu-latest
     environment: production
-    if: github.event_name == 'release' && github.event.release.prerelease == false
+    # Runs for published, non-prerelease releases (after version bump/changelog jobs succeed) or manual dispatch.
+    if: >-
+      always() &&
+      (
+        (github.event_name == 'release' && github.event.release.prerelease == false && needs.validate-and-build.result == 'success' && needs.update-version-and-changelog.result == 'success') ||
+        github.event_name == 'workflow_dispatch'
+      )
     steps:
-      - name: Checkout Updated Repository
+      - name: Checkout Repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.TARGET_BRANCH }}
+          ref: ${{ github.event_name == 'release' && env.TARGET_BRANCH || github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
@@ -194,10 +200,29 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # Release builds are already validated/built in validate-and-build; manual dispatch skips that job.
+      - name: Build Extension
+        if: github.event_name == 'workflow_dispatch'
+        run: npm run vscode:prepublish
+
+      - name: Verify Build Output
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ ! -f "out/main.js" ]; then
+            echo "❌ Build failed: out/main.js not found"
+            exit 1
+          fi
+          echo "✅ Build successful"
+
       - name: Publish to Open VSX Registry
+        if: github.event_name == 'release' || inputs.skip_open_vsx != true
         uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
+
+      - name: Skip Open VSX Publishing
+        if: github.event_name == 'workflow_dispatch' && inputs.skip_open_vsx == true
+        run: echo "⏭️  Skipping Open VSX publish (skip_open_vsx input is true)"
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
@@ -207,4 +232,4 @@ jobs:
 
       - name: Report Success
         run: |
-          echo "✅ Successfully published to both marketplaces"
+          echo "✅ Successfully published extension"
