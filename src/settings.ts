@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { checkPhpcsVersionCompatibility } from './compatibility';
@@ -7,6 +6,7 @@ import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
 import {
   addPhpToEnvPath,
+  executableExist,
   expandHomeDir,
   joinPaths,
   normalizePath,
@@ -139,23 +139,6 @@ const resolvePhpExecutablePath = async (
 
   // If no executable path is found, return an empty string
   return '';
-};
-
-/**
- * Check if the given executable path exists and is accessible.
- * @param {string} path The path to the executable file.
- * @returns {Promise<boolean>} A promise that resolves to true if the executable exists and is accessible, false otherwise.
- */
-const executableExist = async (path: string): Promise<boolean> => {
-  try {
-    if (!path) {
-      return false;
-    }
-    await fs.access(path, fs.constants.X_OK);
-    return true;
-  } catch (error) {
-    return false;
-  }
 };
 
 /**
