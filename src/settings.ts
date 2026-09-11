@@ -23,9 +23,11 @@ export const isSingleFileMode = (): boolean => {
 
 /**
  * Attempt to find the root path for a workspace or resource
- * @param resource
+ * @param {Uri} resource The workspace resource URI
+ * @returns {string} The resolved root path for the given resource,
+ * or an empty string if none is found.
  */
-const resolveRootPath = (resource: Uri) => {
+const resolveRootPath = (resource: Uri): string => {
   // try to get a valid folder from resource
   let folder = workspace.getWorkspaceFolder(resource);
 
@@ -35,7 +37,8 @@ const resolveRootPath = (resource: Uri) => {
 
 /**
  * Get correct executable path from resolver
- * @param settings
+ * @param {ResourceSettings} settings The resource settings.
+ * @returns {Promise<ResourceSettings>} The resolved resource settings with the correct executable path.
  */
 const resolveCBFExecutablePath = async (
   settings: ResourceSettings,
@@ -68,7 +71,8 @@ const resolveCBFExecutablePath = async (
 
 /**
  * Get correct executable path from resolver
- * @param settings
+ * @param {ResourceSettings} settings The resource settings.
+ * @returns {Promise<ResourceSettings>} The resolved resource settings with the correct executable path.
  */
 const resolveCSExecutablePath = async (
   settings: ResourceSettings,
@@ -103,7 +107,7 @@ const resolveCSExecutablePath = async (
  * Resolve PHP executable path with proper precedence handling
  * @param {WorkspaceConfiguration} config phpsab configuration
  * @param {WorkspaceConfiguration} phpConfig php configuration
- * @returns {string} The resolved PHP executable path
+ * @returns {Promise<string>} The resolved PHP executable path or an empty string if none is found.
  */
 const resolvePhpExecutablePath = async (
   config: WorkspaceConfiguration,
@@ -137,7 +141,12 @@ const resolvePhpExecutablePath = async (
   return '';
 };
 
-const executableExist = async (path: string) => {
+/**
+ * Check if the given executable path exists and is accessible.
+ * @param {string} path The path to the executable file.
+ * @returns {Promise<boolean>} A promise that resolves to true if the executable exists and is accessible, false otherwise.
+ */
+const executableExist = async (path: string): Promise<boolean> => {
   try {
     if (!path) {
       return false;
@@ -149,6 +158,13 @@ const executableExist = async (path: string) => {
   }
 };
 
+/**
+ * Validate the resource-specific settings, ensuring that the configured
+ * executable paths exist and disabling features if necessary.
+ * @param settings The resource-specific settings to validate.
+ * @param resource The resource (workspace folder or single file) for which the settings are being validated.
+ * @returns {Promise<ResourceSettings>} The validated resource settings.
+ */
 const validate = async (
   settings: ResourceSettings,
   resource: string,
@@ -177,7 +193,11 @@ const validate = async (
   return settings;
 };
 
-export const loadSettings = async () => {
+/**
+ * Load and validate the extension settings.
+ * @returns {Promise<Settings>} The loaded and validated settings.
+ */
+export const loadSettings = async (): Promise<Settings> => {
   const resourcesSettings: Array<ResourceSettings> = [];
 
   const globalConfig = workspace.getConfiguration('phpsab', null);
