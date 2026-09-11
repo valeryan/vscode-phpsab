@@ -2,8 +2,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
-import { ResourceSettings } from './interfaces/resource-settings';
-import { Settings, SnifferMode } from './interfaces/settings';
+import { ResourceSettings, Settings, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
 import { createPathResolver } from './resolvers/path-resolver';
 import {

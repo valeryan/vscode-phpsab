@@ -13,7 +13,7 @@ import {
   validInternalArguments,
 } from '../interfaces/arguments';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
-import { ResourceSettings } from '../interfaces/resource-settings';
+import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
 
