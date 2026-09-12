@@ -16,6 +16,8 @@ import { ExtensionInfo } from '../interfaces/extensionInfo';
 import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
+// Set of internal argument keys for quick lookup.
+const internalArgumentKeys: Set<string> = new Set(validInternalArguments);
 // Set of valid additional argument keys for quick lookup.
 const additionalArgumentKeys: Set<string> = new Set(validAdditionalArguments);
 
@@ -106,8 +108,10 @@ const validateAdditionalArguments = (
     return [];
   }
 
-  // Set a variable with a default true value so we can test it later.
-  let isArgValid: boolean = true;
+  // Set a variable with a default false value so we can keep track if there
+  // were any invalid arguments. As soon as we encounter an invalid argument,
+  // this variable will be set to true, and will not be reset back to false.
+  let hasInvalidArguments: boolean = false;
   const argErrors: string[] = [];
 
   // Set a default warning message in case we need it later.
@@ -120,7 +124,8 @@ const validateAdditionalArguments = (
   const filteredArguments = additionalArguments.filter((arg) => {
     // If the argument is an internally added argument, filter it out.
     if (isInternalArgumentKey(getArgumentKey(arg))) {
-      isArgValid = false;
+      // Set the variable to true to indicate that there was at least one invalid argument.
+      hasInvalidArguments = true;
       return false;
     }
 
@@ -129,21 +134,23 @@ const validateAdditionalArguments = (
     // Validate the argument.
     const { isValid, errors } = validateArgument(arg);
 
-    // Set isArgValid to the result of the validation so we can
-    // use it later outside this scope.
-    isArgValid = isValid;
+    // If there are any errors...
+    if (!isValid) {
+      // Set the variable to true to indicate that there was at least one invalid argument.
+      hasInvalidArguments = true;
+    }
 
     // Collect any errors for logging later.
     argErrors.push(...errors);
 
-    // Then filter it depending on it's validity.
-    return isArgValid;
+    // Then return it to the filtered array depending on it's validity.
+    return isValid;
   });
 
   // If array is not empty (after filtering)...
   if (filteredArguments.length > 0) {
     // If any arguments were invalid, set some messages.
-    if (!isArgValid) {
+    if (hasInvalidArguments) {
       txt = '\nRunning with the filtered arguments';
       logMsg += `${txt}: "${filteredArguments.join(', ')}".`;
     }
@@ -160,7 +167,7 @@ const validateAdditionalArguments = (
   warningMsg += `${txt}, for more details please see the Output channel.`;
 
   // If any arguments were invalid...
-  if (!isArgValid) {
+  if (hasInvalidArguments) {
     // Log the warning messages and inform the user.
     logger.warn(logMsg);
     // Show a warning message to the user, and offer to open the output channel.
@@ -346,7 +353,7 @@ const getArgumentKey = (arg: string): string => {
 const isInternalArgumentKey = (
   key: string,
 ): key is PHPCSInternalArgumentKey => {
-  return (validInternalArguments as readonly string[]).includes(key);
+  return internalArgumentKeys.has(key);
 };
 
 /**
@@ -439,6 +446,9 @@ const matchesExcludePatterns = (
   if (!patterns || patterns.length === 0) {
     return false;
   }
+
+  // Match against both the full absolute path and the workspace-relative path so
+  // users can express exclude globs in either form without surprising failures.
   const absolutePath = document.uri.fsPath;
   const relativePath = workspaceRoot
     ? path.relative(workspaceRoot, document.uri.fsPath)
