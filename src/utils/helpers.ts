@@ -9,13 +9,18 @@ import type {
 import {
   PHPCSArgumentValidation,
   validAdditionalArguments,
-  validFlags,
+  validAdditionalFlagArguments,
   validInternalArguments,
 } from '../interfaces/arguments';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
 import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
+
+// Set of allowed additional flag argument keys for quick lookup.
+const allowedAdditionalFlagKeys: Set<string> = new Set(
+  validAdditionalFlagArguments,
+);
 // Set of internal argument keys for quick lookup.
 const internalArgumentKeys: Set<string> = new Set(validInternalArguments);
 // Set of valid additional argument keys for quick lookup.
@@ -190,27 +195,25 @@ const validateAdditionalArguments = (
  * @param {string[]} args The command line arguments to parse.
  * @returns {string[]} The parsed arguments.
  */
-export const parseArgs = (args: string[]) => {
-  const parsedArgs: string[] = [];
+export const parseArgs = (args: string[]): string[] => {
+  /**
+   * Quotes a command line argument based on the OS.
+   * Wraps the argument in the appropriate quotes for the OS;
+   * Windows uses double quotes and *nix uses single quotes.
+   *
+   * @see https://ss64.com/nt/syntax-esc.html#quotes for Windows quoting rules
+   * @see https://ss64.com/bash/syntax-quoting.html for *nix quoting rules
+   *
+   * @param {string} arg The argument to quote.
+   * @returns {string} The quoted argument.
+   */
+  const quote = isWin()
+    ? (arg: string) => `"${arg}"`
+    : (arg: string) => `'${arg}'`;
 
-  // For each argument, wrap in quotes to allow spaces in paths
-  // and to help prevent command injection.
-  args.forEach((arg: string) => {
-    // Windows...
-    if (isWin()) {
-      // Wrap in double quotes.
-      // See https://ss64.com/nt/syntax-esc.html#quotes
-      parsedArgs.push(`"${arg}"`);
-    }
-    // *nix...
-    else {
-      // Wrap in single quotes.
-      // See https://ss64.com/bash/syntax-quoting.html
-      parsedArgs.push(`'${arg}'`);
-    }
-  });
-
-  return parsedArgs;
+  // Wrap each argument in OS-appropriate quotes to preserve
+  // spaces in paths and prevent command injection.
+  return args.map(quote);
 };
 
 /**
@@ -231,8 +234,8 @@ const validateArgument = (arg: string): PHPCSArgumentValidation => {
     return validateKeyValueArgument(arg, errors);
   }
 
-  // Handle flag arguments (no value)
-  if (!validFlags.includes(arg)) {
+  // Handle flag arguments (no value) and only allow known additional flags.
+  if (!allowedAdditionalFlagKeys.has(arg)) {
     errors.push(`Invalid flag argument: "${arg}"`);
   }
 
