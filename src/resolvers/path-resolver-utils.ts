@@ -21,7 +21,7 @@ export const getPlatformExtension = (): string => (isWin() ? '.bat' : '');
 
 /**
  * Get the appropriate path separator for the current platform.
- * Windows uses '\' while POSIX systems use '/'.
+ * Windows uses '\\' while POSIX systems use '/'.
  *
  * @returns The path separator for the current platform.
  */

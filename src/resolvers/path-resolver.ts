@@ -60,7 +60,7 @@ export const createPathResolver = (
   return {
     extension: getPlatformExtension(),
     pathSeparator: getPlatformPathSeparator(),
-    resolve: async () => {
+    resolve: async (): Promise<string> => {
       return resolvePath(resolvers);
     },
   };

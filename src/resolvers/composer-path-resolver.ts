@@ -97,7 +97,7 @@ export const createComposerPathResolver = (
   return {
     extension: getPlatformExtension(),
     pathSeparator: getPlatformPathSeparator(),
-    resolve: async () => {
+    resolve: async (): Promise<string> => {
       let resolvedPath: string = '';
       const expandedWorkingPath = expandHomeDir(workingPath);
       const fullWorkingPath = path.isAbsolute(expandedWorkingPath)

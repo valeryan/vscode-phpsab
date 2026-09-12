@@ -23,6 +23,10 @@ const extensionInfo: ExtensionInfo = {
   version: '',
 };
 
+/**
+ * Set the extension information based on the VS Code context.
+ * @param {ExtensionContext} context The extension context provided by VS Code.
+ */
 export const setExtensionInfo = (context: ExtensionContext) => {
   // Get extension unique identifier from context
   const id = context.extension.id;
@@ -33,6 +37,10 @@ export const setExtensionInfo = (context: ExtensionContext) => {
   extensionInfo.version = String(packageJSON?.version ?? 'unknown');
 };
 
+/**
+ * Get the extension information.
+ * @returns {ExtensionInfo} The current extension information.
+ */
 export const getExtensionInfo = (): ExtensionInfo => {
   return extensionInfo;
 };

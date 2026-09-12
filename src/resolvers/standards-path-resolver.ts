@@ -29,7 +29,7 @@ export const createStandardsPathResolver = (
   return {
     extension,
     pathSeparator,
-    resolve: async () => {
+    resolve: async (): Promise<string> => {
       let errors: any = {};
       // `standard` may be a comma-separated list, so expand `~` in each entry individually.
       let configured = normalizePath(

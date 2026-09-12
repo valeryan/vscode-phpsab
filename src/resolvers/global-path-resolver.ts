@@ -18,7 +18,7 @@ export const createGlobalPathResolver = (executable: string): PathResolver => {
   return {
     extension,
     pathSeparator,
-    resolve: async () => {
+    resolve: async (): Promise<string> => {
       let envSeparator = getEnvPathSeparator();
       let resolvedPath: string = '';
       const envPath = process.env.PATH || '';
