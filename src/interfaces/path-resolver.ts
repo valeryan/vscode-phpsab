@@ -17,3 +17,18 @@ export interface PathResolver {
    */
   pathSeparator: string;
 }
+
+/**
+ * Path resolver options.
+ */
+export interface PathResolverOptions {
+  /**
+   * The root directory of the workspace. Can be null if not applicable.
+   */
+  workspaceRoot: string | null;
+
+  /**
+   * The path to the composer.json file.
+   */
+  composerJsonPath: string;
+}

@@ -1,15 +1,10 @@
-import { PathResolver } from '../interfaces/path-resolver';
+import { PathResolver, PathResolverOptions } from '../interfaces/path-resolver';
 import { createComposerPathResolver } from './composer-path-resolver';
 import { createGlobalPathResolver } from './global-path-resolver';
 import {
   getPlatformExtension,
   getPlatformPathSeparator,
 } from './path-resolver-utils';
-
-interface PathResolverOptions {
-  workspaceRoot: string | null;
-  composerJsonPath: string;
-}
 
 /**
  * Resolve the path to an executable using the provided resolvers.
