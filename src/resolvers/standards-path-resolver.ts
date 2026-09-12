@@ -13,6 +13,13 @@ import {
   normalizePath,
 } from './path-resolver-utils';
 
+/**
+ * Create a path resolver for the coding standard ruleset
+ * based on the provided document and configuration.
+ * @param {TextDocument} document The text document for which to resolve the coding standard.
+ * @param {ResourceSettings} config The resource settings containing the coding standard configuration.
+ * @returns {PathResolver} A PathResolver object for the specified document and configuration, which resolves the path to the appropriate coding standard ruleset.
+ */
 export const createStandardsPathResolver = (
   document: TextDocument,
   config: ResourceSettings,
@@ -215,8 +222,8 @@ const isStandardValid = (
 
 /**
  * Determines if a standard string is a simple standard name
- * @param standard The coding standard string
- * @returns True if the standard is a simple name, false otherwise
+ * @param {string} standard The coding standard string
+ * @returns {boolean} True if the standard is a simple name, false otherwise
  */
 const isStandardName = (standard: string): boolean => {
   // Standard name can only contain alphanumeric characters, underscores, and hyphens.

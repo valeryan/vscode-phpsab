@@ -31,7 +31,11 @@ import {
 
 let settingsCache: Settings;
 
-const getSettings = async () => {
+/**
+ * Get the current cached settings, loading them if necessary.
+ * @returns {Promise<Settings>} A promise that resolves to the current settings.
+ */
+const getSettings = async (): Promise<Settings> => {
   if (!settingsCache) {
     settingsCache = await loadSettings();
   }
@@ -39,9 +43,13 @@ const getSettings = async () => {
 };
 
 /**
- * Load Configuration from editor
+ * Reload and recache configuration settings when the relevant editor configuration changes.
+ * @param {ConfigurationChangeEvent} event The configuration change event that triggered the reload.
+ * @returns {Promise<void>} A void promise that resolves once the settings have been reloaded.
  */
-const reloadSettings = async (event: ConfigurationChangeEvent) => {
+const reloadSettings = async (
+  event: ConfigurationChangeEvent,
+): Promise<void> => {
   if (
     !event.affectsConfiguration('phpsab') &&
     !event.affectsConfiguration('php')
@@ -53,8 +61,8 @@ const reloadSettings = async (event: ConfigurationChangeEvent) => {
 
 /**
  * Get the document range
- * @param document TextDocument
- * @returns Range
+ * @param {TextDocument} document TextDocument
+ * @returns {Range} The full range of the document.
  */
 const documentFullRange = (document: TextDocument) =>
   new Range(
@@ -63,19 +71,24 @@ const documentFullRange = (document: TextDocument) =>
   );
 
 /**
- *
- * @param range Range
- * @param document TextDocument
- * @returns boolean
+ * Check if the given range covers the entire document.
+ * @param {Range} range The range to check.
+ * @param {TextDocument} document he text document containing the range.
+ * @returns {boolean} True if the range covers the entire document, false otherwise.
  */
 const isFullDocumentRange = (range: Range, document: TextDocument) =>
   range.isEqual(documentFullRange(document));
 
 /**
- * run the fixer process
- * @param document
+ * Run the fixer process and format the document.
+ * @param {TextDocument} document The text document to format.
+ * @param {boolean} fullDocument Whether to format the full document.
+ * @returns {Promise<string>} A promise that resolves to the formatted document text.
  */
-const format = async (document: TextDocument, fullDocument: boolean) => {
+const format = async (
+  document: TextDocument,
+  fullDocument: boolean,
+): Promise<string> => {
   const settings = await getSettings();
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
@@ -309,8 +322,8 @@ const format = async (document: TextDocument, fullDocument: boolean) => {
  * - is different to the input file text; AND
  * - it doesn't start with a newline (EOL) character (all stdout errors start with a newline).
  *
- * @param {string} fileText The original file text
  * @param {string} stdout The raw stdout (for EOL checking)
+ * @param {string} originalFileText The original file text
  * @returns {boolean} boolean indicating if fixes were successfully applied
  */
 const hasValidFixedOutput = (
@@ -325,9 +338,9 @@ const hasValidFixedOutput = (
 };
 
 /**
- * Load settings and register event watcher
- * @param subscriptions Disposable array
- * @param settings Extension settings
+ * Activate the fixer and register the configuration change event listener.
+ * @param {Disposable[]} subscriptions Disposable array
+ * @param {Settings} settings Extension settings
  */
 export const activateFixer = (
   subscriptions: Disposable[],
@@ -339,7 +352,9 @@ export const activateFixer = (
 
 /**
  * Setup wrapper to format for extension
- * @param document
+ * @param {TextDocument} document The text document to format.
+ * @param {Range} range The range within the document to format.
+ * @returns {ProviderResult<TextEdit[]>} The text edits to apply to the document.
  */
 export const registerFixerAsDocumentProvider = (
   document: TextDocument,

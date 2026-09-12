@@ -36,8 +36,8 @@ const resolveRootPath = (resource: Uri): string => {
 };
 
 /**
- * Validate the resource-specific settings, ensuring that the configured
- * executable paths exist and disabling features if necessary.
+ * Validate the PHPCS and PHPCBF executables, ensuring that they exist
+ * at the specified paths and disabling sniffer or fixer if necessary.
  * @param settings The resource-specific settings to validate.
  * @param resource The resource (workspace folder or single file) for which the settings are being validated.
  * @returns {Promise<ResourceSettings>} The validated resource settings.

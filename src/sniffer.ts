@@ -48,7 +48,11 @@ let validatorListener: Disposable;
  */
 const runnerCancellations: Map<Uri, CancellationTokenSource> = new Map();
 
-const getSettings = async () => {
+/**
+ * Get the current cached settings, loading them if necessary.
+ * @returns {Promise<Settings>} A promise that resolves to the current settings.
+ */
+const getSettings = async (): Promise<Settings> => {
   if (!settingsCache) {
     settingsCache = await loadSettings();
   }
@@ -56,11 +60,12 @@ const getSettings = async () => {
 };
 
 /**
- * Lints a document.
+ * Validates and lints a document.
  *
  * @param document - The document to lint.
+ * @returns {Promise<void>} A void promise that resolves once the validation is complete.
  */
-const validate = async (document: TextDocument) => {
+const validate = async (document: TextDocument): Promise<void> => {
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
   const settings = await getSettings();
@@ -272,7 +277,7 @@ const refresh = (): void => {
 /**
  * Clears diagnostics from a document.
  *
- * @param document - The document to clear diagnostics of.
+ * @param {TextDocument} document - The document to clear diagnostics of.
  */
 const clearDocumentDiagnostics = ({ uri }: TextDocument): void => {
   diagnosticCollection.delete(uri);
@@ -280,6 +285,7 @@ const clearDocumentDiagnostics = ({ uri }: TextDocument): void => {
 
 /**
  * Sets the validation event listening.
+ * @returns {Promise<void>} A void promise that resolves once the validator listener has been set.
  */
 const setValidatorListener = async (): Promise<void> => {
   if (validatorListener) {
@@ -303,11 +309,16 @@ const setValidatorListener = async (): Promise<void> => {
 };
 
 /**
- * Reacts on configuration change.
+ * On configuration change, refreshes the settings cache,
+ * updates the validator listener if necessary,
+ * and re-validates/re-lints open documents.
  *
- * @param event - The configuration change event.
+ * @param {ConfigurationChangeEvent} event - The configuration change event.
+ * @returns {Promise<void>} A void promise that resolves once the configuration change has been handled.
  */
-const onConfigChange = async (event: ConfigurationChangeEvent) => {
+const onConfigChange = async (
+  event: ConfigurationChangeEvent,
+): Promise<void> => {
   if (
     !event.affectsConfiguration('phpsab') &&
     !event.affectsConfiguration('php')
@@ -327,17 +338,23 @@ const onConfigChange = async (event: ConfigurationChangeEvent) => {
 };
 
 /**
- * Dispose this object.
+ * Dispose Sniffer diagnostics.
  */
 export const disposeSniffer = (): void => {
   diagnosticCollection.clear();
   diagnosticCollection.dispose();
 };
 
+/**
+ * Activates the Sniffer and register the event listeners.
+ * @param {Disposable[]} subscriptions The array of disposables to which the event listeners will be added.
+ * @param {Settings} settings The current settings for the Sniffer extension.
+ * @returns {Promise<void>} A void promise that resolves once the Sniffer has been activated and event listeners have been set.
+ */
 export const activateSniffer = async (
   subscriptions: Disposable[],
   settings: Settings,
-) => {
+): Promise<void> => {
   settingsCache = settings;
 
   workspace.onDidChangeConfiguration(onConfigChange, null, subscriptions);

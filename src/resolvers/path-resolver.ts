@@ -11,6 +11,11 @@ interface PathResolverOptions {
   composerJsonPath: string;
 }
 
+/**
+ * Resolve the path to an executable using the provided resolvers.
+ * @param {PathResolver[]} resolvers An array of PathResolver objects to attempt resolution with.
+ * @returns {Promise<string>} A promise that resolves to the resolved path of the executable.
+ */
 const resolvePath = async (resolvers: PathResolver[]): Promise<string> => {
   let resolvedPath: string = '';
   for (const resolver of resolvers) {
@@ -26,6 +31,12 @@ const resolvePath = async (resolvers: PathResolver[]): Promise<string> => {
   return resolvedPath;
 };
 
+/**
+ * Create a path resolver for the specified executable.
+ * @param {PathResolverOptions} options The options for creating the path resolver.
+ * @param {string} executable The name of the executable to resolve.
+ * @returns {PathResolver} A PathResolver object for the specified executable.
+ */
 export const createPathResolver = (
   options: PathResolverOptions,
   executable: string,

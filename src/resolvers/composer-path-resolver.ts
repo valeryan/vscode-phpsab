@@ -8,6 +8,11 @@ import {
   joinPaths,
 } from './path-resolver-utils';
 
+/**
+ * Check if the composer.lock file contains the phpcs dependency.
+ * @param composerLockPath The path to the composer.lock file.
+ * @returns {Promise<boolean>} A promise that resolves to `true` if the composer.lock file contains the phpcs dependency, `false` otherwise.
+ */
 const hasComposerDependency = async (
   composerLockPath: string,
 ): Promise<boolean> => {
@@ -35,6 +40,12 @@ const hasComposerDependency = async (
   });
 };
 
+/**
+ * Get the path to the vendor binary for the specified executable.
+ * @param {string} composerJsonPath The path to the composer.json file.
+ * @param {string} executableFile The name of the executable file to resolve within the vendor directory.
+ * @returns {Promise<string>} A promise that resolves to the path of the vendor binary for the specified executable.
+ */
 const getVendorPath = async (
   composerJsonPath: string,
   executableFile: string,
@@ -70,6 +81,14 @@ const getVendorPath = async (
   return vendorPath;
 };
 
+/**
+ * Create a Composer path resolver for the specified
+ * executable within the composer vendor directory.
+ * @param {string} executableFile The name of the executable file to resolve within the composer vendor directory.
+ * @param {string} workspaceRoot The root path of the workspace.
+ * @param {string} workingPath The working path relative to the workspace root.
+ * @returns {PathResolver} A PathResolver object for the specified executable within the composer vendor directory.
+ */
 export const createComposerPathResolver = (
   executableFile: string,
   workspaceRoot: string,
