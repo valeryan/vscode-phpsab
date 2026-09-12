@@ -96,7 +96,7 @@ export const expandHomeDir = (inputPath: string): string => {
  * @param {string} path The path to the executable file.
  * @returns {Promise<boolean>} A promise that resolves to true if the executable exists and is accessible, false otherwise.
  */
-export const executableExist = async (path: string): Promise<boolean> => {
+export const executableExists = async (path: string): Promise<boolean> => {
   try {
     if (!path) {
       return false;

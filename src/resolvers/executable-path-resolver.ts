@@ -4,7 +4,7 @@ import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
 import { createPathResolver } from './path-resolver';
 import {
-  executableExist,
+  executableExists,
   expandHomeDir,
   joinPaths,
   normalizePath,
@@ -106,7 +106,7 @@ export const resolvePhpExecutablePath = async (
   for (const source of phpExecutableSources) {
     const expandedPath = source.path ? expandHomeDir(source.path) : source.path;
     // Return the first valid (non-empty) existing executable path found
-    if (expandedPath && (await executableExist(expandedPath))) {
+    if (expandedPath && (await executableExists(expandedPath))) {
       logger.debug(`Using PHP executable from ${source.name}: ${expandedPath}`);
       return expandedPath;
     }

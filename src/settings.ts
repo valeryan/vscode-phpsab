@@ -9,7 +9,7 @@ import {
 } from './resolvers/executable-path-resolver';
 import {
   addPhpToEnvPath,
-  executableExist,
+  executableExists,
 } from './resolvers/path-resolver-utils';
 import { getExtensionInfo } from './utils/helpers';
 
@@ -49,21 +49,21 @@ const validate = async (
   let msg = '';
   if (
     settings.snifferEnable &&
-    !(await executableExist(settings.executablePathCS))
+    !(await executableExists(settings.executablePathCS))
   ) {
     msg = `The phpcs executable was not found for ${resource}. Sniffer is being disabled for this workspace.`;
     settings.snifferEnable = false;
   }
   if (
     settings.fixerEnable &&
-    !(await executableExist(settings.executablePathCBF))
+    !(await executableExists(settings.executablePathCBF))
   ) {
     msg = `The phpcbf executable was not found for ${resource}. Fixer is being disabled for this workspace.`;
     settings.fixerEnable = false;
   }
 
   if (msg) {
-    logger.log(msg);
+    logger.warn(msg);
     window.showWarningMessage(msg, 'OK');
   }
 
@@ -149,7 +149,7 @@ export const loadSettings = async (): Promise<Settings> => {
 const getSettings = async (
   config: WorkspaceConfiguration,
   rootPath: string | null = null,
-) => {
+): Promise<ResourceSettings> => {
   let settings: ResourceSettings = {
     fixerEnable: config.get<boolean>('fixerEnable', true),
     fixerArguments: config.get<string[]>('fixerArguments', []),
