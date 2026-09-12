@@ -1,15 +1,15 @@
-import path from 'node:path';
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { checkPhpcsVersionCompatibility } from './compatibility';
 import { ResourceSettings, Settings, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
-import { createPathResolver } from './resolvers/path-resolver';
+import {
+  resolveCBFExecutablePath,
+  resolveCSExecutablePath,
+  resolvePhpExecutablePath,
+} from './resolvers/executable-path-resolver';
 import {
   addPhpToEnvPath,
   executableExist,
-  expandHomeDir,
-  joinPaths,
-  normalizePath,
 } from './resolvers/path-resolver-utils';
 import { getExtensionInfo } from './utils/helpers';
 
@@ -33,112 +33,6 @@ const resolveRootPath = (resource: Uri): string => {
 
   // one last safety check
   return folder ? folder.uri.fsPath : '';
-};
-
-/**
- * Get correct executable path from resolver
- * @param {ResourceSettings} settings The resource settings.
- * @returns {Promise<ResourceSettings>} The resolved resource settings with the correct executable path.
- */
-const resolveCBFExecutablePath = async (
-  settings: ResourceSettings,
-): Promise<ResourceSettings> => {
-  // If no path is set, try and find it via the path resolver.
-  if (!settings.executablePathCBF) {
-    let executablePathResolver = createPathResolver(settings, 'phpcbf');
-    settings.executablePathCBF = await executablePathResolver.resolve();
-  } else {
-    settings.executablePathCBF = expandHomeDir(settings.executablePathCBF);
-
-    // If a relative path is set, resolve it against the workspace root.
-    if (
-      !path.isAbsolute(settings.executablePathCBF) &&
-      settings.workspaceRoot !== null
-    ) {
-      settings.executablePathCBF = joinPaths(
-        settings.workspaceRoot,
-        settings.executablePathCBF,
-      );
-    }
-    // Otherwise normalize the absolute path.
-    else {
-      settings.executablePathCBF = normalizePath(settings.executablePathCBF);
-    }
-  }
-
-  return settings;
-};
-
-/**
- * Get correct executable path from resolver
- * @param {ResourceSettings} settings The resource settings.
- * @returns {Promise<ResourceSettings>} The resolved resource settings with the correct executable path.
- */
-const resolveCSExecutablePath = async (
-  settings: ResourceSettings,
-): Promise<ResourceSettings> => {
-  // If no path is set, try and find it via the path resolver.
-  if (!settings.executablePathCS) {
-    let executablePathResolver = createPathResolver(settings, 'phpcs');
-    settings.executablePathCS = await executablePathResolver.resolve();
-  } else {
-    settings.executablePathCS = expandHomeDir(settings.executablePathCS);
-
-    // If a relative path is set, resolve it against the workspace root.
-    if (
-      !path.isAbsolute(settings.executablePathCS) &&
-      settings.workspaceRoot !== null
-    ) {
-      settings.executablePathCS = joinPaths(
-        settings.workspaceRoot,
-        settings.executablePathCS,
-      );
-    }
-    // Otherwise normalize the absolute path.
-    else {
-      settings.executablePathCS = normalizePath(settings.executablePathCS);
-    }
-  }
-
-  return settings;
-};
-
-/**
- * Resolve PHP executable path with proper precedence handling
- * @param {WorkspaceConfiguration} config phpsab configuration
- * @param {WorkspaceConfiguration} phpConfig php configuration
- * @returns {Promise<string>} The resolved PHP executable path or an empty string if none is found.
- */
-const resolvePhpExecutablePath = async (
-  config: WorkspaceConfiguration,
-  phpConfig: WorkspaceConfiguration,
-): Promise<string> => {
-  const phpExecutableSources = [
-    {
-      name: 'VSCode PHP Language Features Built-in Extension',
-      path: phpConfig.get<string>('validate.executablePath', ''),
-    },
-    {
-      name: 'Devsense PHP Tools Extension',
-      path: phpConfig.get<string>('executablePath', ''),
-    },
-    {
-      name: 'PHPSAB Extension',
-      path: config.get<string>('phpExecutablePath', ''),
-    },
-  ];
-
-  for (const source of phpExecutableSources) {
-    const expandedPath = source.path ? expandHomeDir(source.path) : source.path;
-    // Return the first valid (non-empty) existing executable path found
-    if (expandedPath && (await executableExist(expandedPath))) {
-      logger.debug(`Using PHP executable from ${source.name}: ${expandedPath}`);
-      return expandedPath;
-    }
-  }
-
-  // If no executable path is found, return an empty string
-  return '';
 };
 
 /**
