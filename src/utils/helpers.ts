@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { ExtensionContext, extensions, TextDocument, window } from 'vscode';
 import type {
-  PHPCSArgumentKey,
+  PHPCSAdditionalArgumentKey,
   PHPCSInternalArgumentKey,
 } from '../interfaces/arguments';
 import {
@@ -16,6 +16,8 @@ import { ExtensionInfo } from '../interfaces/extensionInfo';
 import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
+// Set of valid additional argument keys for quick lookup.
+const additionalArgumentKeys: Set<string> = new Set(validAdditionalArguments);
 
 const extensionInfo: ExtensionInfo = {
   id: '',
@@ -243,11 +245,21 @@ const validateKeyValueArgument = (
   arg: string,
   errors: string[],
 ): PHPCSArgumentValidation => {
-  const [key, value] = arg.split('=', 2) as [PHPCSArgumentKey, string];
+  // Split an argument like `--ignore=foo/**` into its name and value.
+  // A value may be empty for malformed input, in which case it should be treated as invalid.
+  const separatorIndex = arg.indexOf('=');
+  const keyRaw = separatorIndex === -1 ? arg : arg.slice(0, separatorIndex);
+  const value = separatorIndex === -1 ? '' : arg.slice(separatorIndex + 1);
 
-  if (!validAdditionalArguments.includes(key)) {
+  // If the key is NOT in the allowed additional argument keys map,
+  // then return an invalid result immediately.
+  if (!isAdditionalArgumentKey(keyRaw)) {
     return { isValid: false, errors: [`Invalid argument: "${arg}"`] };
   }
+
+  // The key is now narrowed to the correct typing and is
+  // guaranteed to be an allowed additional argument key.
+  const key = keyRaw;
 
   // Validate specific argument values
   switch (key) {
@@ -335,6 +347,17 @@ const isInternalArgumentKey = (
   key: string,
 ): key is PHPCSInternalArgumentKey => {
   return (validInternalArguments as readonly string[]).includes(key);
+};
+
+/**
+ * Determines whether an argument key is part of the additional argument set.
+ * @param {string} key The argument key to test.
+ * @returns {boolean} `true` when the key is an additional argument key.
+ */
+const isAdditionalArgumentKey = (
+  key: string,
+): key is PHPCSAdditionalArgumentKey => {
+  return additionalArgumentKeys.has(key);
 };
 
 /**
