@@ -43,6 +43,9 @@ export const createPathResolver = (
 ): PathResolver => {
   const executableFile = executable + getPlatformExtension();
   const resolvers: PathResolver[] = [];
+
+  // Add a composer path resolver if a workspace root is available, to prioritize
+  // the workspace composer-installed executable over the global one.
   if (options.workspaceRoot) {
     resolvers.push(
       createComposerPathResolver(
