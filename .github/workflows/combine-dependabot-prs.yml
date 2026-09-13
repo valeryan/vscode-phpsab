@@ -90,6 +90,8 @@ jobs:
             else
               echo "❌ Failed to merge PR #${number} — retargeting back to main"
               gh pr edit "$number" --base main || echo "::warning::Could not retarget PR #${number} back to main"
+              echo "Requesting review from yCodeTech for PR #${number}"
+              gh pr edit "$number" --add-reviewer yCodeTech || echo "::warning::Could not request review on PR #${number}"
               FAILED_ITEMS+=("> * ${title} (#${number})")
             fi
           done
