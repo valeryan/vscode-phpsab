@@ -50,6 +50,8 @@ export const createPathResolver = (
       ),
     );
   }
+  // Add a global path resolver as a fallback to search
+  // through the system env path for the executable.
   resolvers.push(createGlobalPathResolver(executableFile));
 
   return {

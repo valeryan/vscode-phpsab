@@ -205,7 +205,7 @@ const validate = async (document: TextDocument): Promise<void> => {
         return;
       }
       const diagnostics: Diagnostic[] = [];
-      // try-catch to handle JSON parse errors
+      // Try-catch to handle JSON parse errors
       try {
         const { files }: PHPCSReport = JSON.parse(stdout);
         for (const file in files) {

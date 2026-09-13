@@ -73,7 +73,7 @@ export const createStandardsPathResolver = (
 
         let searchPaths = [];
 
-        // create search paths based on file location
+        // Create search paths based on file location
         for (let i = 0, len = paths.length; i < len; i++) {
           searchPaths.push(
             workspaceRoot + paths.join(pathSeparator) + pathSeparator,
@@ -82,7 +82,7 @@ export const createStandardsPathResolver = (
         }
         searchPaths.push(workspaceRoot);
 
-        // check each search path for an allowed ruleset
+        // Check each search path for an allowed ruleset
         let allowed = config.allowedAutoRulesets;
 
         let files: string[] = [];

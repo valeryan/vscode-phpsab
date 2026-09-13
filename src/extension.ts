@@ -11,7 +11,7 @@ import { getExtensionInfo, setExtensionInfo } from './utils/helpers';
 
 /**
  * Activate Extension
- * @param context
+ * @param {ExtensionContext} context The extension context provided by VS Code
  */
 export const activate = async (context: ExtensionContext) => {
   setExtensionInfo(context);
@@ -25,7 +25,8 @@ export const activate = async (context: ExtensionContext) => {
   const settings = await loadSettings();
   activateFixer(context.subscriptions, settings);
   activateSniffer(context.subscriptions, settings);
-  // register format from command palette
+
+  // Register format from command palette
   context.subscriptions.push(
     commands.registerTextEditorCommand('fixer.fix', (textEditor) => {
       if (textEditor.document.languageId === 'php') {
@@ -34,7 +35,7 @@ export const activate = async (context: ExtensionContext) => {
     }),
   );
 
-  // register as document formatter for php
+  // Register as document formatter for php
   context.subscriptions.push(
     languages.registerDocumentRangeFormattingEditProvider(
       { scheme: 'file', language: 'php' },
@@ -53,6 +54,9 @@ export const activate = async (context: ExtensionContext) => {
   );
 };
 
+/**
+ * Deactivate Extension
+ */
 export const deactivate = () => {
   disposeLogger();
   disposeSniffer();

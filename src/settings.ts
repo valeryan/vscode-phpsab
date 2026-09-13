@@ -28,10 +28,10 @@ export const isSingleFileMode = (): boolean => {
  * or an empty string if none is found.
  */
 const resolveRootPath = (resource: Uri): string => {
-  // try to get a valid folder from resource
+  // Try to get a valid folder from resource
   let folder = workspace.getWorkspaceFolder(resource);
 
-  // one last safety check
+  // One last safety check
   return folder ? folder.uri.fsPath : '';
 };
 
@@ -114,7 +114,7 @@ export const loadSettings = async (): Promise<Settings> => {
     }
   }
 
-  // update settings from config
+  // Update settings from config
   let settings: Settings = {
     resources: resourcesSettings,
     snifferMode: globalConfig.get<SnifferMode>('snifferMode', 'onSave'),

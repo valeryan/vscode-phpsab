@@ -10,8 +10,8 @@ const startTime: {
 } = {};
 
 /**
- * Override the output channel
- * @param channel A vscode output channel
+ * Setup or override the output channel.
+ * @param {OutputChannel} channelOverride A vscode output channel to override the default one.
  */
 export const setupOutputChannel = (channelOverride?: OutputChannel): void => {
   if (channelOverride) {
@@ -25,7 +25,7 @@ export const setupOutputChannel = (channelOverride?: OutputChannel): void => {
 
 /**
  * Turn debug mode on or off. Off will disable info and debug messages
- * @param debug boolean
+ * @param {boolean} debug
  */
 export const setDebugMode = (debug: boolean): void => {
   debugMode = debug;
@@ -40,7 +40,7 @@ export const disposeLogger = (): void => {
 
 /**
  * Sends a basic info log to the output channel if debug is enabled.
- * @param message the message to be logged
+ * @param {string} message The message to be logged
  */
 export const info = (message: string): void => {
   if (debugMode) {
@@ -51,8 +51,8 @@ export const info = (message: string): void => {
 /**
  * Sends a log message and a data to the output channel if debug is enabled.
  * This method purpose is for logging data object.
- * @param message the message to be logged
- * @param data [optional] extra data that is useful for debugging
+ * @param {string} message The message to be logged
+ * @param {unknown} data [optional] Extra data that is useful for debugging
  */
 export const debug = (message: string, data?: unknown): void => {
   if (debugMode) {
@@ -61,25 +61,25 @@ export const debug = (message: string, data?: unknown): void => {
 };
 
 /**
- * Send a basic info log to output channel
- * @param message string to be logged
+ * Send a basic info log to the output channel
+ * @param {string} message The string to be logged
  */
 export const log = (message: string): void => {
   logMessage('INFO', message);
 };
 
 /**
- * Send a basic warning log to output channel
- * @param message string to be logged
+ * Send a basic warning log to the output channel
+ * @param {string} message The string to be logged
  */
 export const warn = (message: string): void => {
   logMessage('WARNING', message);
 };
 
 /**
- * Send a error message and a stack trace if available
- * @param message string to be logged
- * @param error Error an Error object
+ * Send an error message and a stack trace if available
+ * @param {string} message The string to be logged
+ * @param {Error} error An Error object
  */
 export const error = (message: string, error?: Error): void => {
   logMessage('ERROR', message, error);
@@ -87,7 +87,7 @@ export const error = (message: string, error?: Error): void => {
 
 /**
  * Start a timer to track performance.
- * @param key identifier for timer
+ * @param {string} key The identifier for timer
  */
 export const startTimer = (key: string): void => {
   startTime[key] = new Date();
@@ -101,7 +101,7 @@ export const startTimer = (key: string): void => {
 
 /**
  * Calculate time passed and log results.
- * @param key identifier for timer
+ * @param {string} key The identifier for timer
  */
 export const endTimer = (key: string): void => {
   const endTime = new Date();
@@ -115,7 +115,7 @@ export const endTimer = (key: string): void => {
   }
 
   const timeDiff = endTime.valueOf() - startTime[key].valueOf();
-  // strip the ms
+  // Strip the ms
   const seconds = timeDiff / 1000;
   info(`${key} ran for ${seconds} seconds`);
   // Unset timer
@@ -124,14 +124,14 @@ export const endTimer = (key: string): void => {
 
 /**
  * Check and cleanup timers that have expired.
- * @param key identifier for timer
+ * @param {string} key The identifier for timer
  * @returns void
  */
 const checkTimer = (key: string): void => {
   const startTimeValue = startTime[key];
 
   if (!startTimeValue) {
-    // jobs done, timer is not set.
+    // Jobs done, timer is not set.
     return;
   }
   info(`${key} operation timed out.`);
@@ -140,9 +140,9 @@ const checkTimer = (key: string): void => {
 
 /**
  * Format the message and send to output channel.
- * @param level Log Level of message
- * @param message the message to be logged
- * @param meta extra data as needed
+ * @param {string} level Log Level of message
+ * @param {string} message The message to be logged
+ * @param {unknown} meta [optional] Extra data as needed
  */
 const logMessage = (level: string, message: string, meta?: unknown) => {
   if (!outputChannel) {
@@ -166,6 +166,7 @@ const showChannel = () => {
   }
 };
 
+// Export a logger singleton object that provides convenient access to all logging functions.
 export const logger = {
   log,
   info,
