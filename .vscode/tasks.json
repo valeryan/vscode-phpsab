@@ -6,9 +6,72 @@
       "type": "npm",
       "script": "esbuild",
       "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "watch",
+      "dependsOn": ["npm: esbuild-watch", "npm: ts-watch", "npm: lint"],
+      "dependsOrder": "parallel",
+      "presentation": {
+        "reveal": "never"
+      },
       "group": {
         "kind": "build",
         "isDefault": true
+      }
+    },
+    {
+      "type": "npm",
+      "script": "esbuild-watch",
+      "label": "npm: esbuild-watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": [
+          {
+            "regexp": "^✘ \\[ERROR\\] (.+)$",
+            "message": 1
+          },
+          {
+            "regexp": "^\\s+(.+):(\\d+):(\\d+):$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[watch\\] build started",
+          "endsPattern": "^\\[watch\\] build finished"
+        }
+      },
+      "presentation": {
+        "group": "watch",
+        "reveal": "never"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "ts-watch",
+      "label": "npm: ts-watch",
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": "$tsc-watch",
+      "presentation": {
+        "group": "watch",
+        "reveal": "never"
+      }
+    },
+    {
+      "type": "npm",
+      "script": "lint",
+      "label": "npm: lint",
+      "group": "build",
+      "problemMatcher": "$eslint-stylish",
+      "presentation": {
+        "group": "watch",
+        "reveal": "silent"
       }
     }
   ]
