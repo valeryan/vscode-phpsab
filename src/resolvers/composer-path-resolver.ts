@@ -5,9 +5,13 @@ import {
   expandHomeDir,
   getPlatformExtension,
   getPlatformPathSeparator,
-  joinPaths,
 } from './path-resolver-utils';
 
+/**
+ * Check if the composer.lock file contains the phpcs dependency.
+ * @param composerLockPath The path to the composer.lock file.
+ * @returns {Promise<boolean>} A promise that resolves to `true` if the composer.lock file contains the phpcs dependency, `false` otherwise.
+ */
 const hasComposerDependency = async (
   composerLockPath: string,
 ): Promise<boolean> => {
@@ -35,12 +39,18 @@ const hasComposerDependency = async (
   });
 };
 
+/**
+ * Get the path to the vendor binary for the specified executable.
+ * @param {string} composerJsonPath The path to the composer.json file.
+ * @param {string} executableFile The name of the executable file to resolve within the vendor directory.
+ * @returns {Promise<string>} A promise that resolves to the path of the vendor binary for the specified executable.
+ */
 const getVendorPath = async (
   composerJsonPath: string,
   executableFile: string,
 ): Promise<string> => {
   let basePath = path.dirname(composerJsonPath);
-  let vendorPath = joinPaths(basePath, 'vendor', 'bin', executableFile);
+  let vendorPath = path.join(basePath, 'vendor', 'bin', executableFile);
 
   let config = null;
   try {
@@ -51,7 +61,7 @@ const getVendorPath = async (
   }
 
   if (config['config'] && config['config']['vendor-dir']) {
-    vendorPath = joinPaths(
+    vendorPath = path.join(
       basePath,
       config['config']['vendor-dir'],
       'bin',
@@ -60,7 +70,7 @@ const getVendorPath = async (
   }
 
   if (config['config'] && config['config']['bin-dir']) {
-    vendorPath = joinPaths(
+    vendorPath = path.join(
       basePath,
       config['config']['bin-dir'],
       executableFile,
@@ -70,6 +80,14 @@ const getVendorPath = async (
   return vendorPath;
 };
 
+/**
+ * Create a Composer path resolver for the specified
+ * executable within the composer vendor directory.
+ * @param {string} executableFile The name of the executable file to resolve within the composer vendor directory.
+ * @param {string} workspaceRoot The root path of the workspace.
+ * @param {string} workingPath The working path relative to the workspace root.
+ * @returns {PathResolver} A PathResolver object for the specified executable within the composer vendor directory.
+ */
 export const createComposerPathResolver = (
   executableFile: string,
   workspaceRoot: string,
@@ -78,25 +96,24 @@ export const createComposerPathResolver = (
   return {
     extension: getPlatformExtension(),
     pathSeparator: getPlatformPathSeparator(),
-    resolve: async () => {
+    resolve: async (): Promise<string> => {
       let resolvedPath: string = '';
       const expandedWorkingPath = expandHomeDir(workingPath);
       const fullWorkingPath = path.isAbsolute(expandedWorkingPath)
         ? expandedWorkingPath
-        : joinPaths(workspaceRoot, expandedWorkingPath).replace(
-            /composer.json$/,
-            '',
-          );
+        : path
+            .join(workspaceRoot, expandedWorkingPath)
+            .replace(/composer.json$/, '');
 
       let composerJsonPath = '';
       let composerLockPath = '';
       try {
         composerJsonPath = await fs.realpath(
-          joinPaths(fullWorkingPath, 'composer.json'),
+          path.join(fullWorkingPath, 'composer.json'),
         );
 
         composerLockPath = await fs.realpath(
-          joinPaths(fullWorkingPath, 'composer.lock'),
+          path.join(fullWorkingPath, 'composer.lock'),
         );
       } catch (error) {
         return '';

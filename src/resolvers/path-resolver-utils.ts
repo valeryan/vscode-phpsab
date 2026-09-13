@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { logger } from '../logger';
@@ -20,7 +21,7 @@ export const getPlatformExtension = (): string => (isWin() ? '.bat' : '');
 
 /**
  * Get the appropriate path separator for the current platform.
- * Windows uses '\' while POSIX systems use '/'.
+ * Windows uses '\\' while POSIX systems use '/'.
  *
  * @returns The path separator for the current platform.
  */
@@ -55,14 +56,6 @@ export const addPhpToEnvPath = (phpExecutablePath: string) => {
 };
 
 /**
- * Join multiple path segments into a single path string, normalizing separators for the current OS.
- *
- * @param args The path segments to join.
- * @returns The joined path string.
- */
-export const joinPaths = (...args: string[]): string => path.join(...args);
-
-/**
  * Normalize a path to the correct format for the current operating system.
  *
  * @param string The path to normalize.
@@ -88,4 +81,21 @@ export const expandHomeDir = (inputPath: string): string => {
     return path.join(os.homedir(), inputPath.slice(2));
   }
   return inputPath;
+};
+
+/**
+ * Check if the given executable path exists and is accessible.
+ * @param {string} path The path to the executable file.
+ * @returns {Promise<boolean>} A promise that resolves to true if the executable exists and is accessible, false otherwise.
+ */
+export const executableExists = async (path: string): Promise<boolean> => {
+  try {
+    if (!path) {
+      return false;
+    }
+    await fs.access(path, fs.constants.X_OK);
+    return true;
+  } catch (error) {
+    return false;
+  }
 };

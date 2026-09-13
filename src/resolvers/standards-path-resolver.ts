@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import { TextDocument, window, workspace } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { PathResolver } from '../interfaces/path-resolver';
-import { ResourceSettings } from '../interfaces/resource-settings';
+import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
 import { isSingleFileMode } from '../settings';
 import { getErrorCodeDescription } from '../utils/error-handling/error-helpers';
@@ -13,6 +13,13 @@ import {
   normalizePath,
 } from './path-resolver-utils';
 
+/**
+ * Create a path resolver for the coding standard ruleset
+ * based on the provided document and configuration.
+ * @param {TextDocument} document The text document for which to resolve the coding standard.
+ * @param {ResourceSettings} config The resource settings containing the coding standard configuration.
+ * @returns {PathResolver} A PathResolver object for the specified document and configuration, which resolves the path to the appropriate coding standard ruleset.
+ */
 export const createStandardsPathResolver = (
   document: TextDocument,
   config: ResourceSettings,
@@ -22,7 +29,7 @@ export const createStandardsPathResolver = (
   return {
     extension,
     pathSeparator,
-    resolve: async () => {
+    resolve: async (): Promise<string> => {
       let errors: any = {};
       // `standard` may be a comma-separated list, so expand `~` in each entry individually.
       let configured = normalizePath(
@@ -66,7 +73,7 @@ export const createStandardsPathResolver = (
 
         let searchPaths = [];
 
-        // create search paths based on file location
+        // Create search paths based on file location
         for (let i = 0, len = paths.length; i < len; i++) {
           searchPaths.push(
             workspaceRoot + paths.join(pathSeparator) + pathSeparator,
@@ -75,7 +82,7 @@ export const createStandardsPathResolver = (
         }
         searchPaths.push(workspaceRoot);
 
-        // check each search path for an allowed ruleset
+        // Check each search path for an allowed ruleset
         let allowed = config.allowedAutoRulesets;
 
         let files: string[] = [];
@@ -215,8 +222,8 @@ const isStandardValid = (
 
 /**
  * Determines if a standard string is a simple standard name
- * @param standard The coding standard string
- * @returns True if the standard is a simple name, false otherwise
+ * @param {string} standard The coding standard string
+ * @returns {boolean} True if the standard is a simple name, false otherwise
  */
 const isStandardName = (standard: string): boolean => {
   // Standard name can only contain alphanumeric characters, underscores, and hyphens.
