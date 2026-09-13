@@ -76,7 +76,7 @@ const documentFullRange = (document: TextDocument) =>
  * @param {TextDocument} document he text document containing the range.
  * @returns {boolean} True if the range covers the entire document, false otherwise.
  */
-const isFullDocumentRange = (range: Range, document: TextDocument) =>
+const isFullDocumentRange = (range: Range, document: TextDocument): boolean =>
   range.isEqual(documentFullRange(document));
 
 /**
@@ -109,7 +109,7 @@ const format = async (
 
   logger.startTimer('Fixer');
 
-  // setup and spawn fixer process
+  // Setup and spawn fixer process
 
   let standard: string;
 

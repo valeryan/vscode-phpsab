@@ -89,7 +89,7 @@ function verifyEnoentError(
   status: number | null,
   originalCommand: OriginalCommand,
   syscall: 'spawn' | 'spawnSync',
-) {
+): Error | null {
   // If the exit code is `1` AND no file was found (the command) OR
   // the command path does not exist, then we can assume it's an ENOENT error,
   // so we create and return it.
@@ -113,7 +113,7 @@ function verifyEnoentError(
 function createEnoentError(
   originalCommand: OriginalCommand,
   syscall: 'spawn' | 'spawnSync',
-) {
+): Error {
   return Object.assign(
     new Error(`${syscall} ${originalCommand.commandPath} ENOENT`),
     {
