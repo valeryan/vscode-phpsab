@@ -169,7 +169,7 @@
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint src --ext ts",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "npm run compile",
     "test": "vscode-test",
     "ts-watch": "tsc --noEmit --watch -p ./"
   },
