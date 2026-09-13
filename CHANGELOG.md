@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.30] - 2026-09-13
+
+### What's Changed
+* ci: add manual deployment workflow for marketplaces with optional Open VSX skip by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/257
+* ci: version bump actions by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/258
+* ci: add VS Marketplace token expiration checker to publish workflow. by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/259
+* refactor: settings, resolvers and interfaces by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/262
+* build: improve building and linting the extension by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/263
+* ci: request review for failed Dependabot PR merges. by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/265
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.29...v0.0.30
+
+
 ## [0.0.29] - 2026-09-09
 
 ### What's Changed
