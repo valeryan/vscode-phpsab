@@ -3,19 +3,28 @@ import os from 'node:os';
 import path from 'node:path';
 import { ExtensionContext, extensions, TextDocument, window } from 'vscode';
 import type {
-  PHPCSArgumentKey,
+  PHPCSAdditionalArgumentKey,
   PHPCSInternalArgumentKey,
 } from '../interfaces/arguments';
 import {
   PHPCSArgumentValidation,
   validAdditionalArguments,
-  validFlags,
+  validAdditionalFlagArguments,
   validInternalArguments,
 } from '../interfaces/arguments';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
-import { ResourceSettings } from '../interfaces/resource-settings';
+import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
 import { isWin } from '../resolvers/path-resolver-utils';
+
+// Set of allowed additional flag argument keys for quick lookup.
+const allowedAdditionalFlagKeys: Set<string> = new Set(
+  validAdditionalFlagArguments,
+);
+// Set of internal argument keys for quick lookup.
+const internalArgumentKeys: Set<string> = new Set(validInternalArguments);
+// Set of valid additional argument keys for quick lookup.
+const additionalArgumentKeys: Set<string> = new Set(validAdditionalArguments);
 
 const extensionInfo: ExtensionInfo = {
   id: '',
@@ -23,6 +32,10 @@ const extensionInfo: ExtensionInfo = {
   version: '',
 };
 
+/**
+ * Set the extension information based on the VS Code context.
+ * @param {ExtensionContext} context The extension context provided by VS Code.
+ */
 export const setExtensionInfo = (context: ExtensionContext) => {
   // Get extension unique identifier from context
   const id = context.extension.id;
@@ -33,6 +46,10 @@ export const setExtensionInfo = (context: ExtensionContext) => {
   extensionInfo.version = String(packageJSON?.version ?? 'unknown');
 };
 
+/**
+ * Get the extension information.
+ * @returns {ExtensionInfo} The current extension information.
+ */
 export const getExtensionInfo = (): ExtensionInfo => {
   return extensionInfo;
 };
@@ -96,8 +113,10 @@ const validateAdditionalArguments = (
     return [];
   }
 
-  // Set a variable with a default true value so we can test it later.
-  let isArgValid: boolean = true;
+  // Set a variable with a default false value so we can keep track if there
+  // were any invalid arguments. As soon as we encounter an invalid argument,
+  // this variable will be set to true, and will not be reset back to false.
+  let hasInvalidArguments: boolean = false;
   const argErrors: string[] = [];
 
   // Set a default warning message in case we need it later.
@@ -110,7 +129,8 @@ const validateAdditionalArguments = (
   const filteredArguments = additionalArguments.filter((arg) => {
     // If the argument is an internally added argument, filter it out.
     if (isInternalArgumentKey(getArgumentKey(arg))) {
-      isArgValid = false;
+      // Set the variable to true to indicate that there was at least one invalid argument.
+      hasInvalidArguments = true;
       return false;
     }
 
@@ -119,21 +139,23 @@ const validateAdditionalArguments = (
     // Validate the argument.
     const { isValid, errors } = validateArgument(arg);
 
-    // Set isArgValid to the result of the validation so we can
-    // use it later outside this scope.
-    isArgValid = isValid;
+    // If there are any errors...
+    if (!isValid) {
+      // Set the variable to true to indicate that there was at least one invalid argument.
+      hasInvalidArguments = true;
+    }
 
     // Collect any errors for logging later.
     argErrors.push(...errors);
 
-    // Then filter it depending on it's validity.
-    return isArgValid;
+    // Then return it to the filtered array depending on it's validity.
+    return isValid;
   });
 
   // If array is not empty (after filtering)...
   if (filteredArguments.length > 0) {
     // If any arguments were invalid, set some messages.
-    if (!isArgValid) {
+    if (hasInvalidArguments) {
       txt = '\nRunning with the filtered arguments';
       logMsg += `${txt}: "${filteredArguments.join(', ')}".`;
     }
@@ -150,7 +172,7 @@ const validateAdditionalArguments = (
   warningMsg += `${txt}, for more details please see the Output channel.`;
 
   // If any arguments were invalid...
-  if (!isArgValid) {
+  if (hasInvalidArguments) {
     // Log the warning messages and inform the user.
     logger.warn(logMsg);
     // Show a warning message to the user, and offer to open the output channel.
@@ -173,27 +195,25 @@ const validateAdditionalArguments = (
  * @param {string[]} args The command line arguments to parse.
  * @returns {string[]} The parsed arguments.
  */
-export const parseArgs = (args: string[]) => {
-  const parsedArgs: string[] = [];
+export const parseArgs = (args: string[]): string[] => {
+  /**
+   * Quotes a command line argument based on the OS.
+   * Wraps the argument in the appropriate quotes for the OS;
+   * Windows uses double quotes and *nix uses single quotes.
+   *
+   * @see https://ss64.com/nt/syntax-esc.html#quotes for Windows quoting rules
+   * @see https://ss64.com/bash/syntax-quoting.html for *nix quoting rules
+   *
+   * @param {string} arg The argument to quote.
+   * @returns {string} The quoted argument.
+   */
+  const quote = isWin()
+    ? (arg: string) => `"${arg}"`
+    : (arg: string) => `'${arg}'`;
 
-  // For each argument, wrap in quotes to allow spaces in paths
-  // and to help prevent command injection.
-  args.forEach((arg: string) => {
-    // Windows...
-    if (isWin()) {
-      // Wrap in double quotes.
-      // See https://ss64.com/nt/syntax-esc.html#quotes
-      parsedArgs.push(`"${arg}"`);
-    }
-    // *nix...
-    else {
-      // Wrap in single quotes.
-      // See https://ss64.com/bash/syntax-quoting.html
-      parsedArgs.push(`'${arg}'`);
-    }
-  });
-
-  return parsedArgs;
+  // Wrap each argument in OS-appropriate quotes to preserve
+  // spaces in paths and prevent command injection.
+  return args.map(quote);
 };
 
 /**
@@ -214,8 +234,8 @@ const validateArgument = (arg: string): PHPCSArgumentValidation => {
     return validateKeyValueArgument(arg, errors);
   }
 
-  // Handle flag arguments (no value)
-  if (!validFlags.includes(arg)) {
+  // Handle flag arguments (no value) and only allow known additional flags.
+  if (!allowedAdditionalFlagKeys.has(arg)) {
     errors.push(`Invalid flag argument: "${arg}"`);
   }
 
@@ -235,11 +255,21 @@ const validateKeyValueArgument = (
   arg: string,
   errors: string[],
 ): PHPCSArgumentValidation => {
-  const [key, value] = arg.split('=', 2) as [PHPCSArgumentKey, string];
+  // Split an argument like `--ignore=foo/**` into its name and value.
+  // A value may be empty for malformed input, in which case it should be treated as invalid.
+  const separatorIndex = arg.indexOf('=');
+  const keyRaw = separatorIndex === -1 ? arg : arg.slice(0, separatorIndex);
+  const value = separatorIndex === -1 ? '' : arg.slice(separatorIndex + 1);
 
-  if (!validAdditionalArguments.includes(key)) {
+  // If the key is NOT in the allowed additional argument keys map,
+  // then return an invalid result immediately.
+  if (!isAdditionalArgumentKey(keyRaw)) {
     return { isValid: false, errors: [`Invalid argument: "${arg}"`] };
   }
+
+  // The key is now narrowed to the correct typing and is
+  // guaranteed to be an allowed additional argument key.
+  const key = keyRaw;
 
   // Validate specific argument values
   switch (key) {
@@ -326,7 +356,18 @@ const getArgumentKey = (arg: string): string => {
 const isInternalArgumentKey = (
   key: string,
 ): key is PHPCSInternalArgumentKey => {
-  return (validInternalArguments as readonly string[]).includes(key);
+  return internalArgumentKeys.has(key);
+};
+
+/**
+ * Determines whether an argument key is part of the additional argument set.
+ * @param {string} key The argument key to test.
+ * @returns {boolean} `true` when the key is an additional argument key.
+ */
+const isAdditionalArgumentKey = (
+  key: string,
+): key is PHPCSAdditionalArgumentKey => {
+  return additionalArgumentKeys.has(key);
 };
 
 /**
@@ -408,6 +449,9 @@ const matchesExcludePatterns = (
   if (!patterns || patterns.length === 0) {
     return false;
   }
+
+  // Match against both the full absolute path and the workspace-relative path so
+  // users can express exclude globs in either form without surprising failures.
   const absolutePath = document.uri.fsPath;
   const relativePath = workspaceRoot
     ? path.relative(workspaceRoot, document.uri.fsPath)

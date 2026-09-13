@@ -5,9 +5,13 @@
  * with the original command path and arguments.
  */
 export interface OriginalCommand {
-  /** Absolute or configured path to the executable command. */
+  /**
+   * The absolute or configured path to the executable.
+   */
   commandPath: string;
 
-  /** Raw argument array passed to the executable. */
+  /**
+   * The raw argument array passed to the executable.
+   */
   args: string[];
 }
