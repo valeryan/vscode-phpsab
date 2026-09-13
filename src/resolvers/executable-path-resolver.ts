@@ -6,7 +6,6 @@ import { createPathResolver } from './path-resolver';
 import {
   executableExists,
   expandHomeDir,
-  joinPaths,
   normalizePath,
 } from './path-resolver-utils';
 
@@ -30,7 +29,7 @@ export const resolveCBFExecutablePath = async (
       !path.isAbsolute(settings.executablePathCBF) &&
       settings.workspaceRoot !== null
     ) {
-      settings.executablePathCBF = joinPaths(
+      settings.executablePathCBF = path.join(
         settings.workspaceRoot,
         settings.executablePathCBF,
       );
@@ -64,7 +63,7 @@ export const resolveCSExecutablePath = async (
       !path.isAbsolute(settings.executablePathCS) &&
       settings.workspaceRoot !== null
     ) {
-      settings.executablePathCS = joinPaths(
+      settings.executablePathCS = path.join(
         settings.workspaceRoot,
         settings.executablePathCS,
       );

@@ -5,7 +5,6 @@ import {
   expandHomeDir,
   getPlatformExtension,
   getPlatformPathSeparator,
-  joinPaths,
 } from './path-resolver-utils';
 
 /**
@@ -51,7 +50,7 @@ const getVendorPath = async (
   executableFile: string,
 ): Promise<string> => {
   let basePath = path.dirname(composerJsonPath);
-  let vendorPath = joinPaths(basePath, 'vendor', 'bin', executableFile);
+  let vendorPath = path.join(basePath, 'vendor', 'bin', executableFile);
 
   let config = null;
   try {
@@ -62,7 +61,7 @@ const getVendorPath = async (
   }
 
   if (config['config'] && config['config']['vendor-dir']) {
-    vendorPath = joinPaths(
+    vendorPath = path.join(
       basePath,
       config['config']['vendor-dir'],
       'bin',
@@ -71,7 +70,7 @@ const getVendorPath = async (
   }
 
   if (config['config'] && config['config']['bin-dir']) {
-    vendorPath = joinPaths(
+    vendorPath = path.join(
       basePath,
       config['config']['bin-dir'],
       executableFile,
@@ -102,20 +101,19 @@ export const createComposerPathResolver = (
       const expandedWorkingPath = expandHomeDir(workingPath);
       const fullWorkingPath = path.isAbsolute(expandedWorkingPath)
         ? expandedWorkingPath
-        : joinPaths(workspaceRoot, expandedWorkingPath).replace(
-            /composer.json$/,
-            '',
-          );
+        : path
+            .join(workspaceRoot, expandedWorkingPath)
+            .replace(/composer.json$/, '');
 
       let composerJsonPath = '';
       let composerLockPath = '';
       try {
         composerJsonPath = await fs.realpath(
-          joinPaths(fullWorkingPath, 'composer.json'),
+          path.join(fullWorkingPath, 'composer.json'),
         );
 
         composerLockPath = await fs.realpath(
-          joinPaths(fullWorkingPath, 'composer.lock'),
+          path.join(fullWorkingPath, 'composer.lock'),
         );
       } catch (error) {
         return '';

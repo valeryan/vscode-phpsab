@@ -56,14 +56,6 @@ export const addPhpToEnvPath = (phpExecutablePath: string) => {
 };
 
 /**
- * Join multiple path segments into a single path string, normalizing separators for the current OS.
- *
- * @param args The path segments to join.
- * @returns The joined path string.
- */
-export const joinPaths = (...args: string[]): string => path.join(...args);
-
-/**
  * Normalize a path to the correct format for the current operating system.
  *
  * @param string The path to normalize.
