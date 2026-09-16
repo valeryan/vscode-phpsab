@@ -37,13 +37,13 @@ export const activate = async (context: ExtensionContext) => {
 
   // Register as document formatter for php
   context.subscriptions.push(
-    languages.registerDocumentRangeFormattingEditProvider(
+    languages.registerDocumentFormattingEditProvider(
       { scheme: 'file', language: 'php' },
       {
-        provideDocumentRangeFormattingEdits: async (document, range) => {
+        provideDocumentFormattingEdits: async (document) => {
           logger.info(`Starting to format the document: ${document.fileName}`);
           try {
-            return await registerFixerAsDocumentProvider(document, range);
+            return await registerFixerAsDocumentProvider(document);
           } catch (error) {
             logger.error(`DEBUG: Error in provider: ${error}`);
             throw error;
