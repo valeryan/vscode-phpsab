@@ -36,35 +36,11 @@ import {
 let settingsManager: SettingsManager;
 
 /**
- * Get the document range
- * @param {TextDocument} document TextDocument
- * @returns {Range} The full range of the document.
- */
-const documentFullRange = (document: TextDocument) =>
-  new Range(
-    new Position(0, 0),
-    document.lineAt(document.lineCount - 1).range.end,
-  );
-
-/**
- * Check if the given range covers the entire document.
- * @param {Range} range The range to check.
- * @param {TextDocument} document he text document containing the range.
- * @returns {boolean} True if the range covers the entire document, false otherwise.
- */
-const isFullDocumentRange = (range: Range, document: TextDocument): boolean =>
-  range.isEqual(documentFullRange(document));
-
-/**
  * Run the fixer process and format the document.
  * @param {TextDocument} document The text document to format.
- * @param {boolean} fullDocument Whether to format the full document.
  * @returns {Promise<string>} A promise that resolves to the formatted document text.
  */
-const format = async (
-  document: TextDocument,
-  fullDocument: boolean,
-): Promise<string> => {
+const format = async (document: TextDocument): Promise<string> => {
   const settings = settingsManager.current;
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
@@ -335,13 +311,13 @@ export const activateFixer = (
   );
 
   // Register fixer as a document formatter for PHP.
-  const formatter = languages.registerDocumentRangeFormattingEditProvider(
+  const formatter = languages.registerDocumentFormattingEditProvider(
     { scheme: 'file', language: 'php' },
     {
-      provideDocumentRangeFormattingEdits: async (document, range) => {
+      provideDocumentFormattingEdits: async (document) => {
         logger.info(`Starting to format the document: ${document.fileName}`);
         try {
-          return await registerFixerAsDocumentProvider(document, range);
+          return await registerFixerAsDocumentProvider(document);
         } catch (error) {
           logger.error(`DEBUG: Error in provider: ${error}`);
           throw error;
@@ -357,20 +333,22 @@ export const activateFixer = (
 /**
  * Setup wrapper to format for extension
  * @param {TextDocument} document The text document to format.
- * @param {Range} range The range within the document to format.
  * @returns {ProviderResult<TextEdit[]>} The text edits to apply to the document.
  */
 export const registerFixerAsDocumentProvider = (
   document: TextDocument,
-  range: Range,
 ): ProviderResult<TextEdit[]> => {
   return new Promise((resolve, reject) => {
-    const fullRange = documentFullRange(document);
-    const isFullDocument = isFullDocumentRange(range, document);
-
-    format(document, isFullDocument)
+    format(document)
       .then((text) => {
+        // If the formatted text has content, apply it to the entire document.
         if (text.length > 0) {
+          // Get the full range of the entire document.
+          const fullRange = new Range(
+            new Position(0, 0),
+            document.lineAt(document.lineCount - 1).range.end,
+          );
+
           // Edit the document with the fixes.
           return resolve([new TextEdit(fullRange, text)]);
         } else {
