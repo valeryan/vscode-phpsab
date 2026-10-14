@@ -277,7 +277,7 @@ const validateKeyValueArgument = (
       // Filter is either 'GitStaged', 'GitModified', or a path to a custom filter class.
       if (!validateFilterValue(value)) {
         errors.push(
-          `Invalid argument value: "${value}". This must be either 'GitStaged', 'GitModified', or a valid file path.`,
+          `Invalid argument value: "${value}". This must be either 'GitStaged', 'GitModified', or a valid path to a custom filter class.`,
         );
       }
       break;
@@ -327,10 +327,13 @@ const validateKeyValueArgument = (
  * @returns {boolean} Whether the filter value is valid
  */
 const validateFilterValue = (value: string): boolean => {
-  const isValidSpecialValue = value === 'GitStaged' || value === 'GitModified';
+  // Check for the special values 'GitStaged' and 'GitModified' first.
+  if (value === 'GitStaged' || value === 'GitModified') {
+    return true;
+  }
   const isValidFilePath = /^[a-zA-Z0-9._/\\: -]+$/.test(value);
 
-  if (isValidSpecialValue || isValidFilePath) {
+  if (isValidFilePath) {
     return true;
   }
 
