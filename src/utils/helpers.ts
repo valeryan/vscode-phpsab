@@ -15,7 +15,7 @@ import {
 import { ExtensionInfo } from '../interfaces/extensionInfo';
 import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
-import { isWin } from '../resolvers/path-resolver-utils';
+import { isPathValid, isWin } from '../resolvers/path-resolver-utils';
 
 // Set of allowed additional flag argument keys for quick lookup.
 const allowedAdditionalFlagKeys: Set<string> = new Set(
@@ -331,13 +331,9 @@ const validateFilterValue = (value: string): boolean => {
   if (value === 'GitStaged' || value === 'GitModified') {
     return true;
   }
-  const isValidFilePath = /^[a-zA-Z0-9._/\\: -]+$/.test(value);
 
-  if (isValidFilePath) {
-    return true;
-  }
-
-  return false;
+  // Check if the value is a valid PHP file path.
+  return isPathValid(value, 'php');
 };
 
 /**

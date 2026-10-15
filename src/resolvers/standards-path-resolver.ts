@@ -10,6 +10,7 @@ import {
   expandHomeDir,
   getPlatformExtension,
   getPlatformPathSeparator,
+  isPathValid,
   normalizePath,
 } from './path-resolver-utils';
 
@@ -185,19 +186,18 @@ const isStandardValid = (
   }
 
   for (const stnd of standards) {
-    // Check if it's an allowed xml ruleset.
-    // If standard is included in allowed rulesets array, AND it matches the xml ruleset pattern,
-    // then it's valid.
-    if (
-      allowedRulesets.includes(stnd) &&
-      /^[a-zA-Z0-9._/\\: -]+\.xml(\.dist)?$/i.test(stnd)
-    ) {
+    // Standard is an XML ruleset path.
+
+    // If standard is included in allowed rulesets array, AND it is a valid XML ruleset path...
+    if (allowedRulesets.includes(stnd) && isPathValid(stnd, 'xml|xml.dist')) {
       continue; // Valid - continue to next standard
     }
 
+    // Directory path to a standard.
+
     // Check if it resembles a directory path to a standard
     // (doesn't actually check if it's a real path).
-    if (/^[a-zA-Z0-9._/\\: -]+$/.test(stnd)) {
+    if (isPathValid(stnd, '', true)) {
       continue; // Valid - continue to next standard
     }
 
