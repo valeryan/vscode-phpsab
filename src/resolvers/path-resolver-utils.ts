@@ -132,12 +132,14 @@ export const isPathValid = (
   // An optional single trailing separator, e.g. the ending "/" in "foo/bar/".
   const trailingSeparator = allowTrailingSeparator ? /[\\/]?/.source : '';
 
-  // Prepare the extension pattern by splitting multiple extensions by "|", escaping dots
-  // so they are treated as literal dots in the regex, adding a leading escaped dot for
-  // each extension, and joining them back with "|".
+  // Prepare the extension pattern by splitting multiple extensions by "|", then
+  // splitting each extension by "." (for the case of multi-part extensions) and
+  // joining them back with an escaped dot, so they are treated as literal
+  // dots in the regex. It adds a leading escaped dot for each extension,
+  // and joins them back with "|".
   const prepareExtension = extension
     .split('|')
-    .map((ext) => `\\.${ext.replace(/\./g, '\\.')}`)
+    .map((ext) => `\\.${ext.split('.').join('\\.')}`)
     .join('|');
 
   // Create the final extension pattern as a non-capturing group if extensions
