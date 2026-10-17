@@ -182,6 +182,19 @@ const isStandardValid = (standard: string): boolean => {
   }
 
   for (const stnd of standards) {
+    // Standard is a Standard name (e.g. PSR12, PEAR, WordPress).
+
+    // If standard doesn't contain path separators, treat as standard name and
+    // check if it's a safe standard name (only safe characters allowed
+    // (alphanumeric, hyphens, underscores)).
+    if (!stnd.includes(getPlatformPathSeparator())) {
+      if (!isStandardName(stnd)) {
+        return false;
+      }
+
+      continue; // Valid - continue to next standard
+    }
+
     // Standard is an XML ruleset path.
 
     // If standard is a valid XML ruleset path...
@@ -194,17 +207,6 @@ const isStandardValid = (standard: string): boolean => {
     // Check if it resembles a directory path to a standard
     // (doesn't actually check if it's a real path).
     if (isPathValid(stnd, '', true)) {
-      continue; // Valid - continue to next standard
-    }
-
-    // If standard doesn't contain path separators, treat as standard name and
-    // check if it's a safe standard name (only safe characters allowed
-    // (alphanumeric, hyphens, underscores)).
-    if (!stnd.includes(getPlatformPathSeparator())) {
-      if (!isStandardName(stnd)) {
-        return false;
-      }
-
       continue; // Valid - continue to next standard
     }
 
