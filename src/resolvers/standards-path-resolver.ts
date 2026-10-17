@@ -184,14 +184,8 @@ const isStandardValid = (standard: string): boolean => {
   for (const stnd of standards) {
     // Standard is a Standard name (e.g. PSR12, PEAR, WordPress).
 
-    // If standard doesn't contain path separators, treat as standard name and
-    // check if it's a safe standard name (only safe characters allowed
-    // (alphanumeric, hyphens, underscores)).
-    if (!stnd.includes(getPlatformPathSeparator())) {
-      if (!isStandardName(stnd)) {
-        return false;
-      }
-
+    // If standard is a simple standard name...
+    if (isStandardName(stnd)) {
       continue; // Valid - continue to next standard
     }
 
