@@ -37,7 +37,7 @@ export const createStandardsPathResolver = (
         (config.standard ?? '').split(',').map(expandHomeDir).join(','),
       );
 
-      if (!isStandardValid(configured, config.allowedAutoRulesets)) {
+      if (!isStandardValid(configured)) {
         throw new Error(`Invalid coding standard:\n"${configured}".`);
       }
 
@@ -169,13 +169,9 @@ export const createStandardsPathResolver = (
  * @see https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Usage#specifying-a-coding-standard
  *
  * @param {string} standard The coding standard to validate
- * @param {string[]} allowedRulesets The allowed rulesets
  * @returns {boolean} True if standard contains only safe characters
  */
-const isStandardValid = (
-  standard: string,
-  allowedRulesets: string[],
-): boolean => {
+const isStandardValid = (standard: string): boolean => {
   if (standard === '') return true; // Empty is allowed
 
   let standards: string[] = [standard];
@@ -188,8 +184,8 @@ const isStandardValid = (
   for (const stnd of standards) {
     // Standard is an XML ruleset path.
 
-    // If standard is included in allowed rulesets array, AND it is a valid XML ruleset path...
-    if (allowedRulesets.includes(stnd) && isPathValid(stnd, 'xml|xml.dist')) {
+    // If standard is a valid XML ruleset path...
+    if (isPathValid(stnd, 'xml|xml.dist')) {
       continue; // Valid - continue to next standard
     }
 
