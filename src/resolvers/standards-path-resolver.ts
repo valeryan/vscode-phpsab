@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { TextDocument, window, workspace } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { PathResolver } from '../interfaces/path-resolver';
@@ -10,6 +11,7 @@ import {
   expandHomeDir,
   getPlatformExtension,
   getPlatformPathSeparator,
+  isPathValid,
   normalizePath,
 } from './path-resolver-utils';
 
@@ -36,7 +38,7 @@ export const createStandardsPathResolver = (
         (config.standard ?? '').split(',').map(expandHomeDir).join(','),
       );
 
-      if (!isStandardValid(configured, config.allowedAutoRulesets)) {
+      if (!isStandardValid(configured)) {
         throw new Error(`Invalid coding standard:\n"${configured}".`);
       }
 
@@ -168,13 +170,9 @@ export const createStandardsPathResolver = (
  * @see https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Usage#specifying-a-coding-standard
  *
  * @param {string} standard The coding standard to validate
- * @param {string[]} allowedRulesets The allowed rulesets
  * @returns {boolean} True if standard contains only safe characters
  */
-const isStandardValid = (
-  standard: string,
-  allowedRulesets: string[],
-): boolean => {
+const isStandardValid = (standard: string): boolean => {
   if (standard === '') return true; // Empty is allowed
 
   let standards: string[] = [standard];
@@ -185,30 +183,25 @@ const isStandardValid = (
   }
 
   for (const stnd of standards) {
-    // Check if it's an allowed xml ruleset.
-    // If standard is included in allowed rulesets array, AND it matches the xml ruleset pattern,
-    // then it's valid.
-    if (
-      allowedRulesets.includes(stnd) &&
-      /^[a-zA-Z0-9._/\\: -]+\.xml(\.dist)?$/i.test(stnd)
-    ) {
+    // Standard is a Standard name (e.g. PSR12, PEAR, WordPress).
+
+    // If standard is a simple standard name...
+    if (isStandardName(stnd)) {
       continue; // Valid - continue to next standard
     }
 
-    // Check if it resembles a directory path to a standard
-    // (doesn't actually check if it's a real path).
-    if (/^[a-zA-Z0-9._/\\: -]+$/.test(stnd)) {
+    // Standard is an XML ruleset path.
+
+    // If standard is a valid XML ruleset path...
+    if (isPathValid(stnd, 'xml|xml.dist')) {
       continue; // Valid - continue to next standard
     }
 
-    // If standard doesn't contain path separators, treat as standard name and
-    // check if it's a safe standard name (only safe characters allowed
-    // (alphanumeric, hyphens, underscores)).
-    if (!stnd.includes(getPlatformPathSeparator())) {
-      if (!isStandardName(stnd)) {
-        return false;
-      }
+    // Standard is a directory path to a standard.
 
+    // Check if the path is a valid directory path to a standard AND
+    // if the last part of the path is a standard name.
+    if (isPathValid(stnd, '', true) && isStandardName(path.basename(stnd))) {
       continue; // Valid - continue to next standard
     }
 

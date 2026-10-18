@@ -15,7 +15,7 @@ import {
 import { ExtensionInfo } from '../interfaces/extensionInfo';
 import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
-import { isWin } from '../resolvers/path-resolver-utils';
+import { isPathValid, isWin } from '../resolvers/path-resolver-utils';
 
 // Set of allowed additional flag argument keys for quick lookup.
 const allowedAdditionalFlagKeys: Set<string> = new Set(
@@ -277,7 +277,7 @@ const validateKeyValueArgument = (
       // Filter is either 'GitStaged', 'GitModified', or a path to a custom filter class.
       if (!validateFilterValue(value)) {
         errors.push(
-          `Invalid argument value: "${value}". This must be either 'GitStaged', 'GitModified', or a valid file path.`,
+          `Invalid argument value: "${value}". This must be either 'GitStaged', 'GitModified', or a valid path to a custom filter class.`,
         );
       }
       break;
@@ -327,14 +327,13 @@ const validateKeyValueArgument = (
  * @returns {boolean} Whether the filter value is valid
  */
 const validateFilterValue = (value: string): boolean => {
-  const isValidSpecialValue = value === 'GitStaged' || value === 'GitModified';
-  const isValidFilePath = /^[a-zA-Z0-9._/\\: -]+$/.test(value);
-
-  if (isValidSpecialValue || isValidFilePath) {
+  // Check for the special values 'GitStaged' and 'GitModified' first.
+  if (value === 'GitStaged' || value === 'GitModified') {
     return true;
   }
 
-  return false;
+  // Check if the value is a valid PHP file path.
+  return isPathValid(value, 'php');
 };
 
 /**
