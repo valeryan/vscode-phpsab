@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { TextDocument, window, workspace } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { PathResolver } from '../interfaces/path-resolver';
@@ -196,11 +197,11 @@ const isStandardValid = (standard: string): boolean => {
       continue; // Valid - continue to next standard
     }
 
-    // Directory path to a standard.
+    // Standard is a directory path to a standard.
 
-    // Check if it resembles a directory path to a standard
-    // (doesn't actually check if it's a real path).
-    if (isPathValid(stnd, '', true)) {
+    // Check if the path is a valid directory path to a standard AND
+    // if the last part of the path is a standard name.
+    if (isPathValid(stnd, '', true) && isStandardName(path.basename(stnd))) {
       continue; // Valid - continue to next standard
     }
 
