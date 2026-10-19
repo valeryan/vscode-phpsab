@@ -284,9 +284,11 @@ const validateKeyValueArgument = (
 
     case '--ignore':
       // Ignore is a comma-separated list of glob patterns.
-      if (!/^[a-zA-Z0-9.*/_\\,-]+$/.test(value)) {
+
+      // Validate the ignore value.
+      if (!validateIgnoreValue(value)) {
         errors.push(
-          `Invalid argument value: "${value}". This must be a comma-separated list of glob patterns.`,
+          `Invalid --ignore argument value: "${value}". The comma-separated list of glob patterns can only contain standard path characters, spaces, and wildcards.`,
         );
       }
       break;
@@ -301,12 +303,12 @@ const validateKeyValueArgument = (
       break;
 
     case '--exclude':
-      // Exclude is a comma-separated list of sniffs.
+      // Exclude is a comma-separated list of sniffs (Standard.Category.Sniff).
 
-      // Sniffs can contain letters, numbers, underscores, dots, and commas.
-      if (!/^[a-zA-Z0-9_\.,]+$/.test(value)) {
+      // Validate the exclude value.
+      if (!validateExcludeValue(value)) {
         errors.push(
-          `Invalid argument value: "${value}". This must be a comma-separated list of sniffs containing only letters, numbers, underscores and dots.`,
+          `Invalid --exclude argument value: "${value}". This must be a comma-separated list of sniffs in the form of "Standard.Category.Sniff", containing only alphanumeric characters, underscores and dots.`,
         );
       }
       break;
@@ -322,9 +324,9 @@ const validateKeyValueArgument = (
 };
 
 /**
- * Validates --filter argument values
- * @param {string} value The filter value to validate
- * @returns {boolean} Whether the filter value is valid
+ * Validates `--filter` argument values.
+ * @param {string} value The value to validate.
+ * @returns {boolean} Whether the value is valid.
  */
 const validateFilterValue = (value: string): boolean => {
   // Check for the special values 'GitStaged' and 'GitModified' first.
@@ -334,6 +336,52 @@ const validateFilterValue = (value: string): boolean => {
 
   // Check if the value is a valid PHP file path.
   return isPathValid(value, 'php');
+};
+
+/**
+ * Validates `--ignore` argument values.
+ * @param {string} value The value to validate.
+ * @returns {boolean} Whether the value is valid.
+ */
+const validateIgnoreValue = (value: string): boolean => {
+  // Split the value into individual glob patterns to validate each one.
+  const patterns = value
+    .split(',')
+    .map((pattern) => pattern.trim())
+    .filter(Boolean);
+
+  // Regex to validate each glob pattern. They must only contain
+  // standard path characters, spaces, and wildcards.
+  const globRegex = /^[a-zA-Z0-9.*/_\\:?\[\]() -]+$/;
+
+  // Check that there are patterns to validate (ensuring the value is not empty) and
+  // then validate that each pattern matches the glob regex to catch obvious errors.
+  return (
+    patterns.length > 0 && patterns.every((pattern) => globRegex.test(pattern))
+  );
+};
+
+/**
+ * Validates `--exclude` argument values.
+ * @param {string} value The value to validate.
+ * @returns {boolean} Whether the value is valid.
+ */
+const validateExcludeValue = (value: string): boolean => {
+  // Exclude is a comma-separated list of sniffs (Standard.Category.Sniff).
+
+  // Split the value into individual sniffs to validate each one.
+  const sniffs = value
+    .split(',')
+    .map((sniff) => sniff.trim())
+    .filter(Boolean);
+
+  // Regex to validate each sniff. They must only contain alphanumeric
+  // characters, underscores, and dots. (Hyphens are not allowed.)
+  const sniffRegex = /^[a-zA-Z0-9_.]+$/;
+
+  // Check that there are sniffs to validate (ensuring the value is not empty) and
+  // then validate that each sniff matches the regex to catch obvious errors.
+  return sniffs.length > 0 && sniffs.every((sniff) => sniffRegex.test(sniff));
 };
 
 /**
