@@ -124,10 +124,10 @@ export const isPathValid = (
 
   // One path segment (name + separator), e.g. "foo/" or "foo\". Names may
   // start with "." since dotfiles/folders are valid (e.g. ".config/").
-  const pathSegment = /[a-zA-Z0-9._ -]+[\\/]/;
+  const pathSegment = /[a-zA-Z0-9._ ()-]+[\\/]/;
 
   // Allowed characters for the final segment's name, before its extension (if any).
-  const nameChars = /[a-zA-Z0-9._ -]+/;
+  const nameChars = /[a-zA-Z0-9._ ()-]+/;
 
   // An optional single trailing separator, e.g. the ending "/" in "foo/bar/".
   const trailingSeparator = allowTrailingSeparator ? /[\\/]?/.source : '';
