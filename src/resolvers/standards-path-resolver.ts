@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { TextDocument, window, workspace } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { PathResolver } from '../interfaces/path-resolver';
@@ -10,6 +11,7 @@ import {
   expandHomeDir,
   getPlatformExtension,
   getPlatformPathSeparator,
+  isPathValid,
   normalizePath,
 } from './path-resolver-utils';
 
@@ -31,21 +33,25 @@ export const createStandardsPathResolver = (
     pathSeparator,
     resolve: async (): Promise<string> => {
       let errors: any = {};
-      // `standard` may be a comma-separated list, so expand `~` in each entry individually.
-      let configured = normalizePath(
-        (config.standard ?? '').split(',').map(expandHomeDir).join(','),
-      );
+      // `standard` may be a comma-separated list, so trim, expand `~`,
+      // and normalize each entry individually.
+      let configured = (config.standard ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => normalizePath(expandHomeDir(s)))
+        .join(',');
 
-      if (!isStandardValid(configured, config.allowedAutoRulesets)) {
+      if (!isStandardValid(configured)) {
         throw new Error(`Invalid coding standard:\n"${configured}".`);
       }
 
-      // If auto ruleset search is disabled, in single file mode, or standard is a simple name,
-      // return the configured standard as-is.
+      // If auto ruleset search is disabled, in single file mode, or standard is a simple name
+      // (or list of simple names), return the configured standard as-is.
       if (
         config.autoRulesetSearch === false ||
         isSingleFileMode() ||
-        isStandardName(configured)
+        isAllStandardNames(configured)
       ) {
         return configured;
       }
@@ -168,47 +174,48 @@ export const createStandardsPathResolver = (
  * @see https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Usage#specifying-a-coding-standard
  *
  * @param {string} standard The coding standard to validate
- * @param {string[]} allowedRulesets The allowed rulesets
  * @returns {boolean} True if standard contains only safe characters
  */
-const isStandardValid = (
-  standard: string,
-  allowedRulesets: string[],
-): boolean => {
+const isStandardValid = (standard: string): boolean => {
   if (standard === '') return true; // Empty is allowed
 
-  let standards: string[] = [standard];
+  // Split comma-separated standards, trimming whitespace and filtering out empty entries.
+  const standards = standard
+    .split(',')
+    .map((stnd) => stnd.trim())
+    .filter(Boolean);
 
-  // Handle multiple standards separated by commas
-  if (standard.includes(',')) {
-    standards = standard.split(',');
+  // If the standard was only commas, it's invalid.
+  if (standards.length === 0) {
+    return false;
   }
 
   for (const stnd of standards) {
-    // Check if it's an allowed xml ruleset.
-    // If standard is included in allowed rulesets array, AND it matches the xml ruleset pattern,
-    // then it's valid.
+    // Standard is a Standard name (e.g. PSR12, PEAR, WordPress).
+
+    // If standard is a simple standard name...
+    if (isStandardName(stnd)) {
+      continue; // Valid - continue to next standard
+    }
+
+    // Standard is an XML ruleset path.
+
+    // If standard is a valid XML ruleset path...
+    if (isPathValid(stnd, 'xml|xml.dist')) {
+      continue; // Valid - continue to next standard
+    }
+
+    // Standard is a directory path to a standard.
+
+    // Remove any trailing slashes from the path to get a clean directory path.
+    const cleanPath = stnd.replace(/[\\/]+$/, '');
+
+    // Check if the path is a valid directory path to a standard AND
+    // if the last part of the path is a standard name.
     if (
-      allowedRulesets.includes(stnd) &&
-      /^[a-zA-Z0-9._/\\: -]+\.xml(\.dist)?$/i.test(stnd)
+      isPathValid(stnd, '', true) &&
+      isStandardName(path.basename(cleanPath))
     ) {
-      continue; // Valid - continue to next standard
-    }
-
-    // Check if it resembles a directory path to a standard
-    // (doesn't actually check if it's a real path).
-    if (/^[a-zA-Z0-9._/\\: -]+$/.test(stnd)) {
-      continue; // Valid - continue to next standard
-    }
-
-    // If standard doesn't contain path separators, treat as standard name and
-    // check if it's a safe standard name (only safe characters allowed
-    // (alphanumeric, hyphens, underscores)).
-    if (!stnd.includes(getPlatformPathSeparator())) {
-      if (!isStandardName(stnd)) {
-        return false;
-      }
-
       continue; // Valid - continue to next standard
     }
 
@@ -228,4 +235,19 @@ const isStandardValid = (
 const isStandardName = (standard: string): boolean => {
   // Standard name can only contain alphanumeric characters, underscores, and hyphens.
   return /^[a-zA-Z0-9_-]+$/.test(standard);
+};
+
+/**
+ * Determines if a standard string consists entirely of simple standard names.
+ * Supports comma-separated lists of standard names (e.g., "PSR12,WordPress").
+ * @param {string} standard The coding standard string
+ * @returns {boolean} True if every standard in the list is a simple name, false otherwise
+ */
+const isAllStandardNames = (standard: string): boolean => {
+  if (standard === '') return false;
+  return standard
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .every(isStandardName);
 };

@@ -22,6 +22,15 @@ export type PHPCSFlagArgumentKey = KeysByKind<
 >;
 
 /**
+ * Represents only the value-taking PHPCS arguments from the user-allowed set.
+ * These are the arguments with a `'value'` kind, such as `--ignore` or `--severity`.
+ */
+export type PHPCSValueArgumentKey = KeysByKind<
+  AdditionalArgumentDefinitions,
+  'value'
+>;
+
+/**
  * Maps a definition object to the keys whose kind matches the requested argument kind.
  * For example, a map with `--filter: 'value'` and `--ignore-annotations: 'flag'`
  * can produce the union of all `'flag'` keys from that object.
@@ -168,6 +177,12 @@ export const validAdditionalArguments: ReadonlyArray<PHPCSAdditionalArgumentKey>
  */
 export const validAdditionalFlagArguments: ReadonlyArray<PHPCSFlagArgumentKey> =
   Object.freeze([...keysByKind(additionalArgumentDefinitions, 'flag')]);
+
+/**
+ * A frozen array of additional value-taking arguments, derived from the definition map.
+ */
+export const validAdditionalValueArguments: ReadonlyArray<PHPCSValueArgumentKey> =
+  Object.freeze([...keysByKind(additionalArgumentDefinitions, 'value')]);
 
 /**
  * Result interface for PHPCS argument validation
