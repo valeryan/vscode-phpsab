@@ -33,21 +33,25 @@ export const createStandardsPathResolver = (
     pathSeparator,
     resolve: async (): Promise<string> => {
       let errors: any = {};
-      // `standard` may be a comma-separated list, so expand `~` in each entry individually.
-      let configured = normalizePath(
-        (config.standard ?? '').split(',').map(expandHomeDir).join(','),
-      );
+      // `standard` may be a comma-separated list, so trim, expand `~`,
+      // and normalize each entry individually.
+      let configured = (config.standard ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => normalizePath(expandHomeDir(s)))
+        .join(',');
 
       if (!isStandardValid(configured)) {
         throw new Error(`Invalid coding standard:\n"${configured}".`);
       }
 
-      // If auto ruleset search is disabled, in single file mode, or standard is a simple name,
-      // return the configured standard as-is.
+      // If auto ruleset search is disabled, in single file mode, or standard is a simple name
+      // (or list of simple names), return the configured standard as-is.
       if (
         config.autoRulesetSearch === false ||
         isSingleFileMode() ||
-        isStandardName(configured)
+        isAllStandardNames(configured)
       ) {
         return configured;
       }
@@ -175,11 +179,15 @@ export const createStandardsPathResolver = (
 const isStandardValid = (standard: string): boolean => {
   if (standard === '') return true; // Empty is allowed
 
-  let standards: string[] = [standard];
+  // Split comma-separated standards, trimming whitespace and filtering out empty entries.
+  const standards = standard
+    .split(',')
+    .map((stnd) => stnd.trim())
+    .filter(Boolean);
 
-  // Handle multiple standards separated by commas
-  if (standard.includes(',')) {
-    standards = standard.split(',');
+  // If the standard was only commas, it's invalid.
+  if (standards.length === 0) {
+    return false;
   }
 
   for (const stnd of standards) {
@@ -199,9 +207,15 @@ const isStandardValid = (standard: string): boolean => {
 
     // Standard is a directory path to a standard.
 
+    // Remove any trailing slashes from the path to get a clean directory path.
+    const cleanPath = stnd.replace(/[\\/]+$/, '');
+
     // Check if the path is a valid directory path to a standard AND
     // if the last part of the path is a standard name.
-    if (isPathValid(stnd, '', true) && isStandardName(path.basename(stnd))) {
+    if (
+      isPathValid(stnd, '', true) &&
+      isStandardName(path.basename(cleanPath))
+    ) {
       continue; // Valid - continue to next standard
     }
 
@@ -221,4 +235,19 @@ const isStandardValid = (standard: string): boolean => {
 const isStandardName = (standard: string): boolean => {
   // Standard name can only contain alphanumeric characters, underscores, and hyphens.
   return /^[a-zA-Z0-9_-]+$/.test(standard);
+};
+
+/**
+ * Determines if a standard string consists entirely of simple standard names.
+ * Supports comma-separated lists of standard names (e.g., "PSR12,WordPress").
+ * @param {string} standard The coding standard string
+ * @returns {boolean} True if every standard in the list is a simple name, false otherwise
+ */
+const isAllStandardNames = (standard: string): boolean => {
+  if (standard === '') return false;
+  return standard
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .every(isStandardName);
 };
