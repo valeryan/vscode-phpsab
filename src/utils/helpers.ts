@@ -10,6 +10,7 @@ import {
   PHPCSArgumentValidation,
   validAdditionalArguments,
   validAdditionalFlagArguments,
+  validAdditionalValueArguments,
   validInternalArguments,
 } from '../interfaces/arguments';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
@@ -20,6 +21,10 @@ import { isPathValid, isWin } from '../resolvers/path-resolver-utils';
 // Set of allowed additional flag argument keys for quick lookup.
 const allowedAdditionalFlagKeys: Set<string> = new Set(
   validAdditionalFlagArguments,
+);
+// Set of allowed additional value argument keys for quick lookup.
+const allowedAdditionalValueKeys: Set<string> = new Set(
+  validAdditionalValueArguments,
 );
 // Set of internal argument keys for quick lookup.
 const internalArgumentKeys: Set<string> = new Set(validInternalArguments);
@@ -131,6 +136,9 @@ const validateAdditionalArguments = (
     if (isInternalArgumentKey(getArgumentKey(arg))) {
       // Set the variable to true to indicate that there was at least one invalid argument.
       hasInvalidArguments = true;
+      argErrors.push(
+        `Argument "${arg}" cannot be overwritten as it is managed internally.`,
+      );
       return false;
     }
 
@@ -234,6 +242,14 @@ const validateArgument = (arg: string): PHPCSArgumentValidation => {
     return validateKeyValueArgument(arg, errors);
   }
 
+  // If a value-taking argument was passed without a value (e.g., "--severity")
+  if (allowedAdditionalValueKeys.has(arg)) {
+    return {
+      isValid: false,
+      errors: [`Argument "${arg}" requires a value (e.g., "${arg}=<value>").`],
+    };
+  }
+
   // Handle flag arguments (no value) and only allow known additional flags.
   if (!allowedAdditionalFlagKeys.has(arg)) {
     errors.push(`Invalid flag argument: "${arg}"`);
@@ -261,10 +277,28 @@ const validateKeyValueArgument = (
   const keyRaw = separatorIndex === -1 ? arg : arg.slice(0, separatorIndex);
   const value = separatorIndex === -1 ? '' : arg.slice(separatorIndex + 1);
 
+  // If a flag argument was passed with a value (e.g., "--ignore-annotations=true")
+  if (allowedAdditionalFlagKeys.has(keyRaw)) {
+    return {
+      isValid: false,
+      errors: [
+        `Flag argument "${keyRaw}" does not accept a value. Use "${keyRaw}" without '=${value}'.`,
+      ],
+    };
+  }
+
   // If the key is NOT in the allowed additional argument keys map,
   // then return an invalid result immediately.
   if (!isAdditionalArgumentKey(keyRaw)) {
     return { isValid: false, errors: [`Invalid argument: "${arg}"`] };
+  }
+
+  // Check for an empty value (e.g. "--severity=")
+  if (value === '') {
+    return {
+      isValid: false,
+      errors: [`Argument "${keyRaw}" requires a non-empty value.`],
+    };
   }
 
   // The key is now narrowed to the correct typing and is
@@ -275,9 +309,11 @@ const validateKeyValueArgument = (
   switch (key) {
     case '--filter':
       // Filter is either 'GitStaged', 'GitModified', or a path to a custom filter class.
+
+      // Validate the filter value.
       if (!validateFilterValue(value)) {
         errors.push(
-          `Invalid argument value: "${value}". This must be either 'GitStaged', 'GitModified', or a valid path to a custom filter class.`,
+          `Invalid --filter argument value: "${value}". This must be either 'GitStaged', 'GitModified', or a valid path to a custom filter class.`,
         );
       }
       break;
@@ -297,8 +333,12 @@ const validateKeyValueArgument = (
     case '--error-severity':
     case '--warning-severity':
       // Validate severity levels, which are numeric 0-10
+
+      // Validate the severity value.
       if (!/^(0|[1-9]|10)$/.test(value)) {
-        errors.push(`Invalid argument value: "${value}". This must be 0-10.`);
+        errors.push(
+          `Invalid ${key} argument value: "${value}". This must be 0-10.`,
+        );
       }
       break;
 
@@ -314,7 +354,7 @@ const validateKeyValueArgument = (
       break;
 
     default:
-      errors.push(`Invalid argument value: "${value}"`);
+      errors.push(`Invalid ${key} argument value: "${value}"`);
   }
 
   return {
