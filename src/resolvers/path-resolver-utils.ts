@@ -84,6 +84,80 @@ export const expandHomeDir = (inputPath: string): string => {
 };
 
 /**
+ * Checks whether a given path is valid according to the constructed regex pattern.
+ *
+ * Validates both Windows and POSIX absolute paths, plus home directory
+ * shortcut (`~/`) paths, and relative paths with CWD markers (`./`).
+ * Supports files with specific extensions if provided, or directories
+ * with optional trailing separators.
+ *
+ * @param {string} path The path to validate.
+ * @param {string} [extension] The file extension that the final segment must match
+ * (e.g. `"php"`, `"xml|xml.dist"`, etc.). Multiple extensions can be separated by `|`. Extension must not include the leading dot, but a dot in double extensions like `"xml.dist"` are allowed.
+ * Omit or pass an empty string to allow a directories instead.
+ * @param {boolean} [allowTrailingSeparator] Allow one trailing `/` or `\` after
+ * the final segment. Should stay `false` when `extension` is given.
+ * @returns {boolean} `true` if the path is valid according to the constructed pattern,
+ * `false` otherwise.
+ */
+export const isPathValid = (
+  path: string,
+  extension?: string,
+  allowTrailingSeparator?: boolean,
+): boolean => {
+  // Ensure the optional parameters have default values.
+  allowTrailingSeparator = allowTrailingSeparator ?? false;
+  extension = extension ?? '';
+
+  // Reject any paths that contain UNC/device-path prefix (\\server\share, \\?\...) or
+  // path traversal segments ("\..\..\"), either of which could potentially allow a
+  // path to escape its intended scope.
+  if (/^[\\/]{2}/.test(path) || path.split(/[\\/]+/).includes('..')) {
+    return false;
+  }
+
+  // [Optional] Windows absolute path drive letter ("C:\" or "C:/"), OR
+  // POSIX absolute path with a single leading slash ("/" or "\"), OR
+  // relative CWD path marker ("./" or ".\"), OR
+  // home dir shortcut ("~/" or "~\").
+  const driveOrRootPrefix = /(?:[a-zA-Z]:[\\/]|[\\/]|[.~][\\/])?/;
+
+  // One path segment (name + separator), e.g. "foo/" or "foo\". Names may
+  // start with "." since dotfiles/folders are valid (e.g. ".config/").
+  const pathSegment = /[a-zA-Z0-9._ ()-]+[\\/]/;
+
+  // Allowed characters for the final segment's name, before its extension (if any).
+  const nameChars = /[a-zA-Z0-9._ ()-]+/;
+
+  // An optional single trailing separator, e.g. the ending "/" in "foo/bar/".
+  const trailingSeparator = allowTrailingSeparator ? /[\\/]?/.source : '';
+
+  // Prepare the extension pattern by splitting multiple extensions by "|",
+  // removing any leading dot from each extension, then splitting each
+  // extension by the middle dot (for the case of multi-part extensions)
+  // and joining them back with an escaped dot, so they are treated as
+  // literal dots in the regex. It adds a leading escaped dot for each
+  // extension, and joins them back with "|".
+  const prepareExtension = extension
+    .split('|')
+    .map((ext) => `\\.${ext.replace(/^\./, '').split('.').join('\\.')}`)
+    .join('|');
+
+  // Create the final extension pattern as a non-capturing group if extensions
+  // are provided, otherwise an empty string.
+  const extPattern = extension ? `(?:${prepareExtension})` : '';
+
+  // Construct the path pattern, with the case-insensitive flag.
+  const regex = new RegExp(
+    `^${driveOrRootPrefix.source}(?:${pathSegment.source})*${nameChars.source}${extPattern}${trailingSeparator}$`,
+    'i',
+  );
+
+  // Test the constructed regex to ensure it's a valid path and return the result.
+  return regex.test(path);
+};
+
+/**
  * Check if the given executable path exists and is accessible.
  * @param {string} path The path to the executable file.
  * @returns {Promise<boolean>} A promise that resolves to true if the executable exists and is accessible, false otherwise.
