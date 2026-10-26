@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { WorkspaceConfiguration } from 'vscode';
+import { ConsoleError } from '../interfaces/console-error';
 import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
 import { createPathResolver } from './path-resolver';
@@ -19,8 +20,16 @@ export const resolveCBFExecutablePath = async (
 ): Promise<ResourceSettings> => {
   // If no path is set, try and find it via the path resolver.
   if (!settings.executablePathCBF) {
-    let executablePathResolver = createPathResolver(settings, 'phpcbf');
-    settings.executablePathCBF = await executablePathResolver.resolve();
+    try {
+      let executablePathResolver = createPathResolver(settings, 'phpcbf');
+      settings.executablePathCBF = await executablePathResolver.resolve();
+    } catch (err) {
+      const error: ConsoleError = err as ConsoleError;
+
+      logger.error(
+        `Failed to resolve PHPCBF executable path: ${error.message}\n${error.stack}`,
+      );
+    }
   } else {
     settings.executablePathCBF = expandHomeDir(settings.executablePathCBF);
 
@@ -53,8 +62,16 @@ export const resolveCSExecutablePath = async (
 ): Promise<ResourceSettings> => {
   // If no path is set, try and find it via the path resolver.
   if (!settings.executablePathCS) {
-    let executablePathResolver = createPathResolver(settings, 'phpcs');
-    settings.executablePathCS = await executablePathResolver.resolve();
+    try {
+      let executablePathResolver = createPathResolver(settings, 'phpcs');
+      settings.executablePathCS = await executablePathResolver.resolve();
+    } catch (err) {
+      const error: ConsoleError = err as ConsoleError;
+
+      logger.error(
+        `Failed to resolve PHPCS executable path: ${error.message}\n${error.stack}`,
+      );
+    }
   } else {
     settings.executablePathCS = expandHomeDir(settings.executablePathCS);
 
