@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.31] - 2026-10-26
+
+### What's Changed
+* ci: allow test workflow to run on branches that contain `develop` in the name by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/268
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/270
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/272
+* security: improve argument validation by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/273
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.30...v0.0.31
+
+
 ## [0.0.30] - 2026-09-13
 
 ### What's Changed
