@@ -164,9 +164,19 @@ export const isPathValid = (
  */
 export const executableExists = async (path: string): Promise<boolean> => {
   try {
+    // Check if the path is provided. If not, return false.
     if (!path) {
       return false;
     }
+
+    // Check if the path is a file, if it's not return false.
+    const stat = await fs.stat(path);
+    if (!stat.isFile()) {
+      return false;
+    }
+
+    // Check if the file is executable by testing the execute permission on POSIX systems.
+    // On Windows, this will only check if the file exists.
     await fs.access(path, fs.constants.X_OK);
     return true;
   } catch (error) {
