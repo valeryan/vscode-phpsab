@@ -6,6 +6,7 @@ import { createGlobalPathResolver } from '../../resolvers/global-path-resolver';
 
 suite('Global Path Resolver Test Suite', () => {
   let accessStub: sinon.SinonStub;
+  let statStub: sinon.SinonStub;
   let env: NodeJS.ProcessEnv;
   let platformStub: sinon.SinonStub;
   let joinPathsStub: sinon.SinonStub;
@@ -13,6 +14,10 @@ suite('Global Path Resolver Test Suite', () => {
   setup(() => {
     // Stub fs.access method
     accessStub = sinon.stub(fs.promises, 'access');
+    // Stub fs.stat to report every path as a regular file
+    statStub = sinon
+      .stub(fs.promises, 'stat')
+      .resolves({ isFile: () => true } as any);
     // Save the original environment PATH
     env = process.env;
     // Stub process.platform to control platform value
@@ -25,6 +30,8 @@ suite('Global Path Resolver Test Suite', () => {
   teardown(() => {
     // Restore fs.access method
     accessStub.restore();
+    // Restore fs.stat method
+    statStub.restore();
     // Restore the environment PATH
     process.env = env;
     // Restore path.join method
