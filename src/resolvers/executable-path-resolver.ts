@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { WorkspaceConfiguration } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
@@ -7,6 +8,7 @@ import { createPathResolver } from './path-resolver';
 import {
   executableExists,
   expandHomeDir,
+  isWin,
   normalizePath,
 } from './path-resolver-utils';
 
@@ -95,10 +97,12 @@ export const resolveCSExecutablePath = async (
 };
 
 /**
- * Resolve PHP executable path with proper precedence handling
+ * Resolve PHP executable path with proper precedence handling.
+ * Supports both direct executable file paths and directory paths.
+ *
  * @param {WorkspaceConfiguration} config phpsab configuration
  * @param {WorkspaceConfiguration} phpConfig php configuration
- * @returns {Promise<string>} The resolved PHP executable path or an empty string if none is found.
+ * @returns {Promise<string>} The resolved PHP directory path or an empty string if none is found.
  */
 export const resolvePhpExecutablePath = async (
   config: WorkspaceConfiguration,
@@ -119,12 +123,48 @@ export const resolvePhpExecutablePath = async (
     },
   ];
 
+  const phpBinary = isWin() ? 'php.exe' : 'php';
+
   for (const source of phpExecutableSources) {
-    const expandedPath = source.path ? expandHomeDir(source.path) : source.path;
-    // Return the first valid (non-empty) existing executable path found
-    if (expandedPath && (await executableExists(expandedPath))) {
-      logger.debug(`Using PHP executable from ${source.name}: ${expandedPath}`);
-      return expandedPath;
+    // Skip empty or null paths
+    if (!source.path || source.path === 'null') {
+      continue;
+    }
+
+    const expandedPath = expandHomeDir(source.path);
+
+    try {
+      const stat = await fs.stat(expandedPath);
+      let resolvedDir: string | null = null;
+
+      // Attempt to determine if the path is a directory or a file and handle accordingly.
+
+      // Case A: directory path (e.g. "C:\php\8.2" or "/usr/local/bin").
+      if (stat.isDirectory()) {
+        // Construct the full path to the PHP binary within the directory.
+        const binaryPath = path.join(expandedPath, phpBinary);
+        // Check if the PHP binary exists within the directory.
+        if (await executableExists(binaryPath)) {
+          resolvedDir = expandedPath;
+        }
+      }
+      // Case B: executable file path (e.g. "C:\php\8.2\php.exe" or "/usr/bin/php").
+      else if (stat.isFile() && (await executableExists(expandedPath))) {
+        // Get the directory containing the PHP executable (e.g. "C:\php\8.2" or "/usr/local/bin").
+        resolvedDir = path.dirname(expandedPath);
+      }
+
+      // If a valid PHP directory was resolved, log it and return the normalized path.
+      if (resolvedDir) {
+        const normalizedPath = normalizePath(resolvedDir);
+        logger.debug(
+          `Using PHP directory from ${source.name}: ${normalizedPath}`,
+        );
+        return normalizedPath;
+      }
+    } catch {
+      // Path does not exist on disk, try the next source
+      continue;
     }
   }
 
