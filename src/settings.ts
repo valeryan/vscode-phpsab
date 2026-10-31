@@ -1,5 +1,6 @@
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { checkPhpcsVersionCompatibility } from './compatibility';
+import { ToolExecutable, toolNames } from './interfaces/common';
 import { ResourceSettings, Settings, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
 import {
@@ -46,23 +47,34 @@ const validate = async (
   settings: ResourceSettings,
   resource: string,
 ): Promise<ResourceSettings> => {
-  let msg = '';
+  const disabledTools: ToolExecutable[] = [];
+
   if (
     settings.snifferEnable &&
     !(await executableExists(settings.executablePathCS))
   ) {
-    msg = `The phpcs executable was not found for ${resource}. Sniffer is being disabled for this workspace.`;
     settings.snifferEnable = false;
+    disabledTools.push('phpcs');
   }
   if (
     settings.fixerEnable &&
     !(await executableExists(settings.executablePathCBF))
   ) {
-    msg = `The phpcbf executable was not found for ${resource}. Fixer is being disabled for this workspace.`;
     settings.fixerEnable = false;
+    disabledTools.push('phpcbf');
   }
 
-  if (msg) {
+  if (disabledTools.length > 0) {
+    // Map disabled toolnames to their service names, ie. 'phpcs' -> 'Sniffer', 'phpcbf' -> 'Fixer'
+    const toolNamesList = disabledTools.map((tool) => {
+      const name = toolNames[tool] ?? tool;
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    });
+
+    let msg = `The ${disabledTools.join(' and ')} `;
+    msg += disabledTools.length > 1 ? 'executables were' : 'executable was';
+    msg += ` not found for the "${resource}" workspace. ${toolNamesList.join(' and ')} will be disabled for this workspace.`;
+
     logger.warn(msg);
     window.showWarningMessage(msg, 'OK');
   }
