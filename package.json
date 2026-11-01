@@ -165,7 +165,7 @@
   "scripts": {
     "compile": "rimraf out && tsc -p ./",
     "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint src --ext ts",
