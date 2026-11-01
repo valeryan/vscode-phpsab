@@ -1,3 +1,5 @@
+import { ToolExecutable } from './common';
+
 export type SnifferMode = 'onSave' | 'onType';
 
 /**
@@ -104,3 +106,12 @@ export interface ResourceSettings {
    */
   excludeGlobs: string[];
 }
+
+/**
+ * The mapping of tool executable names to the setting key holding their executable path,
+ * i.e., 'phpcs' -> 'executablePathCS', 'phpcbf' -> 'executablePathCBF'.
+ */
+export const executableSettingKeys = {
+  phpcs: 'executablePathCS',
+  phpcbf: 'executablePathCBF',
+} as const satisfies Record<ToolExecutable, keyof ResourceSettings>;

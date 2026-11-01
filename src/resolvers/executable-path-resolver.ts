@@ -1,8 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { WorkspaceConfiguration } from 'vscode';
+import { ToolExecutable } from '../interfaces/common';
 import { ConsoleError } from '../interfaces/console-error';
-import { ResourceSettings } from '../interfaces/settings';
+import {
+  executableSettingKeys,
+  ResourceSettings,
+} from '../interfaces/settings';
 import { logger } from '../logger';
 import { createPathResolver } from './path-resolver';
 import {
@@ -13,85 +17,42 @@ import {
 } from './path-resolver-utils';
 
 /**
- * Resolve the correct PHPCBF executable path.
+ * Resolve the correct phpcs/phpcbf executable path, either by auto-detection
+ * (when setting is not configured) or by expanding and normalizing the configured path.
  * @param {ResourceSettings} settings The resource settings.
+ * @param {ToolExecutable} executable The executable to resolve, either `'phpcs'` or `'phpcbf'`.
+ * Its matching `executablePathCS`/`executablePathCBF` setting is read and updated.
  * @returns {Promise<ResourceSettings>} The resolved resource settings with the correct executable path.
  */
-export const resolveCBFExecutablePath = async (
+export const resolveExecutablePath = async (
   settings: ResourceSettings,
+  executable: ToolExecutable,
 ): Promise<ResourceSettings> => {
+  const key = executableSettingKeys[executable];
+  const configured = settings[key];
+
   // If no path is set, try and find it via the path resolver.
-  if (!settings.executablePathCBF) {
+  if (!configured) {
     try {
-      let executablePathResolver = createPathResolver(settings, 'phpcbf');
-      settings.executablePathCBF = await executablePathResolver.resolve();
+      settings[key] = await createPathResolver(settings, executable).resolve();
     } catch (err) {
       const error: ConsoleError = err as ConsoleError;
 
       logger.error(
-        `Failed to resolve PHPCBF executable path: ${error.message}\n${error.stack}`,
+        `Failed to resolve ${executable.toUpperCase()} executable path: ${error.message}\n${error.stack}`,
       );
     }
-  } else {
-    settings.executablePathCBF = expandHomeDir(settings.executablePathCBF);
-
-    // If a relative path is set, resolve it against the workspace root.
-    if (
-      !path.isAbsolute(settings.executablePathCBF) &&
-      settings.workspaceRoot !== null
-    ) {
-      settings.executablePathCBF = path.join(
-        settings.workspaceRoot,
-        settings.executablePathCBF,
-      );
-    }
-    // Otherwise normalize the absolute path.
-    else {
-      settings.executablePathCBF = normalizePath(settings.executablePathCBF);
-    }
+    return settings;
   }
 
-  return settings;
-};
+  const expanded = expandHomeDir(configured);
 
-/**
- * Resolve the correct PHPCS executable path.
- * @param {ResourceSettings} settings The resource settings.
- * @returns {Promise<ResourceSettings>} The resolved resource settings with the correct executable path.
- */
-export const resolveCSExecutablePath = async (
-  settings: ResourceSettings,
-): Promise<ResourceSettings> => {
-  // If no path is set, try and find it via the path resolver.
-  if (!settings.executablePathCS) {
-    try {
-      let executablePathResolver = createPathResolver(settings, 'phpcs');
-      settings.executablePathCS = await executablePathResolver.resolve();
-    } catch (err) {
-      const error: ConsoleError = err as ConsoleError;
-
-      logger.error(
-        `Failed to resolve PHPCS executable path: ${error.message}\n${error.stack}`,
-      );
-    }
-  } else {
-    settings.executablePathCS = expandHomeDir(settings.executablePathCS);
-
-    // If a relative path is set, resolve it against the workspace root.
-    if (
-      !path.isAbsolute(settings.executablePathCS) &&
-      settings.workspaceRoot !== null
-    ) {
-      settings.executablePathCS = path.join(
-        settings.workspaceRoot,
-        settings.executablePathCS,
-      );
-    }
-    // Otherwise normalize the absolute path.
-    else {
-      settings.executablePathCS = normalizePath(settings.executablePathCS);
-    }
-  }
+  // If a relative path is set, resolve it against the workspace root.
+  // Otherwise normalize the absolute path.
+  settings[key] =
+    !path.isAbsolute(expanded) && settings.workspaceRoot !== null
+      ? path.join(settings.workspaceRoot, expanded)
+      : normalizePath(expanded);
 
   return settings;
 };
