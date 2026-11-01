@@ -4,8 +4,7 @@ import { ToolExecutable, toolNames } from './interfaces/common';
 import { ResourceSettings, Settings, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
 import {
-  resolveCBFExecutablePath,
-  resolveCSExecutablePath,
+  resolveExecutablePath,
   resolvePhpExecutablePath,
 } from './resolvers/executable-path-resolver';
 import {
@@ -185,8 +184,8 @@ const getSettings = async (
     ]),
   };
 
-  settings = await resolveCBFExecutablePath(settings);
-  settings = await resolveCSExecutablePath(settings);
+  settings = await resolveExecutablePath(settings, 'phpcbf');
+  settings = await resolveExecutablePath(settings, 'phpcs');
 
   return settings;
 };
