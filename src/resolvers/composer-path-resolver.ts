@@ -124,7 +124,7 @@ export const createComposerPathResolver = (
 
       if (hasPhpcs && vendorPath) {
         try {
-          fs.access(vendorPath, fs.constants.R_OK || fs.constants.W_OK);
+          await fs.access(vendorPath, fs.constants.R_OK || fs.constants.W_OK);
           resolvedPath = vendorPath;
         } catch (error) {
           const relativeVendorPath = path.relative(workspaceRoot, vendorPath);
