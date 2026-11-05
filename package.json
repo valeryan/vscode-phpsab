@@ -197,5 +197,8 @@
     "sinon": "^21.1.2",
     "ts-loader": "^9.6.2",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.1.3"
   }
 }
