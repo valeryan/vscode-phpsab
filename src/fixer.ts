@@ -1,7 +1,5 @@
 import { spawnSync, SpawnSyncOptions } from 'node:child_process';
 import {
-  ConfigurationChangeEvent,
-  Disposable,
   Position,
   ProviderResult,
   Range,
@@ -12,10 +10,9 @@ import {
 } from 'vscode';
 import { OriginalCommand } from './interfaces/common';
 import { ConsoleError } from './interfaces/console-error';
-import { Settings } from './interfaces/settings';
+import { SettingsManager } from './interfaces/settings';
 import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
-import { loadSettings } from './settings';
 import {
   determineNodeError,
   getPhpNotFoundRegex,
@@ -29,35 +26,11 @@ import {
   shouldProcess,
 } from './utils/helpers';
 
-let settingsCache: Settings;
-
 /**
- * Get the current cached settings, loading them if necessary.
- * @returns {Promise<Settings>} A promise that resolves to the current settings.
+ * The shared settings manager instance used by the fixer throughout the file.
+ * @type {SettingsManager}
  */
-const getSettings = async (): Promise<Settings> => {
-  if (!settingsCache) {
-    settingsCache = await loadSettings();
-  }
-  return settingsCache;
-};
-
-/**
- * Reload and recache configuration settings when the relevant editor configuration changes.
- * @param {ConfigurationChangeEvent} event The configuration change event that triggered the reload.
- * @returns {Promise<void>} A void promise that resolves once the settings have been reloaded.
- */
-const reloadSettings = async (
-  event: ConfigurationChangeEvent,
-): Promise<void> => {
-  if (
-    !event.affectsConfiguration('phpsab') &&
-    !event.affectsConfiguration('php')
-  ) {
-    return;
-  }
-  settingsCache = await loadSettings();
-};
+let settingsManager: SettingsManager;
 
 /**
  * Get the document range
@@ -89,7 +62,7 @@ const format = async (
   document: TextDocument,
   fullDocument: boolean,
 ): Promise<string> => {
-  const settings = await getSettings();
+  const settings = settingsManager.current;
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
@@ -338,16 +311,11 @@ const hasValidFixedOutput = (
 };
 
 /**
- * Activate the fixer and register the configuration change event listener.
- * @param {Disposable[]} subscriptions Disposable array
- * @param {Settings} settings Extension settings
+ * Activate the fixer.
+ * @param {SettingsManager} manager The shared settings manager
  */
-export const activateFixer = (
-  subscriptions: Disposable[],
-  settings: Settings,
-) => {
-  settingsCache = settings;
-  workspace.onDidChangeConfiguration(reloadSettings, null, subscriptions);
+export const activateFixer = (manager: SettingsManager) => {
+  settingsManager = manager;
 };
 
 /**

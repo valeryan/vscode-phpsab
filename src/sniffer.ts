@@ -2,7 +2,6 @@ import { debounce } from 'lodash';
 import { spawn, SpawnOptions } from 'node:child_process';
 import {
   CancellationTokenSource,
-  ConfigurationChangeEvent,
   Diagnostic,
   DiagnosticCollection,
   DiagnosticSeverity,
@@ -18,10 +17,9 @@ import {
 import { OriginalCommand } from './interfaces/common';
 import { ConsoleError } from './interfaces/console-error';
 import { PHPCSMessageType, PHPCSReport } from './interfaces/phpcs-report';
-import { Settings, SnifferMode } from './interfaces/settings';
+import { SettingsManager, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
 import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
-import { loadSettings } from './settings';
 import {
   determineNodeError,
   getPhpNotFoundRegex,
@@ -34,30 +32,31 @@ import {
   shouldProcess,
 } from './utils/helpers';
 
-let settingsCache: Settings;
+/**
+ * The shared settings manager instance used by the sniffer throughout the file.
+ * @type {SettingsManager}
+ */
+let settingsManager: SettingsManager;
+
+/**
+ * The collection of diagnostics for PHP files, used to
+ * display linting errors and warnings in the editor.
+ * @type {DiagnosticCollection}
+ */
 const diagnosticCollection: DiagnosticCollection =
   languages.createDiagnosticCollection('php');
 
 /**
  * The active validator listener.
+ * @type {Disposable}
  */
 let validatorListener: Disposable;
 
 /**
- * Token to cancel a current validation runs.
+ * A map of cancellation tokens for currently running validations.
+ * @type {Map<Uri, CancellationTokenSource>}
  */
 const runnerCancellations: Map<Uri, CancellationTokenSource> = new Map();
-
-/**
- * Get the current cached settings, loading them if necessary.
- * @returns {Promise<Settings>} A promise that resolves to the current settings.
- */
-const getSettings = async (): Promise<Settings> => {
-  if (!settingsCache) {
-    settingsCache = await loadSettings();
-  }
-  return settingsCache;
-};
 
 /**
  * Validates and lints a document.
@@ -68,7 +67,7 @@ const getSettings = async (): Promise<Settings> => {
 const validate = async (document: TextDocument): Promise<void> => {
   const workspaceFolder = workspace.getWorkspaceFolder(document.uri);
 
-  const settings = await getSettings();
+  const settings = settingsManager.current;
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
 
   // If the document should not be processed, return early.
@@ -285,13 +284,12 @@ const clearDocumentDiagnostics = ({ uri }: TextDocument): void => {
 
 /**
  * Sets the validation event listening.
- * @returns {Promise<void>} A void promise that resolves once the validator listener has been set.
  */
-const setValidatorListener = async (): Promise<void> => {
+const setValidatorListener = (): void => {
   if (validatorListener) {
     validatorListener.dispose();
   }
-  const settings = await getSettings();
+  const settings = settingsManager.current;
   const run: SnifferMode = settings.snifferMode;
   const delay: number = settings.snifferTypeDelay;
 
@@ -309,35 +307,6 @@ const setValidatorListener = async (): Promise<void> => {
 };
 
 /**
- * On configuration change, refreshes the settings cache,
- * updates the validator listener if necessary,
- * and re-validates/re-lints open documents.
- *
- * @param {ConfigurationChangeEvent} event - The configuration change event.
- * @returns {Promise<void>} A void promise that resolves once the configuration change has been handled.
- */
-const onConfigChange = async (
-  event: ConfigurationChangeEvent,
-): Promise<void> => {
-  if (
-    !event.affectsConfiguration('phpsab') &&
-    !event.affectsConfiguration('php')
-  ) {
-    return;
-  }
-  settingsCache = await loadSettings();
-
-  if (
-    event.affectsConfiguration('phpsab.snifferMode') ||
-    event.affectsConfiguration('phpsab.snifferTypeDelay')
-  ) {
-    setValidatorListener();
-  }
-
-  refresh();
-};
-
-/**
  * Dispose Sniffer diagnostics.
  */
 export const disposeSniffer = (): void => {
@@ -348,23 +317,33 @@ export const disposeSniffer = (): void => {
 /**
  * Activates the Sniffer and register the event listeners.
  * @param {Disposable[]} subscriptions The array of disposables to which the event listeners will be added.
- * @param {Settings} settings The current settings for the Sniffer extension.
- * @returns {Promise<void>} A void promise that resolves once the Sniffer has been activated and event listeners have been set.
+ * @param {SettingsManager} manager The shared settings manager.
  */
-export const activateSniffer = async (
+export const activateSniffer = (
   subscriptions: Disposable[],
-  settings: Settings,
-): Promise<void> => {
-  settingsCache = settings;
+  manager: SettingsManager,
+): void => {
+  settingsManager = manager;
 
-  workspace.onDidChangeConfiguration(onConfigChange, null, subscriptions);
+  // On settings reload, update the validator listener if necessary,
+  // and re-validate/re-lint open documents.
+  manager.onDidChange(
+    ({ shouldUpdateSnifferValidatorListener }) => {
+      // If the sniffer validator listener needs to be updated, set it accordingly.
+      if (shouldUpdateSnifferValidatorListener) {
+        setValidatorListener();
+      }
+      refresh();
+    },
+    null,
+    subscriptions,
+  );
   workspace.onDidOpenTextDocument(validate, null, subscriptions);
   workspace.onDidCloseTextDocument(
     clearDocumentDiagnostics,
     null,
     subscriptions,
   );
-  workspace.onDidChangeWorkspaceFolders(refresh, this, subscriptions);
 
   refresh();
   setValidatorListener();

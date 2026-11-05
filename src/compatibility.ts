@@ -1,8 +1,11 @@
-import { spawnSync } from 'node:child_process';
+import { exec } from 'node:child_process';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { window } from 'vscode';
 import { Settings } from './interfaces/settings';
 import { logger } from './logger';
+
+const execAsync = promisify(exec);
 
 /**
  * Check PHPCS version compatibility and warn on 4.x versions.
@@ -12,62 +15,66 @@ import { logger } from './logger';
 export const checkPhpcsVersionCompatibility = async (
   settings: Settings,
 ): Promise<void> => {
-  // Check version compatibility for each workspace resource
-  for (const resourceSettings of settings.resources) {
-    let phpcsVersion: string | null = null;
-    let phpcbfVersion: string | null = null;
-    const resourceRoot = path.basename(resourceSettings.workspaceRoot || '');
+  // Check version compatibility for each workspace resource in parallel.
+  await Promise.all(
+    settings.resources.map(async (resourceSettings) => {
+      const resourceRoot = path.basename(resourceSettings.workspaceRoot || '');
 
-    const phpcsExecutablePath = resourceSettings.executablePathCS;
-    const phpcbfExecutablePath = resourceSettings.executablePathCBF;
+      const phpcsExecutablePath = resourceSettings.executablePathCS;
+      const phpcbfExecutablePath = resourceSettings.executablePathCBF;
 
-    // If sniffer is enabled and PHPCS executable found, check it's version.
-    if (resourceSettings.snifferEnable && phpcsExecutablePath) {
-      phpcsVersion = await getPhpcsVersion(phpcsExecutablePath, 'PHPCS');
-    }
+      // If sniffer/fixer is enabled and its executable found, check its version.
+      const [phpcsVersion, phpcbfVersion] = await Promise.all([
+        resourceSettings.snifferEnable && phpcsExecutablePath
+          ? getPhpcsVersion(phpcsExecutablePath, 'PHPCS')
+          : null,
+        resourceSettings.fixerEnable && phpcbfExecutablePath
+          ? getPhpcsVersion(phpcbfExecutablePath, 'PHPCBF')
+          : null,
+      ]);
 
-    // If fixer is enabled and PHPCBF executable found, check it's version.
-    if (resourceSettings.fixerEnable && phpcbfExecutablePath) {
-      phpcbfVersion = await getPhpcsVersion(phpcbfExecutablePath, 'PHPCBF');
-    }
+      let warningMsg = '';
 
-    let warningMsg = '';
+      // Check for version detection issues
 
-    // Check for version detection issues
+      // If neither version could be determined AND sniffer or fixer is enabled, warn the user.
+      if (
+        !phpcsVersion &&
+        !phpcbfVersion &&
+        resourceSettings.snifferEnable &&
+        resourceSettings.fixerEnable
+      ) {
+        warningMsg = `Could not determine version of PHPCS/PHPCBF from "${resourceRoot}". Please ensure the executables are working correctly.`;
+      }
+      // If PHPCS version could not be determined AND sniffer is enabled, warn the user.
+      else if (!phpcsVersion && resourceSettings.snifferEnable) {
+        warningMsg = `Could not determine version of PHPCS from "${resourceRoot}". Please ensure the executable is working correctly.`;
+      }
+      // If PHPCBF version could not be determined AND fixer is enabled, warn the user.
+      else if (!phpcbfVersion && resourceSettings.fixerEnable) {
+        warningMsg = `Could not determine version of PHPCBF from "${resourceRoot}". Please ensure the executable is working correctly.`;
+      }
+      // Check for version mismatches when both versions are available
+      else if (
+        phpcsVersion &&
+        phpcbfVersion &&
+        phpcsVersion !== phpcbfVersion
+      ) {
+        warningMsg = `Version mismatch detected: PHPCS version ${phpcsVersion} and PHPCBF version ${phpcbfVersion} from "${resourceRoot}". This may lead to unexpected behavior. Please ensure both are from the same installation directory.`;
+      }
+      // Check for unsupported versions
+      else if (checkUnsupportedVersion(phpcsVersion, phpcbfVersion)) {
+        const version = phpcsVersion || phpcbfVersion;
+        warningMsg = `Version ${version} detected in "${resourceRoot}". Version 4.x is not supported yet. Some features may not work as expected. Please consider downgrading to the latest 3.x version.`;
+      }
 
-    // If neither version could be determined AND sniffer or fixer is enabled, warn the user.
-    if (
-      !phpcsVersion &&
-      !phpcbfVersion &&
-      resourceSettings.snifferEnable &&
-      resourceSettings.fixerEnable
-    ) {
-      warningMsg = `Could not determine version of PHPCS/PHPCBF from "${resourceRoot}". Please ensure the executables are working correctly.`;
-    }
-    // If PHPCS version could not be determined AND sniffer is enabled, warn the user.
-    else if (!phpcsVersion && resourceSettings.snifferEnable) {
-      warningMsg = `Could not determine version of PHPCS from "${resourceRoot}". Please ensure the executable is working correctly.`;
-    }
-    // If PHPCBF version could not be determined AND fixer is enabled, warn the user.
-    else if (!phpcbfVersion && resourceSettings.fixerEnable) {
-      warningMsg = `Could not determine version of PHPCBF from "${resourceRoot}". Please ensure the executable is working correctly.`;
-    }
-    // Check for version mismatches when both versions are available
-    else if (phpcsVersion && phpcbfVersion && phpcsVersion !== phpcbfVersion) {
-      warningMsg = `Version mismatch detected: PHPCS version ${phpcsVersion} and PHPCBF version ${phpcbfVersion} from "${resourceRoot}". This may lead to unexpected behavior. Please ensure both are from the same installation directory.`;
-    }
-    // Check for unsupported versions
-    else if (checkUnsupportedVersion(phpcsVersion, phpcbfVersion)) {
-      const version = phpcsVersion || phpcbfVersion;
-      warningMsg = `Version ${version} detected in "${resourceRoot}". Version 4.x is not supported yet. Some features may not work as expected. Please consider downgrading to the latest 3.x version.`;
-    }
-
-    // Only show warning if there's a message to display.
-    if (warningMsg) {
-      logger.warn(warningMsg);
-      window.showWarningMessage(warningMsg, 'OK');
-    }
-  }
+      // Only show warning if there's a message to display.
+      if (warningMsg) {
+        logger.warn(warningMsg);
+        window.showWarningMessage(warningMsg, 'OK');
+      }
+    }),
+  );
 };
 
 /**
@@ -87,22 +94,23 @@ const getPhpcsVersion = async (
 
   try {
     // Run the executable with --version
-    const result = spawnSync(`"${executablePath}" --version`, {
-      encoding: 'utf8',
-      shell: true,
-      timeout: 5000,
-    });
-
-    // If the process failed, log the error and return null.
-    if (result.status !== 0 || result.error) {
+    let stdout: string;
+    try {
+      ({ stdout } = await execAsync(`"${executablePath}" --version`, {
+        encoding: 'utf8',
+        timeout: 5000,
+      }));
+    } catch (err) {
+      // If the process failed, log the error and return null.
+      const failure = err as Error & { stderr?: string };
       logger.debug(
-        `Failed to get ${executableName} version: ${result.error?.message || result.stderr}`,
+        `Failed to get ${executableName} version: ${failure.message || failure.stderr}`,
       );
       return null;
     }
 
     // Get the output.
-    const output = result.stdout.toString().trim();
+    const output = stdout.toString().trim();
 
     // Verify that the matched string contains "PHP_CodeSniffer".
     // This ensures it's the correct executable.
