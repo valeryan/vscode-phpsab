@@ -1,5 +1,8 @@
 import { spawnSync, SpawnSyncOptions } from 'node:child_process';
 import {
+  commands,
+  Disposable,
+  languages,
   Position,
   ProviderResult,
   Range,
@@ -312,10 +315,43 @@ const hasValidFixedOutput = (
 
 /**
  * Activate the fixer.
- * @param {SettingsManager} manager The shared settings manager
+ * @param {Disposable[]} subscriptions The array of disposables.
+ * @param {SettingsManager} manager The shared settings manager.
  */
-export const activateFixer = (manager: SettingsManager) => {
+export const activateFixer = (
+  subscriptions: Disposable[],
+  manager: SettingsManager,
+) => {
   settingsManager = manager;
+
+  // Register the fixer command to format from command palette.
+  const fixerCommand = commands.registerTextEditorCommand(
+    'fixer.fix',
+    (textEditor) => {
+      if (textEditor.document.languageId === 'php') {
+        commands.executeCommand('editor.action.formatDocument');
+      }
+    },
+  );
+
+  // Register fixer as a document formatter for PHP.
+  const formatter = languages.registerDocumentRangeFormattingEditProvider(
+    { scheme: 'file', language: 'php' },
+    {
+      provideDocumentRangeFormattingEdits: async (document, range) => {
+        logger.info(`Starting to format the document: ${document.fileName}`);
+        try {
+          return await registerFixerAsDocumentProvider(document, range);
+        } catch (error) {
+          logger.error(`DEBUG: Error in provider: ${error}`);
+          throw error;
+        }
+      },
+    },
+  );
+
+  subscriptions.push(fixerCommand);
+  subscriptions.push(formatter);
 };
 
 /**

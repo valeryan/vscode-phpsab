@@ -2,8 +2,8 @@
  * Copyright (c) 2019 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { commands, ExtensionContext, languages } from 'vscode';
-import { activateFixer, registerFixerAsDocumentProvider } from './fixer';
+import { ExtensionContext } from 'vscode';
+import { activateFixer } from './fixer';
 import { disposeLogger, logger } from './logger';
 import { createSettingsManager } from './settings-manager';
 import { activateSniffer, disposeSniffer } from './sniffer';
@@ -27,35 +27,8 @@ export const activate = async (context: ExtensionContext) => {
   context.subscriptions.push(settingsManager);
   await settingsManager.reload();
 
-  activateFixer(settingsManager);
+  activateFixer(context.subscriptions, settingsManager);
   activateSniffer(context.subscriptions, settingsManager);
-
-  // Register format from command palette
-  context.subscriptions.push(
-    commands.registerTextEditorCommand('fixer.fix', (textEditor) => {
-      if (textEditor.document.languageId === 'php') {
-        commands.executeCommand('editor.action.formatDocument');
-      }
-    }),
-  );
-
-  // Register as document formatter for php
-  context.subscriptions.push(
-    languages.registerDocumentRangeFormattingEditProvider(
-      { scheme: 'file', language: 'php' },
-      {
-        provideDocumentRangeFormattingEdits: async (document, range) => {
-          logger.info(`Starting to format the document: ${document.fileName}`);
-          try {
-            return await registerFixerAsDocumentProvider(document, range);
-          } catch (error) {
-            logger.error(`DEBUG: Error in provider: ${error}`);
-            throw error;
-          }
-        },
-      },
-    ),
-  );
 };
 
 /**
