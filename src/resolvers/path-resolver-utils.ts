@@ -28,14 +28,6 @@ export const getPlatformExtension = (): string => (isWin() ? '.bat' : '');
 export const getPlatformPathSeparator = (): string => (isWin() ? '\\' : '/');
 
 /**
- * Get the appropriate PATH separator for the current platform to use when modifying
- * the PATH environment variable. Windows uses ';' while POSIX systems use ':'.
- *
- * @returns The PATH separator for the current platform.
- */
-export const getEnvPathSeparator = (): string => (isWin() ? ';' : ':');
-
-/**
  * Adds the PHP executable directory to the Node process's environment PATH.
  *
  * @param phpDirectoryPath The PHP directory path from extension settings.
@@ -46,8 +38,7 @@ export const addPhpToEnvPath = (phpDirectoryPath: string) => {
   }
 
   if (!process.env?.PATH?.includes(phpDirectoryPath)) {
-    process.env.PATH =
-      process.env.PATH + getEnvPathSeparator() + phpDirectoryPath;
+    process.env.PATH = process.env.PATH + path.delimiter + phpDirectoryPath;
     logger.debug(
       `Added PHP directory (${phpDirectoryPath}) to extension environment.`,
     );
