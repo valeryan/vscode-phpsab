@@ -1,5 +1,5 @@
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
-import { checkPhpcsVersionCompatibility } from './compatibility';
+import { checkCompatibility } from './compatibility';
 import { ToolExecutable, toolNames } from './interfaces/common';
 import { ResourceSettings, Settings, SnifferMode } from './interfaces/settings';
 import { logger } from './logger';
@@ -143,7 +143,7 @@ export const loadSettings = async (): Promise<Settings> => {
     addPhpToEnvPath(settings.phpExecutablePath);
   }
 
-  await checkPhpcsVersionCompatibility(settings);
+  await checkCompatibility(settings);
 
   logger.setDebugMode(settings.debug);
   logger.debug('CONFIGURATION', settings);

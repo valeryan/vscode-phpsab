@@ -8,11 +8,21 @@ import { logger } from './logger';
 const execAsync = promisify(exec);
 
 /**
+ * Check the compatibility of the PHP environment and PHPCS/PHPCBF versions.
+ * @param {Settings} settings The extension settings.
+ */
+export const checkCompatibility = async (settings: Settings): Promise<void> => {
+  await checkPhpVersion();
+
+  await checkPhpcsVersionCompatibility(settings);
+};
+
+/**
  * Check PHPCS version compatibility and warn on 4.x versions.
  * @param {Settings} settings The extension settings
  * @return {Promise<void>}
  */
-export const checkPhpcsVersionCompatibility = async (
+const checkPhpcsVersionCompatibility = async (
   settings: Settings,
 ): Promise<void> => {
   // Check version compatibility for each workspace resource in parallel.
@@ -164,4 +174,64 @@ const checkUnsupportedVersion = (
     (phpcsVersion != null && phpcsVersion.startsWith(unsupportedVersion)) ||
     (phpcbfVersion != null && phpcbfVersion.startsWith(unsupportedVersion))
   );
+};
+
+/**
+ * Check the PHP version by running `php --version` and parsing the output.
+ * This helps to determine whether the correct PHP executable is being
+ * used and retrieves its version.
+ * @returns {Promise<string | null>} The PHP version string if available, otherwise null.
+ */
+const checkPhpVersion = async (): Promise<string | null> => {
+  try {
+    let stdout: string;
+    try {
+      ({ stdout } = await execAsync(`php --version`, {
+        encoding: 'utf8',
+        timeout: 5000,
+        env: process.env,
+      }));
+    } catch (err) {
+      // If the process failed, log the error and return null.
+      const failure = err as Error & { stderr?: string };
+      logger.debug(
+        `Failed to get PHP version: ${failure.message || failure.stderr}`,
+      );
+      return null;
+    }
+
+    // Get the output.
+    const output = stdout.toString().trim();
+
+    // Verify that the matched string contains "PHP".
+    // This ensures it's the correct executable.
+    if (!output.includes('PHP')) {
+      const errorMsg = `Invalid output string for PHP: ${output}`;
+      logger.debug(errorMsg);
+
+      throw new Error(errorMsg);
+    }
+
+    // Match version patterns like "PHP 8.2.35".
+    const versionMatch = output.match(/(\d+)\.(\d+)\.(\d+)/);
+
+    // If no version match is found, log and return null.
+    if (!versionMatch) {
+      logger.debug(`Could not obtain PHP version from output:`, output);
+      return null;
+    }
+
+    // Get the full version string from the match array.
+    const version = versionMatch[0];
+
+    logger.info(`PHP version: ${version}`);
+
+    return version;
+  } catch (error) {
+    // Log any exceptions and return null.
+    const errorMsg = `Exception while getting the php version: ${error}`;
+    logger.debug(errorMsg);
+    window.showErrorMessage(errorMsg, 'OK');
+    return null;
+  }
 };
