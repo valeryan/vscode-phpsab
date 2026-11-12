@@ -2,10 +2,10 @@
  * Copyright (c) 2019 Samuel Hilson. All rights reserved.
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
-import { commands, ExtensionContext, languages } from 'vscode';
-import { activateFixer, registerFixerAsDocumentProvider } from './fixer';
+import { ExtensionContext } from 'vscode';
+import { activateFixer } from './fixer';
 import { disposeLogger, logger } from './logger';
-import { loadSettings } from './settings';
+import { createSettingsManager } from './settings-manager';
 import { activateSniffer, disposeSniffer } from './sniffer';
 import { getExtensionInfo, setExtensionInfo } from './utils/helpers';
 
@@ -22,36 +22,13 @@ export const activate = async (context: ExtensionContext) => {
   logger.log(`Extension Display Name: ${displayName}.`);
   logger.log(`Extension Version: ${version}.`);
 
-  const settings = await loadSettings();
-  activateFixer(context.subscriptions, settings);
-  activateSniffer(context.subscriptions, settings);
+  // Create the settings manager and load the settings for the extension.
+  const settingsManager = createSettingsManager();
+  context.subscriptions.push(settingsManager);
+  await settingsManager.reload();
 
-  // Register format from command palette
-  context.subscriptions.push(
-    commands.registerTextEditorCommand('fixer.fix', (textEditor) => {
-      if (textEditor.document.languageId === 'php') {
-        commands.executeCommand('editor.action.formatDocument');
-      }
-    }),
-  );
-
-  // Register as document formatter for php
-  context.subscriptions.push(
-    languages.registerDocumentRangeFormattingEditProvider(
-      { scheme: 'file', language: 'php' },
-      {
-        provideDocumentRangeFormattingEdits: async (document, range) => {
-          logger.info(`Starting to format the document: ${document.fileName}`);
-          try {
-            return await registerFixerAsDocumentProvider(document, range);
-          } catch (error) {
-            logger.error(`DEBUG: Error in provider: ${error}`);
-            throw error;
-          }
-        },
-      },
-    ),
-  );
+  activateFixer(context.subscriptions, settingsManager);
+  activateSniffer(context.subscriptions, settingsManager);
 };
 
 /**
