@@ -12,7 +12,7 @@ const execAsync = promisify(exec);
  * @param {Settings} settings The extension settings.
  */
 export const checkCompatibility = async (settings: Settings): Promise<void> => {
-  await checkPhpVersion();
+  await getVersion('PHP', '', '', settings.environment);
 
   await checkPhpcsVersionCompatibility(settings);
 };
@@ -36,10 +36,20 @@ const checkPhpcsVersionCompatibility = async (
       // If sniffer/fixer is enabled and its executable found, check its version.
       const [phpcsVersion, phpcbfVersion] = await Promise.all([
         resourceSettings.snifferEnable && phpcsExecutablePath
-          ? getPhpcsVersion(phpcsExecutablePath, 'PHPCS')
+          ? getVersion(
+              'PHPCS',
+              phpcsExecutablePath,
+              'PHP_CodeSniffer',
+              settings.environment,
+            )
           : null,
         resourceSettings.fixerEnable && phpcbfExecutablePath
-          ? getPhpcsVersion(phpcbfExecutablePath, 'PHPCBF')
+          ? getVersion(
+              'PHPCBF',
+              phpcbfExecutablePath,
+              'PHP_CodeSniffer',
+              settings.environment,
+            )
           : null,
       ]);
 
@@ -88,17 +98,28 @@ const checkPhpcsVersionCompatibility = async (
 };
 
 /**
- * Get the version of PHPCS or PHPCBF
- * @param {string} executablePath The path to the PHPCS or PHPCBF executable
- * @param {string} executableName The name of the executable (phpcs or phpcbf) for logging
- * @returns {Promise<string | null>} The version string or null if it couldn't be determined
+ * Get the version of an executable.
+ * @param {string} executableName The executable name for logging.
+ * @param {string} executablePath The path to the executable.
+ * @param {string} outputIdentifier The text identifying the executable's output.
+ * @returns {Promise<string | null>} The version string or null if it couldn't be determined.
  */
-const getPhpcsVersion = async (
-  executablePath: string,
+const getVersion = async (
   executableName: string,
+  executablePath: string,
+  outputIdentifier: string,
 ): Promise<string | null> => {
-  // If no executable path is provided, return null.
-  if (!executablePath) {
+  // If the executable name is "PHP"...
+  if (executableName === 'PHP') {
+    // Set the default executable path for PHP to the lowercase 'php'
+    // so we run the 'php' command from the system PATH.
+    executablePath = executableName.toLowerCase();
+    // Set the output identifier to the same as its name ('PHP').
+    outputIdentifier = executableName;
+  }
+  // Otherwise if no executable path is provided, return null.
+  // (PHP should be the only one without a specified path.)
+  else if (!executablePath) {
     return null;
   }
 
@@ -122,16 +143,16 @@ const getPhpcsVersion = async (
     // Get the output.
     const output = stdout.toString().trim();
 
-    // Verify that the matched string contains "PHP_CodeSniffer".
+    // Verify that the matched string contains the output identifier.
     // This ensures it's the correct executable.
-    if (!output.includes('PHP_CodeSniffer')) {
-      const errorMsg = `Invalid output string for ${executableName}: ${output}`;
+    if (!output.includes(outputIdentifier)) {
+      const errorMsg = `Invalid output identifier for ${executableName}: ${output}`;
       logger.debug(errorMsg);
 
       throw new Error(errorMsg);
     }
 
-    // Match version patterns like "PHP_CodeSniffer version 3.7.2".
+    // Match version patterns like "3.7.2".
     const versionMatch = output.match(/(\d+)\.(\d+)\.(\d+)/);
 
     // If no version match is found, log and return null.
@@ -174,64 +195,4 @@ const checkUnsupportedVersion = (
     (phpcsVersion != null && phpcsVersion.startsWith(unsupportedVersion)) ||
     (phpcbfVersion != null && phpcbfVersion.startsWith(unsupportedVersion))
   );
-};
-
-/**
- * Check the PHP version by running `php --version` and parsing the output.
- * This helps to determine whether the correct PHP executable is being
- * used and retrieves its version.
- * @returns {Promise<string | null>} The PHP version string if available, otherwise null.
- */
-const checkPhpVersion = async (): Promise<string | null> => {
-  try {
-    let stdout: string;
-    try {
-      ({ stdout } = await execAsync(`php --version`, {
-        encoding: 'utf8',
-        timeout: 5000,
-        env: process.env,
-      }));
-    } catch (err) {
-      // If the process failed, log the error and return null.
-      const failure = err as Error & { stderr?: string };
-      logger.debug(
-        `Failed to get PHP version: ${failure.message || failure.stderr}`,
-      );
-      return null;
-    }
-
-    // Get the output.
-    const output = stdout.toString().trim();
-
-    // Verify that the matched string contains "PHP".
-    // This ensures it's the correct executable.
-    if (!output.includes('PHP')) {
-      const errorMsg = `Invalid output string for PHP: ${output}`;
-      logger.debug(errorMsg);
-
-      throw new Error(errorMsg);
-    }
-
-    // Match version patterns like "PHP 8.2.35".
-    const versionMatch = output.match(/(\d+)\.(\d+)\.(\d+)/);
-
-    // If no version match is found, log and return null.
-    if (!versionMatch) {
-      logger.debug(`Could not obtain PHP version from output:`, output);
-      return null;
-    }
-
-    // Get the full version string from the match array.
-    const version = versionMatch[0];
-
-    logger.info(`PHP version: ${version}`);
-
-    return version;
-  } catch (error) {
-    // Log any exceptions and return null.
-    const errorMsg = `Exception while getting the php version: ${error}`;
-    logger.debug(errorMsg);
-    window.showErrorMessage(errorMsg, 'OK');
-    return null;
-  }
 };
