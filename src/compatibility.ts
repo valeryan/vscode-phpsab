@@ -12,7 +12,7 @@ const execAsync = promisify(exec);
  * @param {Settings} settings The extension settings.
  */
 export const checkCompatibility = async (settings: Settings): Promise<void> => {
-  await getVersion('PHP', '', '', settings.environment);
+  await getVersion('PHP', '', '');
 
   await checkPhpcsVersionCompatibility(settings);
 };
@@ -36,20 +36,10 @@ const checkPhpcsVersionCompatibility = async (
       // If sniffer/fixer is enabled and its executable found, check its version.
       const [phpcsVersion, phpcbfVersion] = await Promise.all([
         resourceSettings.snifferEnable && phpcsExecutablePath
-          ? getVersion(
-              'PHPCS',
-              phpcsExecutablePath,
-              'PHP_CodeSniffer',
-              settings.environment,
-            )
+          ? getVersion('PHPCS', phpcsExecutablePath, 'PHP_CodeSniffer')
           : null,
         resourceSettings.fixerEnable && phpcbfExecutablePath
-          ? getVersion(
-              'PHPCBF',
-              phpcbfExecutablePath,
-              'PHP_CodeSniffer',
-              settings.environment,
-            )
+          ? getVersion('PHPCBF', phpcbfExecutablePath, 'PHP_CodeSniffer')
           : null,
       ]);
 
