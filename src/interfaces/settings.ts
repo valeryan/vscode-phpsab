@@ -41,6 +41,12 @@ export interface Settings {
    * The path to the PHP executable.
    */
   phpExecutablePath: string;
+
+  /**
+   * Environment used by PHPCS, PHPCBF and compatibility checks.
+   * Recreated whenever settings are (re)loaded.
+   */
+  readonly environment: Readonly<NodeJS.ProcessEnv>;
 }
 
 /**

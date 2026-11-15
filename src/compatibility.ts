@@ -12,7 +12,7 @@ const execAsync = promisify(exec);
  * @param {Settings} settings The extension settings.
  */
 export const checkCompatibility = async (settings: Settings): Promise<void> => {
-  await getVersion('PHP', '', '');
+  await getVersion('PHP', '', '', settings.environment);
 
   await checkPhpcsVersionCompatibility(settings);
 };
@@ -36,10 +36,20 @@ const checkPhpcsVersionCompatibility = async (
       // If sniffer/fixer is enabled and its executable found, check its version.
       const [phpcsVersion, phpcbfVersion] = await Promise.all([
         resourceSettings.snifferEnable && phpcsExecutablePath
-          ? getVersion('PHPCS', phpcsExecutablePath, 'PHP_CodeSniffer')
+          ? getVersion(
+              'PHPCS',
+              phpcsExecutablePath,
+              'PHP_CodeSniffer',
+              settings.environment,
+            )
           : null,
         resourceSettings.fixerEnable && phpcbfExecutablePath
-          ? getVersion('PHPCBF', phpcbfExecutablePath, 'PHP_CodeSniffer')
+          ? getVersion(
+              'PHPCBF',
+              phpcbfExecutablePath,
+              'PHP_CodeSniffer',
+              settings.environment,
+            )
           : null,
       ]);
 
@@ -92,12 +102,14 @@ const checkPhpcsVersionCompatibility = async (
  * @param {string} executableName The executable name for logging.
  * @param {string} executablePath The path to the executable.
  * @param {string} outputIdentifier The text identifying the executable's output.
+ * @param {Readonly<NodeJS.ProcessEnv>} environment The child process environment.
  * @returns {Promise<string | null>} The version string or null if it couldn't be determined.
  */
 const getVersion = async (
   executableName: string,
   executablePath: string,
   outputIdentifier: string,
+  environment: Readonly<NodeJS.ProcessEnv>,
 ): Promise<string | null> => {
   // If the executable name is "PHP"...
   if (executableName === 'PHP') {
@@ -120,6 +132,7 @@ const getVersion = async (
       ({ stdout } = await execAsync(`"${executablePath}" --version`, {
         encoding: 'utf8',
         timeout: 5000,
+        env: environment,
       }));
     } catch (err) {
       // If the process failed, log the error and return null.

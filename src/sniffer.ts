@@ -116,7 +116,7 @@ const validate = async (document: TextDocument): Promise<void> => {
       resourceConf.workspaceRoot !== null
         ? resourceConf.workspaceRoot
         : undefined,
-    env: process.env,
+    env: settings.environment,
     // Required to prevent EINVAL errors when spawning .bat files on Windows.
     // https://github.com/valeryan/vscode-phpsab/issues/128
     // https://github.com/nodejs/node/issues/52554

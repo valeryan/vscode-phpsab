@@ -1,7 +1,6 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { logger } from '../logger';
 
 /**
  * Is the current platform Windows?
@@ -28,21 +27,33 @@ export const getPlatformExtension = (): string => (isWin() ? '.bat' : '');
 export const getPlatformPathSeparator = (): string => (isWin() ? '\\' : '/');
 
 /**
- * Adds the PHP executable directory to the Node process's environment PATH.
+ * Create a process environment that includes the configured PHP directory first in the PATH.
  *
- * @param phpDirectoryPath The PHP directory path from extension settings.
+ * @param {string} phpDirectoryPath The PHP directory path.
+ * @returns {NodeJS.ProcessEnv} A new process environment.
  */
-export const addPhpToEnvPath = (phpDirectoryPath: string) => {
+export const createEnv = (phpDirectoryPath: string): NodeJS.ProcessEnv => {
+  // Clone the current process environment to avoid modifying the parent process.
+  const clonedEnv: NodeJS.ProcessEnv = { ...process.env };
+
+  // If no PHP directory path is provided, return the cloned environment as-is.
   if (!phpDirectoryPath) {
-    return;
+    return clonedEnv;
   }
 
-  if (!process.env?.PATH?.includes(phpDirectoryPath)) {
-    process.env.PATH = process.env.PATH + path.delimiter + phpDirectoryPath;
-    logger.debug(
-      `Added PHP directory (${phpDirectoryPath}) to extension environment.`,
-    );
-  }
+  // Get the current PATH environment variable.
+  const inheritedPath = process.env.PATH;
+
+  // On Windows, the PATH key is case-insensitive, so the process could have multiple variations
+  // like 'Path' or 'PATH'. But Node selects the first occurrence in lexicographical order,
+  // meaning uppercase 'PATH' will take precedence if it exists.
+  // So we explicitly create the uppercase variable in the cloned env to ensure it is used by
+  // the process, and add the PHP directory path at the beginning of it.
+  clonedEnv.PATH = inheritedPath
+    ? `${phpDirectoryPath}${path.delimiter}${inheritedPath}`
+    : phpDirectoryPath;
+
+  return clonedEnv;
 };
 
 /**

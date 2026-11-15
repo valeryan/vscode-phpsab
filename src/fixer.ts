@@ -116,7 +116,7 @@ const format = async (
       resourceConf.workspaceRoot !== null
         ? resourceConf.workspaceRoot
         : undefined,
-    env: process.env,
+    env: settings.environment,
     encoding: 'utf8',
     input: fileText,
     // Required to prevent EINVAL errors when spawning .bat files on Windows.

@@ -1,3 +1,4 @@
+import { omit } from 'lodash';
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
 import { checkCompatibility } from './compatibility';
 import { ToolExecutable, toolNames } from './interfaces/common';
@@ -7,10 +8,7 @@ import {
   resolveExecutablePath,
   resolvePhpExecutablePath,
 } from './resolvers/executable-path-resolver';
-import {
-  addPhpToEnvPath,
-  executableExists,
-} from './resolvers/path-resolver-utils';
+import { createEnv, executableExists } from './resolvers/path-resolver-utils';
 import { getExtensionInfo } from './utils/helpers';
 
 /**
@@ -125,8 +123,14 @@ export const loadSettings = async (): Promise<Settings> => {
     }
   }
 
+  // Resolve PHP executable path before updating settings.
+  const phpExecutablePath = await resolvePhpExecutablePath(
+    globalConfig,
+    PHPconfig,
+  );
+
   // Update settings from config
-  let settings: Settings = {
+  const settings: Settings = {
     resources: resourcesSettings,
     snifferMode: globalConfig.get<SnifferMode>('snifferMode', 'onSave'),
     snifferShowSources: globalConfig.get<boolean>('snifferShowSources', false),
@@ -136,17 +140,17 @@ export const loadSettings = async (): Promise<Settings> => {
     ),
     snifferTypeDelay: globalConfig.get<number>('snifferTypeDelay', 250),
     debug: globalConfig.get<boolean>('debug', false),
-    phpExecutablePath: await resolvePhpExecutablePath(globalConfig, PHPconfig),
+    phpExecutablePath,
+    environment: createEnv(phpExecutablePath),
   };
-
-  if (settings.phpExecutablePath != '') {
-    addPhpToEnvPath(settings.phpExecutablePath);
-  }
 
   await checkCompatibility(settings);
 
   logger.setDebugMode(settings.debug);
-  logger.debug('CONFIGURATION', settings);
+
+  // Log the configuration without the environment property for debugging purposes.
+  const configuration = omit(settings, 'environment');
+  logger.debug('CONFIGURATION', configuration);
 
   return settings;
 };
