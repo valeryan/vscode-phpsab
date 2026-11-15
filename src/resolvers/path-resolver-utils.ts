@@ -28,29 +28,19 @@ export const getPlatformExtension = (): string => (isWin() ? '.bat' : '');
 export const getPlatformPathSeparator = (): string => (isWin() ? '\\' : '/');
 
 /**
- * Get the appropriate PATH separator for the current platform to use when modifying
- * the PATH environment variable. Windows uses ';' while POSIX systems use ':'.
+ * Adds the PHP executable directory to the Node process's environment PATH.
  *
- * @returns The PATH separator for the current platform.
+ * @param phpDirectoryPath The PHP directory path from extension settings.
  */
-export const getEnvPathSeparator = (): string => (isWin() ? ';' : ':');
-
-/**
- * Adds the PHP executable path to the Node process's environment path.
- *
- * @param phpExecutablePath The PHP executable path from extension settings.
- */
-export const addPhpToEnvPath = (phpExecutablePath: string) => {
-  // If the path ends with php.exe, remove it because we only need the directory path.
-  if (phpExecutablePath.endsWith('php.exe')) {
-    phpExecutablePath = phpExecutablePath.replace('php.exe', '');
+export const addPhpToEnvPath = (phpDirectoryPath: string) => {
+  if (!phpDirectoryPath) {
+    return;
   }
 
-  if (!process.env?.PATH?.includes(phpExecutablePath)) {
-    process.env.PATH =
-      process.env.PATH + getEnvPathSeparator() + phpExecutablePath;
+  if (!process.env?.PATH?.includes(phpDirectoryPath)) {
+    process.env.PATH = process.env.PATH + path.delimiter + phpDirectoryPath;
     logger.debug(
-      `Added PHP executable path (${phpExecutablePath}) to extension environment.`,
+      `Added PHP directory (${phpDirectoryPath}) to extension environment.`,
     );
   }
 };
@@ -164,9 +154,19 @@ export const isPathValid = (
  */
 export const executableExists = async (path: string): Promise<boolean> => {
   try {
+    // Check if the path is provided. If not, return false.
     if (!path) {
       return false;
     }
+
+    // Check if the path is a file, if it's not return false.
+    const stat = await fs.stat(path);
+    if (!stat.isFile()) {
+      return false;
+    }
+
+    // Check if the file is executable by testing the execute permission on POSIX systems.
+    // On Windows, this will only check if the file exists.
     await fs.access(path, fs.constants.X_OK);
     return true;
   } catch (error) {

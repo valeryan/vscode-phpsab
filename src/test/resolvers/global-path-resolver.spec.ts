@@ -6,17 +6,26 @@ import { createGlobalPathResolver } from '../../resolvers/global-path-resolver';
 
 suite('Global Path Resolver Test Suite', () => {
   let accessStub: sinon.SinonStub;
+  let statStub: sinon.SinonStub;
   let env: NodeJS.ProcessEnv;
   let platformStub: sinon.SinonStub;
   let joinPathsStub: sinon.SinonStub;
+  let delimiterStub: sinon.SinonStub;
 
   setup(() => {
     // Stub fs.access method
     accessStub = sinon.stub(fs.promises, 'access');
+    // Stub fs.stat to report every path as a regular file
+    statStub = sinon
+      .stub(fs.promises, 'stat')
+      .resolves({ isFile: () => true } as any);
     // Save the original environment PATH
     env = process.env;
     // Stub process.platform to control platform value
     platformStub = sinon.stub(process, 'platform').value('win32');
+
+    // Stub path.delimiter to match the simulated platform for the env PATH separator.
+    delimiterStub = sinon.stub(path, 'delimiter').value(';');
 
     // Stub path.join method directly
     joinPathsStub = sinon.stub(path, 'join');
@@ -25,8 +34,12 @@ suite('Global Path Resolver Test Suite', () => {
   teardown(() => {
     // Restore fs.access method
     accessStub.restore();
+    // Restore fs.stat method
+    statStub.restore();
     // Restore the environment PATH
     process.env = env;
+    // Restore the path delimiter
+    delimiterStub.restore();
     // Restore path.join method
     joinPathsStub.restore();
     // Restore process.platform
@@ -44,6 +57,7 @@ suite('Global Path Resolver Test Suite', () => {
 
   test('Global Path Resolver should resolve path on Unix-like systems', async () => {
     platformStub.value('linux'); // Set platform to linux for this test
+    delimiterStub.value(':');
     process.env.PATH = '/usr/bin:/usr/local/bin:/opt/bin';
     accessStub.resolves(); // Make fs.access resolve successfully
     joinPathsStub.callsFake((...args: string[]) => args.join('/'));
@@ -54,6 +68,7 @@ suite('Global Path Resolver Test Suite', () => {
 
   test('Global Path Resolver should handle PATH with empty segments', async () => {
     platformStub.value('linux'); // Set platform to linux for this test
+    delimiterStub.value(':');
     process.env.PATH = '/usr/bin:/usr/local/bin::/opt/bin';
     accessStub.resolves(); // Make fs.access resolve successfully
     joinPathsStub.callsFake((...args: string[]) => args.join('/'));
@@ -64,6 +79,7 @@ suite('Global Path Resolver Test Suite', () => {
 
   test('Global Path Resolver should return empty string if executable not found', async () => {
     platformStub.value('linux'); // Set platform to linux for this test
+    delimiterStub.value(':');
     process.env.PATH = '/usr/bin:/usr/local/bin:/opt/bin';
     accessStub.rejects(new Error('File not found')); // Make fs.access reject
     joinPathsStub.callsFake((...args: string[]) => args.join('/'));

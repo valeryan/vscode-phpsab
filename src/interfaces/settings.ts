@@ -1,3 +1,6 @@
+import type { Disposable, Event } from 'vscode';
+import { ToolExecutable } from './common';
+
 export type SnifferMode = 'onSave' | 'onType';
 
 /**
@@ -104,3 +107,52 @@ export interface ResourceSettings {
    */
   excludeGlobs: string[];
 }
+
+/**
+ * Describes a completed settings reload.
+ */
+export interface SettingsChange {
+  /**
+   * The settings before the reload, or `undefined` for the initial load.
+   */
+  previous: Settings | undefined;
+
+  /**
+   * The newly loaded settings.
+   */
+  current: Settings;
+
+  /**
+   * Whether the sniffer should update its validation listener.
+   */
+  shouldUpdateSnifferValidatorListener: boolean;
+}
+
+/**
+ * Shared access to the current settings and settings reload notifications.
+ */
+export interface SettingsManager extends Disposable {
+  /**
+   * The current settings. Only valid after the initial `reload()` has resolved.
+   */
+  readonly current: Settings;
+
+  /**
+   * Fires after each successful settings reload.
+   */
+  readonly onDidChange: Event<SettingsChange>;
+
+  /**
+   * Reload the settings.
+   */
+  reload(): Promise<Settings>;
+}
+
+/**
+ * The mapping of tool executable names to the setting key holding their executable path,
+ * i.e., 'phpcs' -> 'executablePathCS', 'phpcbf' -> 'executablePathCBF'.
+ */
+export const executableSettingKeys = {
+  phpcs: 'executablePathCS',
+  phpcbf: 'executablePathCBF',
+} as const satisfies Record<ToolExecutable, keyof ResourceSettings>;

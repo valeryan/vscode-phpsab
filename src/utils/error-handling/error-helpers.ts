@@ -1,4 +1,5 @@
 import { getSystemErrorMap } from 'node:util';
+import { ToolType } from '../../interfaces/common';
 import { ConsoleError } from '../../interfaces/console-error';
 
 /**
@@ -9,7 +10,7 @@ import { ConsoleError } from '../../interfaces/console-error';
  */
 export const determineNodeError = (
   nodeError: ConsoleError,
-  toolType: 'sniffer' | 'fixer',
+  toolType: ToolType,
 ): { errorMsg: string; extraLoggerMsg: string } => {
   let errorMsg = `${toolType.toUpperCase()} NODE ERROR: `;
   // Assert code is not undefined.

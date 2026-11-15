@@ -177,7 +177,7 @@ Passes additional arguments to `phpcbf` runner.
 > The only additional arguments this extension supports are:
 >
 > - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
-> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
+> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories, see [PHPCS docs](https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Advanced-Usage#ignoring-files-and-folders).)
 > - `--severity` (0-10)
 > - `--error-severity` (0-10)
 > - `--warning-severity` (0-10)
@@ -215,7 +215,7 @@ Passes additional arguments to `phpcs` runner.
 > The only additional arguments this extension supports are:
 >
 > - `--filter` (values either `GitModified`, `GitStaged`, or a path to a custom filter class.)
-> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories.)
+> - `--ignore` (a comma-separated list of glob patterns matching files and/or directories, see [PHPCS docs](https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Advanced-Usage#ignoring-files-and-folders).)
 > - `--severity` (0-10)
 > - `--error-severity` (0-10)
 > - `--warning-severity` (0-10)
@@ -391,19 +391,47 @@ The following values are applicable:
 
 [ *Scope:* Resource | Optional | *Type:* boolean | *Default:* true ]
 
-Automatically search for any `.phpcs.xml`, `.phpcs.xml.dist`, `phpcs.xml`, `phpcs.xml.dist`, `phpcs.ruleset.xml` or `ruleset.xml` file to use as configuration. Overrides `phpsab.standard` configuration when a ruleset is found. If `phpcs` finds a configuration file through auto search this extension should similarly find that configuration file and apply fixes based on the same configuration.
+Automatically search for any allowed ruleset file, as defined in the [`phpsab.allowedAutoRulesets`](#phpsaballowedautorulesets) setting, to use as configuration. Overrides `phpsab.standard` configuration when a ruleset is found. If `phpcs` finds a configuration file through auto search this extension should similarly find that configuration file and apply fixes based on the same configuration.
 
-> **NOTE:** This option does not apply for unsaved documents (in-memory). Also, the name of files that are searched for is configurable in this extension.
+> **NOTE:** This option does not apply for unsaved documents (in-memory).
 
 ### **phpsab.allowedAutoRulesets**
 
-[ *Scope:* Resource | Optional | *Type:* array | *Default:* [] ]
+[ *Scope:* Resource | Optional | *Type:* array | *Default:* [
+".phpcs.xml",
+".phpcs.xml.dist",
+"phpcs.xml",
+"phpcs.xml.dist",
+"phpcs.ruleset.xml",
+"ruleset.xml"] ]
 
-An array of filenames that could contain a valid phpcs ruleset.
+An array of filenames that could contain a valid phpcs ruleset to automatically search for while [`phpsab.autoRulesetSearch`](#phpsabautorulesetsearch) is enabled.
+
+As per PHPCS [documentation](https://github.com/PHPCSStandards/PHP_CodeSniffer/wiki/Annotated-Ruleset):
+
+> This XML file can be named anything you like, as long as it has an xml extension and complies to the ruleset.xml format.
+
+In addition to `.xml`, the extension can also be `.dist.xml`.
 
 ```json
 {
-    "phpsab.allowedAutoRulesets": ["phpcs.xml", "special.xml"]
+    "phpsab.allowedAutoRulesets": ["phpcs.xml", "special.xml.dist"]
+}
+```
+
+
+The default is the same as what PHPCS would also automatically search for:
+
+```json
+{
+    "phpsab.allowedAutoRulesets": [
+        ".phpcs.xml",
+        ".phpcs.xml.dist",
+        "phpcs.xml",
+        "phpcs.xml.dist",
+        "phpcs.ruleset.xml",
+        "ruleset.xml"
+    ]
 }
 ```
 
@@ -486,8 +514,6 @@ Good Example:
     "phpsab.phpExecutablePath": "path/to/executable/directory"
 }
 ```
-
-> **NOTE:** Changing this setting or the external 3rd party settings after the extension has activated requires restarting VScode. It will not currently update the `php` executable in the environment `PATH` automatically until after a VScode restart.
 
 ### **phpsab.excludeGlobs**
 

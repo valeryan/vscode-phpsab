@@ -13,6 +13,7 @@ import {
   validAdditionalValueArguments,
   validInternalArguments,
 } from '../interfaces/arguments';
+import { ToolType } from '../interfaces/common';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
 import { ResourceSettings } from '../interfaces/settings';
 import { logger } from '../logger';
@@ -64,14 +65,14 @@ export const getExtensionInfo = (): ExtensionInfo => {
  * @param {string} filePath The file path to be linted or fixed. (Note: The path is obtained via vscode's API, so it's already normalized.)
  * @param {string} standard The coding standard to use.
  * @param {string[]} additionalArguments Any additional arguments to pass to the executable.
- * @param {'sniffer' | 'fixer'} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @param {ToolType} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
  * @returns {string[]} The array of arguments to pass to the sniffer or fixer executable.
  */
 export const getArgs = (
   filePath: string,
   standard: string,
   additionalArguments: string[],
-  toolType: 'sniffer' | 'fixer',
+  toolType: ToolType,
 ): string[] => {
   let args: string[] = [];
 
@@ -490,13 +491,13 @@ export const getEOL = (): string => {
  * Determines if a document should be processed.
  *
  * @param document - The document to check.
- * @param {'sniffer' | 'fixer'} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
+ * @param {ToolType} toolType The type of tool being executed (e.g., 'sniffer', 'fixer').
  * @returns `true` if the document should be processed, `false` otherwise.
  */
 export const shouldProcess = (
   document: TextDocument,
   resourceConf: ResourceSettings,
-  toolType: 'sniffer' | 'fixer',
+  toolType: ToolType,
 ): boolean => {
   let isEnabled = false;
   if (toolType === 'sniffer') {
