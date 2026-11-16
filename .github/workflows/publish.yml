@@ -73,8 +73,8 @@ jobs:
 
       - name: Verify Build Output
         run: |
-          if [ ! -f "out/main.js" ]; then
-            echo "❌ Build failed: out/main.js not found"
+          if [ ! -f "out/extension.js" ]; then
+            echo "❌ Build failed: out/extension.js not found"
             exit 1
           fi
           echo "✅ Build successful"
@@ -239,8 +239,8 @@ jobs:
       - name: Verify Build Output
         if: github.event_name == 'workflow_dispatch'
         run: |
-          if [ ! -f "out/main.js" ]; then
-            echo "❌ Build failed: out/main.js not found"
+          if [ ! -f "out/extension.js" ]; then
+            echo "❌ Build failed: out/extension.js not found"
             exit 1
           fi
           echo "✅ Build successful"
