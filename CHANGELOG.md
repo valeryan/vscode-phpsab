@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.32] - 2026-11-16
+
+### What's Changed
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/275
+* Security - bump dependency versions from dependabot by @github-actions[bot] in https://github.com/valeryan/vscode-phpsab/pull/278
+* security: add overrides for `serialize-javascript` dependency to resolve a RCE by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/279
+* refactor: general improvements by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/276
+* fix: PHP env PATH handling to ensure PHPCS uses the correct PHP version. by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/280
+* ci: fix build output verification in publish script with new main file name `extension.js` by @yCodeTech in https://github.com/valeryan/vscode-phpsab/pull/281
+
+
+**Full Changelog**: https://github.com/valeryan/vscode-phpsab/compare/v0.0.31...v0.0.32
+
+
 ## [0.0.31] - 2026-10-26
 
 ### What's Changed
