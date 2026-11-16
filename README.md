@@ -485,7 +485,9 @@ This setting allows you to override the path to your composer.json file when it 
 
 [ *Scope:* All | Optional | *Type:* string | *Default:* null ]
 
-This setting controls the path for the `php` executable. If you don't have PHP in your system `PATH` and the extension errors that it cannot find PHP, then you may specify the absolute path to the directory where `php` executable can be found. This setting will only be used if PHP isn't set in VSCode's built-in PHP setting `php.validate.executablePath` or Devsense's "PHP Tools" extension setting `php.executablePath`.
+This setting controls the path for the `php` executable. If you don't have PHP in your system `PATH` and the extension errors that it cannot find PHP, then you may specify the absolute path to the PHP executable or its containing directory. A leading `~` is expanded to your home directory. 
+
+This setting will only be used if PHP isn't set in VSCode's built-in PHP setting `php.validate.executablePath` or Devsense's "PHP Tools" extension setting `php.executablePath`.
 
 The order of precedence for finding PHP path in the settings is as follows:
 
@@ -493,25 +495,37 @@ The order of precedence for finding PHP path in the settings is as follows:
 2. Devsense's "PHP Tools" extension setting `php.executablePath`.
 3. This extension's `phpsab.phpExecutablePath` setting.
 
-The path should lead to the directory where the executable can be found, and shouldn't include the actual executable itself. A leading `~` is expanded to your home directory as well.
+When the setting points to the executable file (`php` on Unix-like systems or `php.exe` on Windows), the executable is removed from the path and its containing directory is used.
 
-On Windows, if it detects the path has `php.exe` at the end, then it will be removed from the path. On other systems, it won't detect or remove anything.
+The resolved directory is placed first in the `PATH` to ensure PHPCS/PHPCBF finds the correct PHP executable.
 
-Bad Example:
+> **Note:** The process environment and `PATH` are cloned and modified for child processes only, and doesn't affect the system or extension host's `PATH`, this is to ensure it can easily be reverted to the original state if no configured path is resolved. This also allows it to be updated dynamically when settings change.
 
-Where `php` is the executable.
+Example using the PHP executable:
 
 ```json
+// Unix-like systems
 {
     "phpsab.phpExecutablePath": "path/to/executable/directory/php"
 }
+
+// Windows
+{
+    "phpsab.phpExecutablePath": "C:\\path\\to\\executable\\directory\\php.exe"
+}
 ```
 
-Good Example:
+Example using its directory:
 
 ```json
+// Unix-like systems
 {
     "phpsab.phpExecutablePath": "path/to/executable/directory"
+}
+
+// Windows
+{
+    "phpsab.phpExecutablePath": "C:\\path\\to\\executable\\directory"
 }
 ```
 
