@@ -4,8 +4,8 @@ import { TextDocument, window, workspace } from 'vscode';
 import { ConsoleError } from '../interfaces/console-error';
 import { PathResolver } from '../interfaces/path-resolver';
 import { ResourceSettings } from '../interfaces/settings';
-import { logger } from '../logger';
-import { isSingleFileMode } from '../settings';
+import { logger } from '../services/logger';
+import { isSingleFileMode } from '../services/settings';
 import { getErrorCodeDescription } from '../utils/error-handling/error-helpers';
 import {
   expandHomeDir,

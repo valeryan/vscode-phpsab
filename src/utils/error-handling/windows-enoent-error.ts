@@ -18,8 +18,8 @@
 import { ChildProcess, SpawnSyncReturns } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { OriginalCommand } from '../../interfaces/common';
-import { logger } from '../../logger';
 import { isWin } from '../../resolvers/path-resolver-utils';
+import { logger } from '../../services/logger';
 
 /**
  * Add ENOENT error handling for Windows spawned processes using spawn or spawnSync.

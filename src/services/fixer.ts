@@ -11,23 +11,23 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { OriginalCommand } from './interfaces/common';
-import { ConsoleError } from './interfaces/console-error';
-import { SettingsManager } from './interfaces/settings';
-import { logger } from './logger';
-import { createStandardsPathResolver } from './resolvers/standards-path-resolver';
+import { OriginalCommand } from '../interfaces/common';
+import { ConsoleError } from '../interfaces/console-error';
+import { SettingsManager } from '../interfaces/settings';
+import { createStandardsPathResolver } from '../resolvers/standards-path-resolver';
 import {
   determineNodeError,
   getPhpNotFoundRegex,
-} from './utils/error-handling/error-helpers';
-import { addWindowsEnoentError } from './utils/error-handling/windows-enoent-error';
+} from '../utils/error-handling/error-helpers';
+import { addWindowsEnoentError } from '../utils/error-handling/windows-enoent-error';
 import {
   constructCommandString,
   getArgs,
   getEOL,
   parseArgs,
   shouldProcess,
-} from './utils/helpers';
+} from '../utils/helpers';
+import { logger } from './logger';
 
 /**
  * The shared settings manager instance used by the fixer throughout the file.
