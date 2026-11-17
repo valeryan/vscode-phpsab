@@ -16,8 +16,8 @@ import {
 import { ToolType } from '../interfaces/common';
 import { ExtensionInfo } from '../interfaces/extensionInfo';
 import { ResourceSettings } from '../interfaces/settings';
-import { logger } from '../logger';
 import { isPathValid, isWin } from '../resolvers/path-resolver-utils';
+import { logger } from '../services/logger';
 
 // Set of allowed additional flag argument keys for quick lookup.
 const allowedAdditionalFlagKeys: Set<string> = new Set(

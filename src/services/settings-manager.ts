@@ -3,7 +3,7 @@ import {
   Settings,
   SettingsChange,
   SettingsManager,
-} from './interfaces/settings';
+} from '../interfaces/settings';
 import { logger } from './logger';
 import { loadSettings } from './settings';
 

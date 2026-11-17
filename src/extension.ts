@@ -3,10 +3,10 @@
  * Licensed under the MIT License. See License.md in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 import { ExtensionContext } from 'vscode';
-import { activateFixer } from './fixer';
-import { disposeLogger, logger } from './logger';
-import { createSettingsManager } from './settings-manager';
-import { activateSniffer, disposeSniffer } from './sniffer';
+import { activateFixer } from './services/fixer';
+import { disposeLogger, logger } from './services/logger';
+import { createSettingsManager } from './services/settings-manager';
+import { activateSniffer, disposeSniffer } from './services/sniffer';
 import { getExtensionInfo, setExtensionInfo } from './utils/helpers';
 
 /**

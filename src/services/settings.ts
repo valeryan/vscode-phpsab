@@ -1,15 +1,19 @@
 import { omit } from 'lodash';
 import { Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
-import { checkCompatibility } from './compatibility';
-import { ToolExecutable, toolNames } from './interfaces/common';
-import { ResourceSettings, Settings, SnifferMode } from './interfaces/settings';
-import { logger } from './logger';
+import { ToolExecutable, toolNames } from '../interfaces/common';
+import {
+  ResourceSettings,
+  Settings,
+  SnifferMode,
+} from '../interfaces/settings';
 import {
   resolveExecutablePath,
   resolvePhpExecutablePath,
-} from './resolvers/executable-path-resolver';
-import { createEnv, executableExists } from './resolvers/path-resolver-utils';
-import { getExtensionInfo } from './utils/helpers';
+} from '../resolvers/executable-path-resolver';
+import { createEnv, executableExists } from '../resolvers/path-resolver-utils';
+import { getExtensionInfo } from '../utils/helpers';
+import { checkCompatibility } from './compatibility';
+import { logger } from './logger';
 
 /**
  * Check if the editor is in single file mode.

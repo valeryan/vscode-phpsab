@@ -2,7 +2,7 @@ import { exec } from 'node:child_process';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { window } from 'vscode';
-import { Settings } from './interfaces/settings';
+import { Settings } from '../interfaces/settings';
 import { logger } from './logger';
 
 const execAsync = promisify(exec);

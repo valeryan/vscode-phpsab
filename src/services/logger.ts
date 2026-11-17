@@ -1,5 +1,5 @@
 import { OutputChannel, window } from 'vscode';
-import { getExtensionInfo } from './utils/helpers';
+import { getExtensionInfo } from '../utils/helpers';
 
 let outputChannel: OutputChannel;
 

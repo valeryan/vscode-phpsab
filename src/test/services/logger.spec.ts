@@ -1,7 +1,7 @@
 import assert from 'assert';
 import sinon from 'sinon';
 import { window } from 'vscode';
-import { logger } from '../../logger';
+import { logger } from '../../services/logger';
 
 const setupTestSuite = (debugMode: boolean): [sinon.SinonSpy] => {
   const mockOutputChannel = window.createOutputChannel('PHP SAB UNIT TEST');

@@ -7,7 +7,7 @@ import {
   executableSettingKeys,
   ResourceSettings,
 } from '../interfaces/settings';
-import { logger } from '../logger';
+import { logger } from '../services/logger';
 import { createPathResolver } from './path-resolver';
 import {
   executableExists,
