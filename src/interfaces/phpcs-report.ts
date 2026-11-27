@@ -1,5 +1,14 @@
+/**
+ * The types of messages that PHPCS can generate: ERROR or WARNING.
+ */
 export enum PHPCSMessageType {
+  /**
+   * An ERROR message.
+   */
   ERROR = 'ERROR',
+  /**
+   * A WARNING message.
+   */
   WARNING = 'WARNING',
 }
 
@@ -18,7 +27,9 @@ export interface PHPCSMessage {
   source: string;
 
   /**
-   * The severity level of the message.
+   * The severity level (0-10) of the message.
+   *
+   * Note: `severity` isn't used in the diagnostics, but it is included in the PHPCS report.
    */
   severity: number;
 
