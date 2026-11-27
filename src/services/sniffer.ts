@@ -2,12 +2,7 @@ import { debounce } from 'lodash';
 import { spawn, SpawnOptions } from 'node:child_process';
 import {
   CancellationTokenSource,
-  Diagnostic,
-  DiagnosticCollection,
-  DiagnosticSeverity,
   Disposable,
-  languages,
-  Range,
   TextDocument,
   TextDocumentChangeEvent,
   Uri,
@@ -16,7 +11,6 @@ import {
 } from 'vscode';
 import { OriginalCommand } from '../interfaces/common';
 import { ConsoleError } from '../interfaces/console-error';
-import { PHPCSMessageType, PHPCSReport } from '../interfaces/phpcs-report';
 import { SettingsManager, SnifferMode } from '../interfaces/settings';
 import { createStandardsPathResolver } from '../resolvers/standards-path-resolver';
 import {
@@ -30,6 +24,12 @@ import {
   parseArgs,
   shouldProcess,
 } from '../utils/helpers';
+import {
+  clearAllDiagnostics,
+  clearDocumentDiagnostics,
+  constructDiagnostics,
+  disposeDiagnostics,
+} from './diagnostics';
 import { logger } from './logger';
 
 /**
@@ -37,14 +37,6 @@ import { logger } from './logger';
  * @type {SettingsManager}
  */
 let settingsManager: SettingsManager;
-
-/**
- * The collection of diagnostics for PHP files, used to
- * display linting errors and warnings in the editor.
- * @type {DiagnosticCollection}
- */
-const diagnosticCollection: DiagnosticCollection =
-  languages.createDiagnosticCollection('php');
 
 /**
  * The active validator listener.
@@ -72,6 +64,7 @@ const validate = async (document: TextDocument): Promise<void> => {
 
   // If the document should not be processed, return early.
   if (shouldProcess(document, resourceConf, 'sniffer') === false) {
+    clearDocumentDiagnostics(document);
     return;
   }
 
@@ -203,39 +196,9 @@ const validate = async (document: TextDocument): Promise<void> => {
         resolve();
         return;
       }
-      const diagnostics: Diagnostic[] = [];
-      // Try-catch to handle JSON parse errors
+      // Attempt to construct diagnostics from the PHPCS output.
       try {
-        const { files }: PHPCSReport = JSON.parse(stdout);
-        for (const file in files) {
-          files[file].messages.forEach(
-            ({ message, line, column, type, source, fixable }) => {
-              const zeroLine = line - 1;
-              const ZeroColumn = column - 1;
-
-              const range = new Range(
-                zeroLine,
-                ZeroColumn,
-                zeroLine,
-                ZeroColumn,
-              );
-              const severity =
-                type === PHPCSMessageType.ERROR
-                  ? DiagnosticSeverity.Error
-                  : DiagnosticSeverity.Warning;
-              let output = message;
-              if (settings.snifferShowSources) {
-                output += `\n(${source})`;
-              }
-              if (settings.snifferShowFixabilityIcons) {
-                output += `\nAuto-fixable: ${fixable ? '✔️' : '❌'}`;
-              }
-              const diagnostic = new Diagnostic(range, output, severity);
-              diagnostic.source = '\nphpcs';
-              diagnostics.push(diagnostic);
-            },
-          );
-        }
+        constructDiagnostics(stdout, document, settingsManager.current);
         resolve();
       } catch (error) {
         let message = '';
@@ -268,18 +231,9 @@ const validate = async (document: TextDocument): Promise<void> => {
  * Refreshes validation on any open documents.
  */
 const refresh = (): void => {
-  diagnosticCollection!.clear();
+  clearAllDiagnostics();
 
   workspace.textDocuments.forEach(validate);
-};
-
-/**
- * Clears diagnostics from a document.
- *
- * @param {TextDocument} document - The document to clear diagnostics of.
- */
-const clearDocumentDiagnostics = ({ uri }: TextDocument): void => {
-  diagnosticCollection.delete(uri);
 };
 
 /**
@@ -310,8 +264,8 @@ const setValidatorListener = (): void => {
  * Dispose Sniffer diagnostics.
  */
 export const disposeSniffer = (): void => {
-  diagnosticCollection.clear();
-  diagnosticCollection.dispose();
+  clearAllDiagnostics();
+  disposeDiagnostics();
 };
 
 /**
