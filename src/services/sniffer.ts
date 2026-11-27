@@ -2,12 +2,7 @@ import { debounce } from 'lodash';
 import { spawn, SpawnOptions } from 'node:child_process';
 import {
   CancellationTokenSource,
-  Diagnostic,
-  DiagnosticCollection,
-  DiagnosticSeverity,
   Disposable,
-  languages,
-  Range,
   TextDocument,
   TextDocumentChangeEvent,
   Uri,
@@ -16,7 +11,6 @@ import {
 } from 'vscode';
 import { OriginalCommand } from '../interfaces/common';
 import { ConsoleError } from '../interfaces/console-error';
-import { PHPCSMessageType, PHPCSReport } from '../interfaces/phpcs-report';
 import { SettingsManager, SnifferMode } from '../interfaces/settings';
 import { createStandardsPathResolver } from '../resolvers/standards-path-resolver';
 import {
@@ -30,6 +24,12 @@ import {
   parseArgs,
   shouldProcess,
 } from '../utils/helpers';
+import {
+  clearAllDiagnostics,
+  clearDocumentDiagnostics,
+  constructDiagnostics,
+  disposeDiagnostics,
+} from './diagnostics';
 import { logger } from './logger';
 
 /**
@@ -39,14 +39,6 @@ import { logger } from './logger';
 let settingsManager: SettingsManager;
 
 /**
- * The collection of diagnostics for PHP files, used to
- * display linting errors and warnings in the editor.
- * @type {DiagnosticCollection}
- */
-const diagnosticCollection: DiagnosticCollection =
-  languages.createDiagnosticCollection('php');
-
-/**
  * The active validator listener.
  * @type {Disposable}
  */
@@ -54,9 +46,21 @@ let validatorListener: Disposable;
 
 /**
  * A map of cancellation tokens for currently running validations.
- * @type {Map<Uri, CancellationTokenSource>}
+ * @type {Map<string, CancellationTokenSource>}
  */
-const runnerCancellations: Map<Uri, CancellationTokenSource> = new Map();
+const runnerCancellations: Map<string, CancellationTokenSource> = new Map();
+
+/**
+ * Cleans up the runner and removes it from the cancellation map.
+ * @param {string} key The key corresponding to the document URI.
+ * @param {CancellationTokenSource} runner The cancellation token source to clean up.
+ */
+const cleanupRunner = (key: string, runner: CancellationTokenSource): void => {
+  if (runnerCancellations.get(key) === runner) {
+    runnerCancellations.delete(key);
+    runner.dispose();
+  }
+};
 
 /**
  * Validates and lints a document.
@@ -69,22 +73,18 @@ const validate = async (document: TextDocument): Promise<void> => {
 
   const settings = settingsManager.current;
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
+  const key = document.uri.toString();
 
   // If the document should not be processed, return early.
   if (shouldProcess(document, resourceConf, 'sniffer') === false) {
+    clearDocumentDiagnostics(document);
     return;
   }
 
   logger.startTimer('Sniffer');
 
-  const oldRunner = runnerCancellations.get(document.uri);
-  if (oldRunner) {
-    oldRunner.cancel();
-    oldRunner.dispose();
-  }
-
   const runner = new CancellationTokenSource();
-  runnerCancellations.set(document.uri, runner);
+  runnerCancellations.set(key, runner);
   const { token } = runner;
 
   let standard: string;
@@ -203,60 +203,32 @@ const validate = async (document: TextDocument): Promise<void> => {
         resolve();
         return;
       }
-      const diagnostics: Diagnostic[] = [];
-      // Try-catch to handle JSON parse errors
-      try {
-        const { files }: PHPCSReport = JSON.parse(stdout);
-        for (const file in files) {
-          files[file].messages.forEach(
-            ({ message, line, column, type, source, fixable }) => {
-              const zeroLine = line - 1;
-              const ZeroColumn = column - 1;
 
-              const range = new Range(
-                zeroLine,
-                ZeroColumn,
-                zeroLine,
-                ZeroColumn,
-              );
-              const severity =
-                type === PHPCSMessageType.ERROR
-                  ? DiagnosticSeverity.Error
-                  : DiagnosticSeverity.Warning;
-              let output = message;
-              if (settings.snifferShowSources) {
-                output += `\n(${source})`;
-              }
-              if (settings.snifferShowFixabilityIcons) {
-                output += `\nAuto-fixable: ${fixable ? '✔️' : '❌'}`;
-              }
-              const diagnostic = new Diagnostic(range, output, severity);
-              diagnostic.source = '\nphpcs';
-              diagnostics.push(diagnostic);
-            },
-          );
-        }
-        resolve();
+      // Attempt to construct diagnostics from the PHPCS output.
+      try {
+        constructDiagnostics(stdout, document, settingsManager.current);
       } catch (error) {
-        let message = '';
-        if (stdout) {
-          message += `${stdout}\n`;
-        }
-        if (stderr) {
-          message += `${stderr}\n`;
-        }
-        if (error instanceof Error) {
-          message += error.toString();
-        } else {
-          message += 'Unexpected error';
-        }
-        window.showErrorMessage(message, 'OK');
-        logger.error(message);
-        reject(message);
+        const message = 'Unable to process the PHPCS report.';
+        logger.error(
+          `${message}\n${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n${stdout}\n${stderr}`,
+        );
+        // Show an Error message to the user, and offer to open the output channel.
+        window
+          .showErrorMessage(
+            `${message} See the output channel for details.`,
+            'OK',
+            'Open Output Channel',
+          )
+          .then((selection) => {
+            // If user chose to open output channel, then show it.
+            if (selection === 'Open Output Channel') {
+              logger.showChannel();
+            }
+          });
+      } finally {
+        cleanupRunner(key, runner);
+        resolve();
       }
-      diagnosticCollection.set(document.uri, diagnostics);
-      runner.dispose();
-      runnerCancellations.delete(document.uri);
     });
   });
 
@@ -268,18 +240,9 @@ const validate = async (document: TextDocument): Promise<void> => {
  * Refreshes validation on any open documents.
  */
 const refresh = (): void => {
-  diagnosticCollection!.clear();
+  clearAllDiagnostics();
 
   workspace.textDocuments.forEach(validate);
-};
-
-/**
- * Clears diagnostics from a document.
- *
- * @param {TextDocument} document - The document to clear diagnostics of.
- */
-const clearDocumentDiagnostics = ({ uri }: TextDocument): void => {
-  diagnosticCollection.delete(uri);
 };
 
 /**
@@ -310,8 +273,8 @@ const setValidatorListener = (): void => {
  * Dispose Sniffer diagnostics.
  */
 export const disposeSniffer = (): void => {
-  diagnosticCollection.clear();
-  diagnosticCollection.dispose();
+  clearAllDiagnostics();
+  disposeDiagnostics();
 };
 
 /**
