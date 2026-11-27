@@ -46,9 +46,21 @@ let validatorListener: Disposable;
 
 /**
  * A map of cancellation tokens for currently running validations.
- * @type {Map<Uri, CancellationTokenSource>}
+ * @type {Map<string, CancellationTokenSource>}
  */
-const runnerCancellations: Map<Uri, CancellationTokenSource> = new Map();
+const runnerCancellations: Map<string, CancellationTokenSource> = new Map();
+
+/**
+ * Cleans up the runner and removes it from the cancellation map.
+ * @param {string} key The key corresponding to the document URI.
+ * @param {CancellationTokenSource} runner The cancellation token source to clean up.
+ */
+const cleanupRunner = (key: string, runner: CancellationTokenSource): void => {
+  if (runnerCancellations.get(key) === runner) {
+    runnerCancellations.delete(key);
+    runner.dispose();
+  }
+};
 
 /**
  * Validates and lints a document.
@@ -61,6 +73,7 @@ const validate = async (document: TextDocument): Promise<void> => {
 
   const settings = settingsManager.current;
   const resourceConf = settings.resources[workspaceFolder?.index ?? 0];
+  const key = document.uri.toString();
 
   // If the document should not be processed, return early.
   if (shouldProcess(document, resourceConf, 'sniffer') === false) {
@@ -196,30 +209,32 @@ const validate = async (document: TextDocument): Promise<void> => {
         resolve();
         return;
       }
+
       // Attempt to construct diagnostics from the PHPCS output.
       try {
         constructDiagnostics(stdout, document, settingsManager.current);
-        resolve();
       } catch (error) {
-        let message = '';
-        if (stdout) {
-          message += `${stdout}\n`;
-        }
-        if (stderr) {
-          message += `${stderr}\n`;
-        }
-        if (error instanceof Error) {
-          message += error.toString();
-        } else {
-          message += 'Unexpected error';
-        }
-        window.showErrorMessage(message, 'OK');
-        logger.error(message);
-        reject(message);
+        const message = 'Unable to process the PHPCS report.';
+        logger.error(
+          `${message}\n${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n${stdout}\n${stderr}`,
+        );
+        // Show an Error message to the user, and offer to open the output channel.
+        window
+          .showErrorMessage(
+            `${message} See the output channel for details.`,
+            'OK',
+            'Open Output Channel',
+          )
+          .then((selection) => {
+            // If user chose to open output channel, then show it.
+            if (selection === 'Open Output Channel') {
+              logger.showChannel();
+            }
+          });
+      } finally {
+        cleanupRunner(key, runner);
+        resolve();
       }
-      diagnosticCollection.set(document.uri, diagnostics);
-      runner.dispose();
-      runnerCancellations.delete(document.uri);
     });
   });
 
