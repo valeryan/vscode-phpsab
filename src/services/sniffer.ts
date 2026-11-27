@@ -83,14 +83,8 @@ const validate = async (document: TextDocument): Promise<void> => {
 
   logger.startTimer('Sniffer');
 
-  const oldRunner = runnerCancellations.get(document.uri);
-  if (oldRunner) {
-    oldRunner.cancel();
-    oldRunner.dispose();
-  }
-
   const runner = new CancellationTokenSource();
-  runnerCancellations.set(document.uri, runner);
+  runnerCancellations.set(key, runner);
   const { token } = runner;
 
   let standard: string;
